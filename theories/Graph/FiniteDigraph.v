@@ -172,6 +172,61 @@ Section Digraph.
       S ⊆ T →
       T = S).
 
+  Lemma is_scc_strongly_connected (G : fin_digraph) (S : gset V) :
+    is_scc G S → strongly_connected G S.
+  Proof using Type.
+    intros [_ [Hsc _]].
+    exact Hsc.
+  Qed.
+
+  Lemma strongly_connected_union (G : fin_digraph) (S T : gset V) :
+    strongly_connected G S →
+    strongly_connected G T →
+    (∃ x, x ∈ S ∧ x ∈ T) →
+    strongly_connected G (S ∪ T).
+  Proof using EqDecision0 EqDecision1 H V.
+    intros [HSverts HSconn] [HTverts HTconn] [x [HxS HxT]].
+    split.
+    - intros v Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      + exact (HSverts v Hv).
+      + exact (HTverts v Hv).
+    - intros u v Hu Hv.
+      apply elem_of_union in Hu as [HuS|HuT];
+        apply elem_of_union in Hv as [HvS|HvT].
+      + exact (HSconn u v HuS HvS).
+      + exact (mut_reachable_trans G u x v (HSconn u x HuS HxS) (HTconn x v HxT HvT)).
+      + exact (mut_reachable_trans G u x v (HTconn u x HuT HxT) (HSconn x v HxS HvS)).
+      + exact (HTconn u v HuT HvT).
+  Qed.
+
+  Lemma is_scc_eq_of_common_vertex (G : fin_digraph) (S T : gset V) :
+    is_scc G S →
+    is_scc G T →
+    (∃ x, x ∈ S ∧ x ∈ T) →
+    S = T.
+  Proof using EqDecision0 EqDecision1 H V.
+    intros HS HT Hx.
+    set (U := S ∪ T).
+    destruct HS as [HSne [HSsc HSmax]].
+    destruct HT as [HTne [HTsc HTmax]].
+
+    assert (HUsc : strongly_connected G U).
+    { subst U. exact (strongly_connected_union G S T HSsc HTsc Hx). }
+
+    assert (HUeqS : U = S).
+    { apply HSmax; [exact HUsc|].
+      intros y Hy.
+      subst U. apply elem_of_union. left. exact Hy. }
+
+    assert (HUeqT : U = T).
+    { apply HTmax; [exact HUsc|].
+      intros y Hy.
+      subst U. apply elem_of_union. right. exact Hy. }
+
+    exact (eq_trans (eq_sym HUeqS) HUeqT).
+  Qed.
+
   Lemma edge_iff (G : fin_digraph) (v w : V) :
     edge G v w ↔ v ∈ verts G ∧ w ∈ succ G v.
   Proof.
