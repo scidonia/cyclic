@@ -55,7 +55,7 @@ Note: these `.v` files compile when invoked directly with:
 ### 2) Polish graph & pre-proof interfaces
 
 - Decide whether successors are lists (ordered) vs sets/multisets.
-- Add basic path/cycle definitions (done: `is_path`, `is_cycle` in `theories/Graph/FiniteDigraph.v`).
+- Add basic path/cycle/SCC infra (done: `is_path`, `is_cycle`, `reachable_by_path`, inductive `reachable`, `mut_reachable`, `is_scc` in `theories/Graph/FiniteDigraph.v`).
 - Decide whether graphs are total on `verts` or partial with domain proofs.
 
 ### 3) Progress condition (ranking / Büchi)
