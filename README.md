@@ -166,9 +166,35 @@ Once the Coq sources and `dune` files exist, typical commands will be:
 - Build everything: `dune build`
 - Clean: `dune clean`
 
-Dependency installation is intentionally not specified yet (opam/nix/etc.); once
-we add the actual `dune-project` and package metadata, we will record exact
-install commands here.
+### Dependencies (opam sketch)
+
+This is a non-binding sketch for setting up dependencies with `opam`. Package
+names differ slightly between “Coq” and “Rocq” distributions, so treat this as a
+starting point and adjust based on `opam search`.
+
+Typical ingredients:
+- the prover (`rocq-prover` / `coq`), matching the version you have installed
+- `stdpp` (`rocq-stdpp` / `coq-stdpp`)
+
+Example (illustrative):
+
+```sh
+# Create a local switch (optional)
+opam switch create . ocaml-base-compiler.4.14.1
+
+# Install the prover + stdpp (package names may vary)
+opam install rocq-prover rocq-stdpp
+
+# Or, on older Coq package naming:
+# opam install coq coq-stdpp
+```
+
+If in doubt:
+- `opam search stdpp`
+- `opam show rocq-prover` (or `opam show coq`)
+
+Dependency installation will be made precise once the repository has a
+`dune-project` and package metadata.
 
 ## Planned layout
 
