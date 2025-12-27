@@ -1,0 +1,6 @@
+(coq.theory
+ (name Cyclic)
+ (theories stdpp Stdlib)
+ (modules
+  Graph.FiniteDigraph
+  Preproof.Preproof))
