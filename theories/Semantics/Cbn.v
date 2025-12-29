@@ -1,4 +1,4 @@
-From Stdlib Require Import List Relations Relation_Operators Vectors.Fin.
+From Stdlib Require Import List Utf8 Relations Relation_Operators Vectors.Fin.
 
 From Cyclic.Syntax Require Import StrictPos Term.
 
@@ -30,6 +30,9 @@ Fixpoint apps (t : tm) (us : list tm) : tm :=
   | u :: us => apps (tApp t u) us
   end.
 
+Definition roll_params (Σ : ind_sig) (s : Shape Σ) (params : ParamPos Σ s -> tm) : list tm :=
+  map params (enumFin (param_arity Σ s)).
+
 Definition roll_args (Σ : ind_sig) (s : Shape Σ) (k : Pos Σ s -> tm) : list tm :=
   map k (enumFin (arity Σ s)).
 
@@ -39,7 +42,10 @@ Fixpoint shift (d : nat) (c : nat) (t : tm) : tm :=
   | tLam A t => tLam A (shift d (S c) t)
   | tApp t u => tApp (shift d c t) (shift d c u)
   | tFix A t => tFix A (shift d (S c) t)
-  | tRoll Σ s k => tRoll Σ s (fun p => shift d c (k p))
+  | tRoll Σ s params k =>
+      tRoll Σ s
+        (fun i => shift d c (params i))
+        (fun j => shift d c (k j))
   | tCase Σ scrut br =>
       tCase Σ (shift d c scrut) (fun s => shift d c (br s))
   end.
@@ -57,7 +63,10 @@ Fixpoint subst (σ : nat -> tm) (t : tm) : tm :=
   | tLam A t => tLam A (subst (up σ) t)
   | tApp t u => tApp (subst σ t) (subst σ u)
   | tFix A t => tFix A (subst (up σ) t)
-  | tRoll Σ s k => tRoll Σ s (fun p => subst σ (k p))
+  | tRoll Σ s params k =>
+      tRoll Σ s
+        (fun i => subst σ (params i))
+        (fun j => subst σ (k j))
   | tCase Σ scrut br =>
       tCase Σ (subst σ scrut) (fun s => subst σ (br s))
   end.
@@ -76,7 +85,40 @@ Inductive step : tm -> tm -> Prop :=
 | step_case_scrut Σ scrut scrut' br :
     step scrut scrut' ->
     step (tCase Σ scrut br) (tCase Σ scrut' br)
-| step_case_roll Σ s k br :
-    step (tCase Σ (tRoll Σ s k) br) (apps (br s) (roll_args Σ s k)).
+| step_case_roll Σ s params k br :
+    step (tCase Σ (tRoll Σ s params k) br)
+      (apps (br s) (roll_params Σ s params ++ roll_args Σ s k)).
 
 Definition steps : tm -> tm -> Prop := clos_refl_trans tm step.
+
+Inductive value : tm -> Prop :=
+| v_lam A t : value (tLam A t)
+| v_roll Σ s params k : value (tRoll Σ s params k).
+
+Definition terminates_to (t v : tm) : Prop :=
+  steps t v ∧ value v.
+
+Definition terminates (t : tm) : Prop :=
+  ∃ v, terminates_to t v.
+
+CoInductive diverges (t : tm) : Prop :=
+| diverges_step t' : step t t' -> diverges t' -> diverges t.
+
+Lemma value_no_step (v v' : tm) :
+  value v -> step v v' -> False.
+Proof.
+  intros Hv Hstep.
+  inversion Hv; subst; inversion Hstep.
+Qed.
+
+Lemma steps_refl (t : tm) : steps t t.
+Proof.
+  apply rt_refl.
+Qed.
+
+Lemma steps_step (t t' : tm) : step t t' -> steps t t'.
+Proof.
+  intro H.
+  apply rt_step.
+  exact H.
+Qed.

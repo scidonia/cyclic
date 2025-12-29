@@ -10,8 +10,8 @@ across opencode restarts.
 - Use a library with finite maps/sets: `stdpp`.
 - Preferred global condition formulation: ranking-based.
 - Object language includes general recursion.
-- Inductive types are via a general strictly-positive signature machinery (finitary W-type signatures; `Pos` is `Fin.t` of an arity).
-- Operational semantics: call-by-name small-step (`theories/Semantics/Cbn.v`), with `case` applying branch to all constructor fields.
+- Inductive types are via a general strictly-positive signature machinery (finitary W-type signatures; `Pos` is `Fin.t` of a recursive arity; plus `ParamPos` for non-recursive parameters).
+- Operational semantics: call-by-name small-step (`theories/Semantics/Cbn.v`), with `case` applying the selected branch to all non-recursive parameters and recursive fields.
 - Equality / program transformation correctness stays meta-theoretic for now.
 - Canonicalization goal: define an operational procedure `Reduce` on proof objects and a behavioural relation `~` such that `p ~ Reduce(p)`.
 

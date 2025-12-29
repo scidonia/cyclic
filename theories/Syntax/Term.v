@@ -27,6 +27,8 @@ Module Syntax.
   | tLam (A : ty) (t : tm)
   | tApp (t u : tm)
   | tFix (A : ty) (t : tm) (* t is in extended context, binds the recursive name *)
-  | tRoll (Σ : ind_sig) (s : Shape Σ) (k : Pos Σ s -> tm)
+  | tRoll (Σ : ind_sig) (s : Shape Σ)
+      (params : ParamPos Σ s -> tm)
+      (k : Pos Σ s -> tm)
   | tCase (Σ : ind_sig) (scrut : tm) (br : Shape Σ -> tm).
 End Syntax.
