@@ -8,8 +8,12 @@ across opencode restarts.
 - Topic: cyclic proofs for a CoC-style dependent type theory.
 - Build tool: `dune`.
 - Use a library with finite maps/sets: `stdpp`.
-- Preferred global condition formulation: ranking-based (with Büchi/fairness view
-  as a secondary/equivalent characterization).
+- Preferred global condition formulation: ranking-based.
+- Object language includes general recursion.
+- Inductive types are via a general strictly-positive signature machinery (finitary W-type signatures; `Pos` is `Fin.t` of an arity).
+- Operational semantics: call-by-name small-step (`theories/Semantics/Cbn.v`), with `case` applying branch to all constructor fields.
+- Equality / program transformation correctness stays meta-theoretic for now.
+- Canonicalization goal: define an operational procedure `Reduce` on proof objects and a behavioural relation `~` such that `p ~ Reduce(p)`.
 
 ## Toolchain status (important)
 
@@ -54,21 +58,21 @@ Note: these `.v` files compile when invoked directly with:
 
 ### 2) Polish graph & pre-proof interfaces
 
-- Decide whether successors are lists (ordered) vs sets/multisets.
+- Decide whether successors are lists (ordered) vs sets/multisets (decision: keep `succ : V -> list V` for now; treat duplicates as allowed/irrelevant).
 - Add basic path/cycle/SCC infra (done: `is_path`, `is_cycle`, `reachable_by_path`, inductive `reachable`, `mut_reachable`, `is_scc`, plus SCC lemmas in `theories/Graph/FiniteDigraph.v`).
-- Decide whether graphs are total on `verts` or partial with domain proofs.
+- Decide whether graphs are total on `verts` or partial with domain proofs (decision: `succ` is a total function on `V`, but only constrained/meaningful on `verts` via `succ_closed`).
 
 ### 3) Progress condition (ranking / Büchi)
 
-- Define edge annotations / trace positions needed for progress.
-- Define ranking-based condition:
+- Define edge annotations / trace positions needed for progress (started: `progress_edge` parameter + `has_progress_edge` and basic lemmas in `theories/Progress/Ranking.v`).
+- Define ranking-based condition (started: `ranking_condition` record in `theories/Progress/Ranking.v`):
   - measure type, strict-decrease edge predicate, monotonicity.
-- Optional: define Büchi/fairness acceptance and relate to ranking.
+- Optional: define Büchi/fairness acceptance and relate to ranking (decision: skip for now).
 
 ### 4) Proof equivalence (bisimulation)
 
-- Define bisimulation over labelled proof graphs.
-- Prove it is an equivalence relation.
+- Define bisimulation over labelled proof graphs (started: `theories/Equiv/Bisimulation.v`).
+- Prove it is an equivalence relation (pending: need symmetry/transitivity story across differing node types).
 - Prove it respects unfolding/interpretation (once semantics exists).
 
 ### 5) Fold/refold + canonicalization

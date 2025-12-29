@@ -2,5 +2,12 @@
  (name Cyclic)
  (theories stdpp Stdlib)
  (modules
+  Syntax.StrictPos
+  Syntax.Term
+  Semantics.Cbn
   Graph.FiniteDigraph
-  Preproof.Preproof))
+  Preproof.Preproof
+  Progress.Ranking
+  Equiv.Bisimulation))
+
+

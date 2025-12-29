@@ -1,4 +1,9 @@
 -Q theories Cyclic
 
+theories/Syntax/StrictPos.v
+theories/Syntax/Term.v
+theories/Semantics/Cbn.v
 theories/Graph/FiniteDigraph.v
 theories/Preproof/Preproof.v
+theories/Progress/Ranking.v
+theories/Equiv/Bisimulation.v
