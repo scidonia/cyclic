@@ -30,5 +30,5 @@ Module Syntax.
   | tRoll (Σ : ind_sig) (s : Shape Σ)
       (params : ParamPos Σ s -> tm)
       (k : Pos Σ s -> tm)
-  | tCase (Σ : ind_sig) (scrut : tm) (br : Shape Σ -> tm).
+  | tCase (Σ : ind_sig) (scrut : tm) (C : ty) (br : Shape Σ -> tm).
 End Syntax.
