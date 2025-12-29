@@ -2,6 +2,7 @@
 
 Syntax/StrictPos.v
 Syntax/Term.v
+Judgement/Typing.v
 Semantics/Cbn.v
 Graph/FiniteDigraph.v
 Preproof/Preproof.v

@@ -30,10 +30,10 @@ Fixpoint apps (t : tm) (us : list tm) : tm :=
   | u :: us => apps (tApp t u) us
   end.
 
-Definition roll_params (Σ : ind_sig) (s : Shape Σ) (params : ParamPos Σ s -> tm) : list tm :=
+Definition roll_params (Σ : ind_sig ty) (s : Shape Σ) (params : ParamPos Σ s -> tm) : list tm :=
   map params (enumFin (param_arity Σ s)).
 
-Definition roll_args (Σ : ind_sig) (s : Shape Σ) (k : Pos Σ s -> tm) : list tm :=
+Definition roll_args (Σ : ind_sig ty) (s : Shape Σ) (k : Pos Σ s -> tm) : list tm :=
   map k (enumFin (arity Σ s)).
 
 Fixpoint shift (d : nat) (c : nat) (t : tm) : tm :=
@@ -167,33 +167,42 @@ Proof.
     | Σ s params k C br];
     intro t2; intro H2.
   - inversion H2; subst; try reflexivity; try discriminate.
+    exfalso.
+    match goal with
+    | H : step (tLam _ _) _ |- _ => eapply value_no_step; [apply v_lam|exact H]
+    end.
   - inversion H2; subst; try discriminate.
-    + exfalso; inversion Htt'.
-    + f_equal. eapply IH; eauto.
+    { exfalso.
+      match goal with
+      | H : step (tLam _ _) _ |- _ => eapply value_no_step; [apply v_lam|exact H]
+      end. }
+    { f_equal. eapply IH; eauto. }
   - inversion H2; subst; reflexivity.
   - inversion H2; subst; try discriminate.
-    + (* case-scrut vs case-scrut *)
+    { (* case-scrut vs case-scrut *)
       repeat match goal with
       | H : existT _ _ _ = existT _ _ _ |- _ => dependent destruction H
       end.
-      pose proof (IH _ H4) as ->.
-      reflexivity.
-    + (* case-scrut vs case-roll is impossible: scrut is a roll, but rolls don't step *)
+      match goal with
+      | H : step scrut ?u |- _ => pose proof (IH _ H) as ->
+      end.
+      reflexivity. }
+    { (* case-scrut vs case-roll is impossible: scrut is a roll, but rolls don't step *)
       exfalso.
       eapply value_no_step.
-      * apply v_roll.
-      * exact Hscrut.
+      - apply v_roll.
+      - exact Hscrut. }
   - inversion H2; subst; try discriminate.
-    + (* case-roll vs case-scrut is impossible: rolls don't step *)
+    { (* case-roll vs case-scrut is impossible: rolls don't step *)
       exfalso.
-      eapply value_no_step.
-      * apply v_roll.
-      * exact H4.
-    + (* case-roll vs case-roll *)
+      match goal with
+      | H : step (tRoll _ _ _ _) _ |- _ => eapply value_no_step; [apply v_roll|exact H]
+      end. }
+    { (* case-roll vs case-roll *)
       repeat match goal with
       | H : existT _ _ _ = existT _ _ _ |- _ => dependent destruction H
       end.
-      reflexivity.
+      reflexivity. }
 Qed.
 
 (* A helper for reasoning about multi-step reductions. *)

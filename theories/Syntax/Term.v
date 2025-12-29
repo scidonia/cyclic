@@ -20,15 +20,15 @@ Module Syntax.
   Inductive ty : Type :=
   | TyU
   | TyPi (A : ty) (B : ty) (* B lives in extended context *)
-  | TyInd (Σ : ind_sig).
+  | TyInd (Σ : ind_sig ty).
 
   Inductive tm : Type :=
   | tVar (x : nat)
   | tLam (A : ty) (t : tm)
   | tApp (t u : tm)
   | tFix (A : ty) (t : tm) (* t is in extended context, binds the recursive name *)
-  | tRoll (Σ : ind_sig) (s : Shape Σ)
+  | tRoll (Σ : ind_sig ty) (s : Shape Σ)
       (params : ParamPos Σ s -> tm)
       (k : Pos Σ s -> tm)
-  | tCase (Σ : ind_sig) (scrut : tm) (C : ty) (br : Shape Σ -> tm).
+  | tCase (Σ : ind_sig ty) (scrut : tm) (C : ty) (br : Shape Σ -> tm).
 End Syntax.

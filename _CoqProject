@@ -2,6 +2,7 @@
 
 theories/Syntax/StrictPos.v
 theories/Syntax/Term.v
+theories/Judgement/Typing.v
 theories/Semantics/Cbn.v
 theories/Graph/FiniteDigraph.v
 theories/Preproof/Preproof.v

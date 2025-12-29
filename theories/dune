@@ -1,10 +1,12 @@
 (coq.theory
  (name Cyclic)
  (theories stdpp Stdlib)
- (modules
-  Syntax.StrictPos
-  Syntax.Term
-  Semantics.Cbn
+  (modules
+   Syntax.StrictPos
+   Syntax.Term
+   Judgement.Typing
+   Semantics.Cbn
+
   Graph.FiniteDigraph
   Preproof.Preproof
   Progress.Ranking
