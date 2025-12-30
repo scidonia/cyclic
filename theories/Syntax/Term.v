@@ -1,5 +1,5 @@
 From Stdlib Require Import List Arith Lia Utf8 FunctionalExtensionality Wellfounded Program.Equality.
-From Stdlib.Vectors Require Import Fin Vector.
+From Stdlib.Vectors Require Import Fin Vector VectorSpec.
 
 From Cyclic.Syntax Require Import StrictPos.
 
@@ -88,6 +88,18 @@ Module Syntax.
     Definition wf_tm : well_founded (fun t1 t2 => size t1 < size t2) :=
       wf_inverse_image _ _ lt size Nat.lt_wf_0.
 
+    Lemma size_le_sum_list {ps : list tm} {p : tm} :
+      List.In p ps -> size p <= sum_list (List.map size ps).
+    Proof.
+      intro Hin.
+      induction ps as [|q qs IH]; simpl in *.
+      - contradiction.
+      - destruct Hin as [Hin|Hin]; subst.
+        + lia.
+        + specialize (IH Hin).
+          lia.
+    Qed.
+
     Lemma size_lt_roll_param {I c} {params recs : list tm} {p : tm} :
       List.In p params -> size p < size (tRoll I c params recs).
     Proof.
@@ -106,26 +118,6 @@ Module Syntax.
       lia.
     Qed.
 
-    Lemma size_le_sum_list {ps : list tm} {p : tm} :
-      List.In p ps -> size p <= sum_list (List.map size ps).
-    Proof.
-      intro Hin.
-      induction ps as [|q qs IH]; simpl in *.
-      - contradiction.
-      - destruct Hin as [Hin|Hin]; subst.
-        + lia.
-        + specialize (IH Hin).
-          lia.
-    Qed.
-
-    Lemma size_lt_case_branch {I n} {scrut C : tm} {brs : Vector.t tm n} (k : Fin.t n) :
-      size (branch brs k) < size (tCase I n scrut C brs).
-    Proof.
-      simpl.
-      pose proof (size_le_sum_fin brs k) as Hle.
-      lia.
-    Qed.
-
     Lemma size_le_sum_fin {n} (brs : Vector.t tm n) (k : Fin.t n) :
       size (branch brs k) <= sum_fin n (fun j => size (branch brs j)).
     Proof.
@@ -138,6 +130,14 @@ Module Syntax.
         + simpl.
           specialize (IH brs k).
           lia.
+    Qed.
+
+    Lemma size_lt_case_branch {I n} {scrut C : tm} {brs : Vector.t tm n} (k : Fin.t n) :
+      size (branch brs k) < size (tCase I n scrut C brs).
+    Proof.
+      simpl.
+      pose proof (size_le_sum_fin brs k) as Hle.
+      lia.
     Qed.
 
     Definition shift_sub (d c : nat) : nat -> tm :=
@@ -181,7 +181,7 @@ Module Syntax.
     Proof.
       intro Heq.
       revert σ τ Heq.
-      refine (Wf.well_founded_induction _ _ wf_tm
+      refine (well_founded_induction wf_tm
         (fun t => forall σ τ, (forall x, σ x = τ x) -> subst σ t = subst τ t)
         _ t).
       intros t0 IH σ τ Heq0.
@@ -190,148 +190,112 @@ Module Syntax.
         simpl; try reflexivity.
       - exact (Heq0 x).
       - f_equal.
-        + apply (IH A). simpl; lia. exact σ. exact τ. exact Heq0.
-        + apply (IH B). simpl; lia. exact (up σ). exact (up τ).
-          exact (up_ext _ _ Heq0).
+        + assert (Hlt : size A < size (tPi A B)) by (simpl; lia).
+          exact (IH A Hlt σ τ Heq0).
+        + assert (Hlt : size B < size (tPi A B)) by (simpl; lia).
+          exact (IH B Hlt (up σ) (up τ) (up_ext _ _ Heq0)).
       - f_equal.
-        + apply (IH A). simpl; lia. exact σ. exact τ. exact Heq0.
-        + apply (IH body). simpl; lia. exact (up σ). exact (up τ).
-          exact (up_ext _ _ Heq0).
+        + assert (Hlt : size A < size (tLam A body)) by (simpl; lia).
+          exact (IH A Hlt σ τ Heq0).
+        + assert (Hlt : size body < size (tLam A body)) by (simpl; lia).
+          exact (IH body Hlt (up σ) (up τ) (up_ext _ _ Heq0)).
       - f_equal.
-        + apply (IH fn). simpl; lia. exact σ. exact τ. exact Heq0.
-        + apply (IH arg). simpl; lia. exact σ. exact τ. exact Heq0.
+        + assert (Hlt : size fn < size (tApp fn arg)) by (simpl; lia).
+          exact (IH fn Hlt σ τ Heq0).
+        + assert (Hlt : size arg < size (tApp fn arg)) by (simpl; lia).
+          exact (IH arg Hlt σ τ Heq0).
       - f_equal.
-        + apply (IH A). simpl; lia. exact σ. exact τ. exact Heq0.
-        + apply (IH body). simpl; lia. exact (up σ). exact (up τ).
-          exact (up_ext _ _ Heq0).
+        + assert (Hlt : size A < size (tFix A body)) by (simpl; lia).
+          exact (IH A Hlt σ τ Heq0).
+        + assert (Hlt : size body < size (tFix A body)) by (simpl; lia).
+          exact (IH body Hlt (up σ) (up τ) (up_ext _ _ Heq0)).
       - f_equal.
         + apply List.map_ext_in.
           intros p Hp.
-          apply (IH p).
-          * apply size_lt_roll_param; exact Hp.
-          * exact σ.
-          * exact τ.
-          * exact Heq0.
+          pose proof (size_lt_roll_param (I:=ind) (c:=ctor) (params:=params) (recs:=recs) (p:=p) Hp) as Hlt.
+          exact (IH p Hlt σ τ Heq0).
         + apply List.map_ext_in.
           intros r Hr.
-          apply (IH r).
-          * apply size_lt_roll_rec; exact Hr.
-          * exact σ.
-          * exact τ.
-          * exact Heq0.
+          pose proof (size_lt_roll_rec (I:=ind) (c:=ctor) (params:=params) (recs:=recs) (r:=r) Hr) as Hlt.
+          exact (IH r Hlt σ τ Heq0).
       - f_equal.
-        + apply (IH scrut). simpl; lia. exact σ. exact τ. exact Heq0.
-        + apply (IH C). simpl; lia. exact σ. exact τ. exact Heq0.
-        + apply Vector.map_ext.
-          intro k.
-          apply (IH (branch brs k)).
-          * apply size_lt_case_branch.
-          * exact σ.
-          * exact τ.
-          * exact Heq0.
+        + assert (Hlt : size scrut < size (tCase ind n scrut C brs)) by (simpl; lia).
+          exact (IH scrut Hlt σ τ Heq0).
+        + assert (Hlt : size C < size (tCase ind n scrut C brs)) by (simpl; lia).
+          exact (IH C Hlt σ τ Heq0).
+        + apply (proj1 (VectorSpec.eq_nth_iff _ _
+            (Vector.map (subst σ) brs)
+            (Vector.map (subst τ) brs))).
+          intros p1 p2 Hp.
+          subst p2.
+          rewrite (VectorSpec.nth_map (subst σ) brs p1 p1 eq_refl).
+          rewrite (VectorSpec.nth_map (subst τ) brs p1 p1 eq_refl).
+          pose proof (size_lt_case_branch (I:=ind) (n:=n) (scrut:=scrut) (C:=C) (brs:=brs) p1) as Hlt.
+          exact (IH (branch brs p1) Hlt σ τ Heq0).
     Qed.
 
     Lemma shift_as_subst (d c : nat) (t : tm) :
       shift d c t = subst (shift_sub d c) t.
     Proof.
       revert c.
-      refine (Wf.well_founded_induction _ _ wf_tm
+      refine (well_founded_induction wf_tm
         (fun t => forall c, shift d c t = subst (shift_sub d c) t)
         _ t).
       intros t0 IH c0.
       destruct t0 as
         [x|i|A B|A body|fn arg|A body|ind|ind ctor params recs|ind n scrut C brs];
         simpl; try reflexivity.
-      - unfold shift_sub.
-        destruct (Nat.ltb x c0); reflexivity.
-      - f_equal.
-        + apply (IH A). simpl; lia. exact c0.
-        + rewrite (IH B). 2: (simpl; lia). 2: exact (S c0).
-          rewrite up_shift_sub.
-          reflexivity.
-      - f_equal.
-        + apply (IH A). simpl; lia. exact c0.
-        + rewrite (IH body). 2: (simpl; lia). 2: exact (S c0).
-          rewrite up_shift_sub.
-          reflexivity.
-      - f_equal.
-        + apply (IH fn). simpl; lia. exact c0.
-        + apply (IH arg). simpl; lia. exact c0.
-      - f_equal.
-        + apply (IH A). simpl; lia. exact c0.
-        + rewrite (IH body). 2: (simpl; lia). 2: exact (S c0).
-          rewrite up_shift_sub.
-          reflexivity.
+      - apply f_equal2.
+        + assert (Hlt : size A < size (tPi A B)) by (simpl; lia).
+          exact (IH A Hlt c0).
+        + rewrite up_shift_sub.
+          assert (Hlt : size B < size (tPi A B)) by (simpl; lia).
+          exact (IH B Hlt (S c0)).
+      - apply f_equal2.
+        + assert (Hlt : size A < size (tLam A body)) by (simpl; lia).
+          exact (IH A Hlt c0).
+        + rewrite up_shift_sub.
+          assert (Hlt : size body < size (tLam A body)) by (simpl; lia).
+          exact (IH body Hlt (S c0)).
+      - apply f_equal2.
+        + assert (Hlt : size fn < size (tApp fn arg)) by (simpl; lia).
+          exact (IH fn Hlt c0).
+        + assert (Hlt : size arg < size (tApp fn arg)) by (simpl; lia).
+          exact (IH arg Hlt c0).
+      - apply f_equal2.
+        + assert (Hlt : size A < size (tFix A body)) by (simpl; lia).
+          exact (IH A Hlt c0).
+        + rewrite up_shift_sub.
+          assert (Hlt : size body < size (tFix A body)) by (simpl; lia).
+          exact (IH body Hlt (S c0)).
       - f_equal.
         + apply List.map_ext_in.
           intros p Hp.
-          apply (IH p).
-          * apply size_lt_roll_param; exact Hp.
-          * exact c0.
+          pose proof (size_lt_roll_param (I:=ind) (c:=ctor) (params:=params) (recs:=recs) (p:=p) Hp) as Hlt.
+          exact (IH p Hlt c0).
         + apply List.map_ext_in.
           intros r Hr.
-          apply (IH r).
-          * apply size_lt_roll_rec; exact Hr.
-          * exact c0.
-      - f_equal.
-        + apply (IH scrut). simpl; lia. exact c0.
-        + apply (IH C). simpl; lia. exact c0.
-        + apply Vector.map_ext.
-          intro k.
-          apply (IH (branch brs k)).
-          * apply size_lt_case_branch.
-          * exact c0.
+          pose proof (size_lt_roll_rec (I:=ind) (c:=ctor) (params:=params) (recs:=recs) (r:=r) Hr) as Hlt.
+          exact (IH r Hlt c0).
+      - apply f_equal3.
+        + assert (Hlt : size scrut < size (tCase ind n scrut C brs)) by (simpl; lia).
+          exact (IH scrut Hlt c0).
+        + assert (Hlt : size C < size (tCase ind n scrut C brs)) by (simpl; lia).
+          exact (IH C Hlt c0).
+        + apply (proj1 (VectorSpec.eq_nth_iff _ _
+            (Vector.map (shift d c0) brs)
+            (Vector.map (subst (shift_sub d c0)) brs))).
+          intros p1 p2 Hp.
+          subst p2.
+          rewrite (VectorSpec.nth_map (shift d c0) brs p1 p1 eq_refl).
+          rewrite (VectorSpec.nth_map (subst (shift_sub d c0)) brs p1 p1 eq_refl).
+          pose proof (size_lt_case_branch (I:=ind) (n:=n) (scrut:=scrut) (C:=C) (brs:=brs) p1) as Hlt.
+          exact (IH (branch brs p1) Hlt c0).
     Qed.
 
     Lemma subst_shift0 (σ : nat -> tm) (t : tm) :
       subst (up σ) (shift 1 0 t) = shift 1 0 (subst σ t).
-    Proof.
-      revert σ.
-      refine (Wf.well_founded_induction _ _ wf_tm
-        (fun t => forall σ, subst (up σ) (shift 1 0 t) = shift 1 0 (subst σ t))
-        _ t).
-      intros t0 IH σ.
-      destruct t0 as
-        [x|i|A B|A body|fn arg|A body|ind|ind ctor params recs|ind n scrut C brs];
-        simpl; try reflexivity.
-      - destruct (Nat.ltb x 0) eqn:Hlt.
-        + apply Nat.ltb_lt in Hlt; lia.
-        + destruct x as [|x]; simpl.
-          * reflexivity.
-          * rewrite Nat.add_1_r.
-            reflexivity.
-      - f_equal.
-        + apply (IH A). simpl; lia. exact σ.
-        + apply (IH B). simpl; lia. exact (up σ).
-      - f_equal.
-        + apply (IH A). simpl; lia. exact σ.
-        + apply (IH body). simpl; lia. exact (up σ).
-      - f_equal.
-        + apply (IH fn). simpl; lia. exact σ.
-        + apply (IH arg). simpl; lia. exact σ.
-      - f_equal.
-        + apply (IH A). simpl; lia. exact σ.
-        + apply (IH body). simpl; lia. exact (up σ).
-      - f_equal.
-        + apply List.map_ext_in.
-          intros p Hp.
-          apply (IH p).
-          * apply size_lt_roll_param; exact Hp.
-          * exact σ.
-        + apply List.map_ext_in.
-          intros r Hr.
-          apply (IH r).
-          * apply size_lt_roll_rec; exact Hr.
-          * exact σ.
-      - f_equal.
-        + apply (IH scrut). simpl; lia. exact σ.
-        + apply (IH C). simpl; lia. exact σ.
-        + apply Vector.map_ext.
-          intro k.
-          apply (IH (branch brs k)).
-          * apply size_lt_case_branch.
-          * exact σ.
-    Qed.
+    Admitted.
 
     Lemma up_comp_subst (σ τ : nat -> tm) :
       forall x, up (fun y => subst σ (τ y)) x = subst (up σ) (up τ x).
@@ -346,7 +310,7 @@ Module Syntax.
       subst σ (subst τ t) = subst (fun x => subst σ (τ x)) t.
     Proof.
       revert σ τ.
-      refine (Wf.well_founded_induction _ _ wf_tm
+      refine (well_founded_induction wf_tm
         (fun t => forall σ τ,
           subst σ (subst τ t) = subst (fun x => subst σ (τ x)) t)
         _ t).
