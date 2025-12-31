@@ -27,6 +27,39 @@ Module Typing.
 
   Definition ctx_extend (Γ : ctx) (A : T.tm) : ctx := A :: Γ.
 
+  Lemma ctx_lookup_lt (Γ : ctx) (x : nat) (A : T.tm) :
+    ctx_lookup Γ x = Some A -> x < length Γ.
+  Proof.
+    revert x A.
+    induction Γ as [|B Γ IH]; intros [|x] A H; simpl in *.
+    - discriminate.
+    - discriminate.
+    - (* x = 0 *)
+      inversion H.
+      simpl.
+      lia.
+    - (* x = S x *)
+      destruct (ctx_lookup Γ x) as [A'|] eqn:Hx; simpl in H.
+      + inversion H.
+        specialize (IH x A' Hx).
+        simpl.
+        lia.
+      + discriminate.
+  Qed.
+
+  Lemma ctx_lookup_app_r (Γ Δ : ctx) (x : nat) :
+    x < length Γ -> ctx_lookup (Γ ++ Δ) x = ctx_lookup Γ x.
+  Proof.
+    revert x.
+    induction Γ as [|A Γ IH]; intros x Hx; simpl in *.
+    - destruct x; [lia|].
+      exfalso; lia.
+    - destruct x as [|x].
+      + reflexivity.
+      + rewrite IH by lia.
+        reflexivity.
+  Qed.
+
   Fixpoint mk_pis (As : list T.tm) (B : T.tm) : T.tm :=
     match As with
     | [] => B
@@ -101,6 +134,84 @@ Module Typing.
       lia.
   Qed.
 
+  Lemma has_type_weaken_tail (Σenv : env) (Γ : ctx) (t A B : T.tm) :
+    has_type Σenv Γ t A -> has_type Σenv (Γ ++ [B]) t A.
+  Proof.
+    revert Γ t A B.
+    refine (fix IH Γ t A B (Hty : has_type Σenv Γ t A) {struct Hty}
+            : has_type Σenv (Γ ++ [B]) t A := _).
+    destruct Hty.
+    - (* var *)
+      apply ty_var.
+      pose proof (ctx_lookup_lt Γ x A H) as Hlt.
+      rewrite (ctx_lookup_app_r Γ [B] x Hlt).
+      exact H.
+    - (* sort *)
+      constructor.
+    - (* pi *)
+      econstructor.
+      + eapply IH; eauto.
+      + match goal with
+        | |- has_type _ (ctx_extend (_ ++ [_]) _) ?t ?Ty =>
+            change (has_type Σenv ((ctx_extend Γ A) ++ [B]) t Ty)
+        end.
+        eapply IH; eauto.
+    - (* lam *)
+      econstructor.
+      + eapply IH; eauto.
+      + match goal with
+        | |- has_type _ (ctx_extend (_ ++ [_]) _) ?t ?Ty =>
+            change (has_type Σenv ((ctx_extend Γ A) ++ [B]) t Ty)
+        end.
+        eapply IH; eauto.
+    - (* app *)
+      econstructor.
+      + eapply IH; eauto.
+      + eapply IH; eauto.
+    - (* fix *)
+      econstructor.
+      + eapply IH; eauto.
+      + match goal with
+        | |- has_type _ (ctx_extend (_ ++ [_]) _) ?t ?Ty =>
+            change (has_type Σenv ((ctx_extend Γ A) ++ [B]) t Ty)
+        end.
+        eapply IH; eauto.
+    - (* ind *)
+      econstructor; eauto.
+    - (* roll *)
+      eapply ty_roll; try eassumption.
+      + (* params *)
+        match goal with
+        | [ Hp : Forall2 (has_type Σenv Γ) ?ps ?tys
+          |- Forall2 (has_type Σenv (Γ ++ [B])) ?ps ?tys ] =>
+            clear -IH B Hp;
+            induction Hp; constructor; eauto using IH
+        end.
+      + (* recs *)
+        match goal with
+        | [ Hr : Forall (fun r : T.tm => has_type Σenv Γ r (T.tInd I)) ?rs
+          |- Forall (fun r : T.tm => has_type Σenv (Γ ++ [B]) r (T.tInd I)) ?rs ] =>
+            clear -IH B Hr;
+            induction Hr; constructor; eauto using IH
+        end.
+    - (* case *)
+      eapply ty_case; try eassumption.
+      + eapply IH; eauto.
+      + eapply IH; eauto.
+      + intros c ctor0 Hctor.
+        match goal with
+        | [ Hbrs : forall c1 ctor1,
+              SP.lookup_ctor _ c1 = Some ctor1 ->
+              exists br,
+                T.branch _ c1 = Some br /\ has_type Σenv Γ br _
+          |- _ ] =>
+            destruct (Hbrs c ctor0 Hctor) as [br [Hbr Htybr]];
+            exists br;
+            split; [exact Hbr|];
+            exact (IH _ _ _ B Htybr)
+        end.
+  Qed.
+
   (* Binder-stable explicit substitutions: (k, σ). *)
 
   Definition sub : Type := nat * list T.tm.
@@ -162,6 +273,28 @@ Module Typing.
       has_subst Σenv Δ σ Γ ->
       has_type Σenv Δ u (subst_list σ (T.shift 1 0 A)) ->
       has_subst Σenv Δ (u :: σ) (A :: Γ).
+
+  Lemma has_subst_length (Σenv : env) (Δ : ctx) (σ : list T.tm) (Γ : ctx) :
+    has_subst Σenv Δ σ Γ -> length σ = length Γ.
+  Proof.
+    intro Hs.
+    induction Hs.
+    - reflexivity.
+    - simpl. now rewrite IHHs.
+  Qed.
+
+  Lemma has_subst_weaken_tail (Σenv : env) (Δ : ctx) (σ : list T.tm) (Γ : ctx) (B : T.tm) :
+    has_subst Σenv Δ σ Γ -> has_subst Σenv (Δ ++ [B]) σ Γ.
+  Proof.
+    intro Hs.
+    induction Hs.
+    - constructor.
+    - econstructor.
+      + exact IHHs.
+      + (* weaken the typing premise in the target context *)
+        eapply has_type_weaken_tail.
+        exact H.
+  Qed.
 
   (* Substitution/renaming algebra (Autosubst-powered).
 
