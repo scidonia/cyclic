@@ -1,6 +1,7 @@
 From Stdlib Require Import List Arith Lia PeanoNat Utf8 FunctionalExtensionality.
-From Stdlib.Vectors Require Import Fin Vector.
 From stdpp Require Import prelude countable.
+
+From Autosubst Require Import Autosubst.
 
 From Cyclic.Syntax Require Import StrictPos Term.
 From Cyclic.Preproof Require Import Preproof.
@@ -72,17 +73,19 @@ Module Typing.
       length recs = (@SP.ctor_rec_arity _ ctor) ->
       has_type Σenv Γ (T.tRoll I c params recs) (T.tInd I)
 
-  | ty_case Γ I ΣI n scrut C brs i :
+  | ty_case Γ I ΣI scrut C brs i :
       SP.lookup_ind Σenv I = Some ΣI ->
-      n = length (@SP.ind_ctors _ ΣI) ->
+      length brs = length (@SP.ind_ctors _ ΣI) ->
       has_type Σenv Γ scrut (T.tInd I) ->
       has_type Σenv Γ C (T.tSort i) ->
       (forall c ctor,
         SP.lookup_ctor ΣI c = Some ctor ->
-        forall Hc : c < n,
-          has_type Σenv Γ (T.branch brs (Fin.of_nat_lt Hc))
-            (mk_pis (@SP.ctor_param_tys _ ctor ++ repeat (T.tInd I) (@SP.ctor_rec_arity _ ctor)) C)) ->
-      has_type Σenv Γ (T.tCase I n scrut C brs) C.
+        exists br,
+          T.branch brs c = Some br
+          /\ has_type Σenv Γ br
+              (mk_pis (@SP.ctor_param_tys _ ctor ++ repeat (T.tInd I) (@SP.ctor_rec_arity _ ctor)) C)) ->
+      has_type Σenv Γ (T.tCase I scrut C brs) C.
+
 
   (* Binder-stable explicit substitutions: (k, σ). *)
 
@@ -101,22 +104,27 @@ Module Typing.
   Definition subst_sub (s : sub) (t : T.tm) : T.tm := T.subst (sub_fun s) t.
 
   Definition up_sub (s : sub) : sub :=
-    (S (sub_k s), T.tVar 0 :: map (T.shift 1 0) (sub_list s)).
+    (S (sub_k s), T.tVar 0 :: map (T.rename (Autosubst_Basics.lift 1)) (sub_list s)).
 
   Lemma sub_fun_up (s : sub) :
     sub_fun (up_sub s) = T.up (sub_fun s).
   Proof.
-    apply functional_extensionality; intro x.
-    destruct x as [|x]; simpl.
+    apply functional_extensionality; intros [|x]; simpl.
     - reflexivity.
     - unfold sub_fun.
       simpl.
       destruct (nth_error (sub_list s) x) as [u|] eqn:Hx.
-      + rewrite nth_error_map.
+      + rewrite nth_error_map, Hx.
+        simpl.
+        unfold T.up, Autosubst_Classes.up.
+        simpl.
         rewrite Hx.
         simpl.
         reflexivity.
-      + rewrite nth_error_map.
+      + rewrite nth_error_map, Hx.
+        simpl.
+        unfold T.up, Autosubst_Classes.up.
+        simpl.
         rewrite Hx.
         simpl.
         f_equal.
@@ -141,15 +149,42 @@ Module Typing.
       has_type Σenv Δ u (subst_list σ (T.shift 1 0 A)) ->
       has_subst Σenv Δ (u :: σ) (A :: Γ).
 
-  (* Next phase: prove (1) renaming, (2) substitution-preserves-typing.
+  (* Substitution/renaming algebra (Autosubst-powered).
 
-     Both require a generalized shift/renaming lemma that respects the cutoff
-     change under binders (shift uses cutoff+1 in binder bodies). *)
+     These lemmas are the main ingredients needed later for renaming and
+     substitution-preserves-typing proofs.
+  *)
 
-  (* NOTE: these lemmas are left for a later phase; they were previously
-     stated with `Admitted`, which we avoid.
+  Lemma shift1_eq_rename (t : T.tm) :
+    T.shift 1 0 t = T.rename (fun x => x + 1) t.
+  Proof.
+    unfold T.shift, Term.Syntax.shift.
+    assert (H : Term.Syntax.shift_sub 1 0 = fun x => x + 1).
+    { apply functional_extensionality; intro x.
+      unfold Term.Syntax.shift_sub.
+      destruct (x <? 0) eqn:Hx.
+      - apply Nat.ltb_lt in Hx. lia.
+      - reflexivity. }
+    now rewrite H.
+  Qed.
 
-     Reintroduce them once we have a stable renaming/substitution framework. *)
+  Lemma subst_comp_tm (sigma tau : var -> T.tm) (t : T.tm) :
+    t.[sigma].[tau] = t.[sigma >> tau].
+  Proof.
+    apply subst_comp.
+  Qed.
+
+  Lemma subst0_comp_tm (t u v : T.tm) :
+    (t.[u/]).[v/] = t.[u.[v/], v/].
+  Proof.
+    change (t.[u .: T.ids].[v .: T.ids] = t.[(u.[v/]) .: v .: T.ids]).
+    rewrite subst_comp.
+    assert (H : (u .: T.ids) >> (v .: T.ids) = (u.[v/]) .: v .: T.ids).
+    { apply functional_extensionality; intros [|x]; simpl.
+      - reflexivity.
+      - destruct x; reflexivity. }
+    now rewrite H.
+  Qed.
 
   Module Cyclic.
     Inductive judgement : Type :=
@@ -215,7 +250,7 @@ Module Typing.
     | cFix (A : ctm) (t : ctm)
     | cInd (ind : nat)
     | cRoll (ind : nat) (ctor : nat) (params recs : list ctm)
-    | cCase (ind : nat) (n : nat) (scrut : ctm) (C : ctm) (brs : Vector.t ctm n)
+    | cCase (ind : nat) (scrut : ctm) (C : ctm) (brs : list ctm)
     | cBack (args : list ctm).
 
     Fixpoint apps (t : T.tm) (us : list T.tm) : T.tm :=
@@ -234,7 +269,7 @@ Module Typing.
       | cFix A t => T.tFix (erase A) (erase t)
       | cInd ind => T.tInd ind
       | cRoll ind ctor ps rs => T.tRoll ind ctor (map erase ps) (map erase rs)
-      | cCase ind n scrut C brs => T.tCase ind n (erase scrut) (erase C) (Vector.map erase brs)
+      | cCase ind scrut C brs => T.tCase ind (erase scrut) (erase C) (map erase brs)
       | cBack args => apps (T.tVar 0) (map erase args)
       end.
   End CyclicTerm.

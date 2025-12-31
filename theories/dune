@@ -1,6 +1,6 @@
 (coq.theory
  (name Cyclic)
- (theories stdpp Stdlib)
+ (theories stdpp Stdlib Autosubst)
   (modules
    Syntax.StrictPos
    Syntax.Term
