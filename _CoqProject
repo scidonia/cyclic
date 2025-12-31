@@ -6,5 +6,4 @@ theories/Judgement/Typing.v
 theories/Semantics/Cbn.v
 theories/Graph/FiniteDigraph.v
 theories/Preproof/Preproof.v
-theories/Progress/Ranking.v
 theories/Equiv/Bisimulation.v

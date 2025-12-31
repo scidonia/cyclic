@@ -86,6 +86,20 @@ Module Typing.
               (mk_pis (@SP.ctor_param_tys _ ctor ++ repeat (T.tInd I) (@SP.ctor_rec_arity _ ctor)) C)) ->
       has_type Σenv Γ (T.tCase I scrut C brs) C.
 
+  Lemma branch_exists {ΣI : SP.ind_sig T.tm} (brs : list T.tm) (c : nat) (ctor : SP.ctor_sig T.tm) :
+    length brs = length (@SP.ind_ctors _ ΣI) ->
+    SP.lookup_ctor ΣI c = Some ctor ->
+    exists br, T.branch brs c = Some br.
+  Proof.
+    intros Hlen Hctor.
+    pose proof (SP.lookup_ctor_lt _ _ _ Hctor) as Hlt.
+    rewrite <- Hlen in Hlt.
+    destruct (nth_error brs c) as [br|] eqn:Hbr.
+    - exists br. exact Hbr.
+    - exfalso.
+      apply nth_error_None in Hbr.
+      lia.
+  Qed.
 
   (* Binder-stable explicit substitutions: (k, σ). *)
 
@@ -191,6 +205,18 @@ Module Typing.
     | jTy (Γ : ctx) (t A : T.tm)
     | jSub (Δ : ctx) (s : sub) (Γ : ctx).
 
+    Definition jTy_params (Γ : ctx) (ps As : list T.tm) : list judgement :=
+      map (fun '(p, A) => jTy Γ p A) (combine ps As).
+
+    Definition jTy_recs (Γ : ctx) (I : nat) (recs : list T.tm) : list judgement :=
+      map (fun r => jTy Γ r (T.tInd I)) recs.
+
+    Definition branch_ty (I : nat) (ctor : SP.ctor_sig T.tm) (C : T.tm) : T.tm :=
+      mk_pis (@SP.ctor_param_tys _ ctor ++ repeat (T.tInd I) (@SP.ctor_rec_arity _ ctor)) C.
+
+    Definition jTy_branches (Γ : ctx) (I : nat) (ΣI : SP.ind_sig T.tm) (C : T.tm) (brs : list T.tm) : list judgement :=
+      map (fun '(ctor, br) => jTy Γ br (branch_ty I ctor C)) (combine (@SP.ind_ctors _ ΣI) brs).
+
     Definition rule (Σenv : env) (j : judgement) (premises : list judgement) : Prop :=
       match j with
       | jSub Δ (k, []) [] => premises = []
@@ -220,6 +246,28 @@ Module Typing.
           exists i,
             Ty = A ∧
             premises = [jTy Γ A (T.tSort i); jTy (ctx_extend Γ A) t (T.shift 1 0 A)]
+
+      | jTy Γ (T.tInd ind) (T.tSort k) =>
+          exists ΣI,
+            premises = []
+            /\ SP.lookup_ind Σenv ind = Some ΣI
+            /\ k = S (@SP.ind_level _ ΣI)
+
+      | jTy Γ (T.tRoll ind c params recs) (T.tInd ind') =>
+          exists ΣI ctor,
+            ind' = ind
+            /\ SP.lookup_ind Σenv ind = Some ΣI
+            /\ SP.lookup_ctor ΣI c = Some ctor
+            /\ length params = length (@SP.ctor_param_tys _ ctor)
+            /\ length recs = (@SP.ctor_rec_arity _ ctor)
+            /\ premises = jTy_params Γ params (@SP.ctor_param_tys _ ctor) ++ jTy_recs Γ ind recs
+
+      | jTy Γ (T.tCase ind scrut C brs) Ty =>
+          exists i ΣI,
+            Ty = C
+            /\ SP.lookup_ind Σenv ind = Some ΣI
+            /\ length brs = length (@SP.ind_ctors _ ΣI)
+            /\ premises = [jTy Γ scrut (T.tInd ind); jTy Γ C (T.tSort i)] ++ jTy_branches Γ ind ΣI C brs
 
       | jTy _ _ _ => False
       end

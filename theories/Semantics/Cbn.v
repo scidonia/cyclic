@@ -70,3 +70,75 @@ Definition terminates (t : tm) : Prop :=
 
 CoInductive diverges (t : tm) : Prop :=
 | diverges_step t' : step t t' -> diverges t' -> diverges t.
+
+Lemma value_no_step (v v' : tm) :
+  value v -> step v v' -> False.
+Proof.
+  intros Hv Hstep.
+  inversion Hv; subst; inversion Hstep.
+Qed.
+
+Lemma neutral_no_step (t t' : tm) :
+  neutral t -> step t t' -> False.
+Proof.
+  intro Hn.
+  revert t'.
+  induction Hn as [x|t u Ht IH|I t C brs Ht IH]; intro t'; intro Hstep.
+  - inversion Hstep.
+  - inversion Hstep; subst.
+    + inversion Ht.
+    + eapply IH; eauto.
+  - inversion Hstep; subst.
+    + eapply IH; eauto.
+    + inversion Ht.
+Qed.
+
+Lemma whnf_no_step (t t' : tm) :
+  whnf t -> step t t' -> False.
+Proof.
+  intros Hwh Hstep.
+  inversion Hwh; subst.
+  - exact (value_no_step _ _ H Hstep).
+  - exact (neutral_no_step _ _ H Hstep).
+Qed.
+
+Lemma step_deterministic (t t1 t2 : tm) :
+  step t t1 -> step t t2 -> t1 = t2.
+Proof.
+  intro H1.
+  revert t2.
+  induction H1 as
+    [A t u
+    | t t' u Htt' IH
+    | A t
+    | I scrut scrut' C brs Hscrut IH
+    | I c params recs C brs br Hbr];
+    intro t2; intro H2.
+  - inversion H2; subst; try reflexivity; try discriminate.
+    exfalso.
+    match goal with
+    | H : step (tLam _ _) _ |- _ => eapply value_no_step; [apply v_lam|exact H]
+    end.
+  - inversion H2; subst; try discriminate.
+    { exfalso.
+      match goal with
+      | H : step (tLam _ _) _ |- _ => eapply value_no_step; [apply v_lam|exact H]
+      end. }
+    { f_equal. eapply IH; eauto. }
+  - inversion H2; subst; reflexivity.
+  - inversion H2; subst; try discriminate.
+    { f_equal. eapply IH; eauto. }
+    { exfalso.
+      (* scrutinee is a roll, but rolls do not step *)
+      eapply value_no_step.
+      - apply v_roll.
+      - exact Hscrut. }
+  - inversion H2; subst; try discriminate.
+    { exfalso.
+      match goal with
+      | H : step (tRoll _ _ _ _) _ |- _ => eapply value_no_step; [apply v_roll|exact H]
+      end. }
+    { (* both case-roll *)
+      assert (br0 = br) as -> by congruence.
+      reflexivity. }
+Qed.

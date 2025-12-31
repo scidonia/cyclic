@@ -6,5 +6,4 @@ Judgement/Typing.v
 Semantics/Cbn.v
 Graph/FiniteDigraph.v
 Preproof/Preproof.v
-Progress/Ranking.v
 Equiv/Bisimulation.v
