@@ -65,10 +65,15 @@ Crucially, every back-link carries explicit *evidence* of instantiation:
 
 No schema label contains `tFix`, and neither do any types represented by vertices.
 
-**Concrete choice (for next implementation step):** represent a substitution as a dedicated vertex `sv` whose label includes a binder-stability offset `k` and whose successors are the argument vertices.
+**Concrete choice (for next implementation step):** represent a substitution as a linked list of `Subst`-vertices.
 
-- `Subst k n` where `n = length args`
-- `succ(sv) = args` (a list of term vertices)
+- `SubstNil k` where `succ(sv) = []`
+- `SubstCons k` where `succ(sv) = [u; sv_tail]`
+
+This matches the existing list-backed substitution checking rule (`has_subst`) but makes the *tail substitution* explicit as a vertex, which is necessary for the `jSubV` rule to mirror `Typing.Cyclic.rule`.
+
+A back-link node then needs only:
+- `succ(back) = [target; sv]`
 
 Intuition: this is the vertex analogue of `Typing.sub = (k, list tm)`.
 
@@ -118,7 +123,7 @@ Back-links must use an explicit substitution *vertex* as evidence:
 
 - a back-link node has outgoing edges to:
   - the target vertex `u`
-  - a substitution vertex `sv` (labelled `Subst`)
+  - a substitution vertex `sv` (a linked `Subst` chain)
 
 - the back-link typing rule has premises including:
   - `jTyV Γ0 u A0` (the target obligation)
@@ -136,15 +141,15 @@ Intuition:
 
 We need a `jSubV` rule that enforces typed substitutions *computationally*, similar to `Typing.has_subst` in `theories/Judgement/Typing.v`.
 
-Given a substitution vertex `sv` with `label(sv) = Subst k n` and `succ(sv) = [u0; u1; ...; u(n-1)]`:
+Given a substitution vertex `sv` with `label(sv) = SubstNil k` / `SubstCons k` and `succ(sv) = [u0; u1; ...; u(n-1)]`:
 
 - `jSubV Δ sv Γ` should mean: the substitution maps Γ into Δ.
 
 Rule sketch (structural, list-backed):
 
-- base: if `Γ = []` and `succ(sv) = []`, then `jSubV Δ sv []` holds.
-- step: if `Γ = A :: Γ'` and `succ(sv) = u :: σ`:
-  - premise: `jSubV Δ sv_tail Γ'` for the tail substitution vertex
+- base: if `Γ = []` and `label(sv) = SubstNil k`, then `jSubV Δ sv []` holds.
+- step: if `Γ = A :: Γ'` and `label(sv) = SubstCons k` with `succ(sv) = [u; sv_tail]`:
+  - premise: `jSubV Δ sv_tail Γ'`
   - premise: `jTyV Δ u (substV sv_tail (shiftV 1 0 A))`
 
 This is exactly the vertex-level analogue of:

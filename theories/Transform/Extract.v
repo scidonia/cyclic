@@ -46,6 +46,21 @@ Section Extract.
   Definition lookup_succ (b : RO.builder) (v : nat) : list nat :=
     default [] (RO.b_succ b !! v).
 
+  Fixpoint subst_args (fuel : nat) (b : RO.builder) (ρ : fix_env) (sv : nat) : list T.tm :=
+    match fuel with
+    | 0 => []
+    | S fuel' =>
+        match lookup_node b sv with
+        | RO.nSubstNil _ => []
+        | RO.nSubstCons _ =>
+            match lookup_succ b sv with
+            | [u; sv_tail] => extract_v fuel' b ρ u :: subst_args fuel' b ρ sv_tail
+            | _ => []
+            end
+        | _ => []
+        end
+    end
+
   Fixpoint extract_v (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) : T.tm :=
     match fuel with
     | 0 => T.tVar 0
@@ -106,22 +121,21 @@ Section Extract.
               (map (extract_v fuel b ρ) (take nbrs brs))
         | _ => T.tVar 0
         end
-    | RO.nSubst _ _ =>
-        (* Substitution evidence nodes are not terms. They should only appear
-           under backlinks. *)
+    | RO.nSubstNil _ =>
+        (* Substitution evidence nodes are not terms. *)
+        T.tVar 0
+    | RO.nSubstCons _ =>
+        (* Substitution evidence nodes are not terms. *)
         T.tVar 0
     | RO.nBack =>
         match lookup_succ b v with
-        | target :: sv :: args =>
+        | [target; sv] =>
             (* Backlink becomes a call to the synthesized fix binder for `target`. *)
             match ρ !! target with
             | Some k =>
-                (* Argument vertices are stored as successors of `sv`. *)
-                let arg_vs := lookup_succ b sv in
-                apps (T.tVar k) (map (extract_v fuel b ρ) arg_vs)
+                apps (T.tVar k) (subst_args fuel b ρ sv)
             | None =>
-                (* If this happens, the graph is not in the expected normal form:
-                   we encountered a backlink without an enclosing fix binder. *)
+                (* Backlink without an enclosing synthesized fix binder. *)
                 T.tVar 0
             end
         | _ => T.tVar 0

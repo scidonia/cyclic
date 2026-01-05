@@ -38,7 +38,8 @@ Section ReadOff.
   | nInd (ind : nat)
   | nRoll (ind ctor nparams nrecs : nat)
   | nCase (ind nbrs : nat)
-  | nSubst (k : nat) (nargs : nat)
+  | nSubstNil (k : nat)
+  | nSubstCons (k : nat)
   | nBack.
 
   (* For each de Bruijn index, either it is not a recursive variable (`None`)
@@ -135,13 +136,30 @@ Section ReadOff.
                 | Some (Some target) =>
                     (* Compile each argument as a vertex. *)
                     let '(v_args, b1) := compile_list args b in
-                    (* Allocate a substitution evidence vertex `sv` whose succ are args. *)
-                    let '(sv, b2) := fresh b1 in
-                    let b3 := put sv (nSubst 0 (length v_args)) v_args b2 in
-                    (* Allocate the backlink node `v` pointing to target and sv and args. *)
-                    let '(v, b4) := fresh b3 in
-                    let b5 := put v nBack (target :: sv :: v_args) b4 in
-                    (v, b5)
+                    (* Build an explicit substitution evidence chain.
+
+                       We represent substitutions as linked vertices:
+                       - `sv_nil` has label `nSubstNil 0` and no successors.
+                       - for each argument `u`, create a `nSubstCons 0` vertex
+                         with successors `[u; sv_tail]`.
+
+                       The head of the chain is the substitution vertex `sv`.
+                    *)
+                    let '(sv_nil, b2) := fresh b1 in
+                    let b3 := put sv_nil (nSubstNil 0) [] b2 in
+                    let '(sv, b4) :=
+                      fold_right
+                        (fun u acc =>
+                           let '(sv_tail, b_acc) := acc in
+                           let '(sv_head, b_head0) := fresh b_acc in
+                           (sv_head, put sv_head (nSubstCons 0) [u; sv_tail] b_head0))
+                        (sv_nil, b3)
+                        v_args
+                    in
+                    (* Allocate the backlink node `v` pointing to target and substitution. *)
+                    let '(v, b5) := fresh b4 in
+                    let b6 := put v nBack [target; sv] b5 in
+                    (v, b6)
                 | _ =>
                     let '(v, b0) := fresh b in
                     let '(v1, b1) := compile_tm fuel' ρ t1 b0 in

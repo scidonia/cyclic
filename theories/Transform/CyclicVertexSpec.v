@@ -43,14 +43,20 @@ Module Type CYCLIC_VERTEX_SPEC.
   | nInd (ind : nat)
   | nRoll (ind ctor nparams nrecs : nat)
   | nCase (ind nbrs : nat)
-  | nSubst (k : nat) (nargs : nat)
+  | nSubstNil (k : nat)
+  | nSubstCons (k : nat)
   | nBack.
 
   (** Underlying cyclic term graph.
 
       `succ v` lists the immediate children of node `v`.
-      For `nSubst k nargs`, `succ v` is the argument list.
-      For `nBack`, `succ v` has the form `target :: sv :: args`.
+
+      Substitutions are linked lists of evidence nodes:
+      - for `nSubstNil k`, `succ v = []`
+      - for `nSubstCons k`, `succ v = [u; sv_tail]`
+
+      Back-links use a substitution vertex as evidence:
+      - for `nBack`, `succ v = [target; sv]`
   *)
   Parameter label : V -> node.
   Parameter succ : V -> list V.

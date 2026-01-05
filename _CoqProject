@@ -19,5 +19,6 @@ theories/Transform/ReadOff.v
 theories/Transform/CyclicVertexSpec.v
 theories/Transform/ReadOffPreproof.v
 theories/Transform/Extract.v
+theories/Transform/CyclicRules.v
 
 theories/Equiv/Bisimulation.v

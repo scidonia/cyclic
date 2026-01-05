@@ -22,6 +22,7 @@
    Transform.CyclicVertexSpec
    Transform.ReadOffPreproof
    Transform.Extract
+   Transform.CyclicRules
    Equiv.Bisimulation))
 
 
