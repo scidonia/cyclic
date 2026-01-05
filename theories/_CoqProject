@@ -17,5 +17,7 @@ Progress/PatternUnification.v
 Transform/ReadOffSpec.v
 Transform/ReadOff.v
 Transform/CyclicVertexSpec.v
+Transform/ReadOffPreproof.v
+Transform/Extract.v
 
 Equiv/Bisimulation.v

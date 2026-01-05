@@ -20,6 +20,8 @@
    Transform.ReadOffSpec
    Transform.ReadOff
    Transform.CyclicVertexSpec
+   Transform.ReadOffPreproof
+   Transform.Extract
    Equiv.Bisimulation))
 
 

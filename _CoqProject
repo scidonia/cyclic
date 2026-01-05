@@ -17,5 +17,7 @@ theories/Progress/PatternUnification.v
 theories/Transform/ReadOffSpec.v
 theories/Transform/ReadOff.v
 theories/Transform/CyclicVertexSpec.v
+theories/Transform/ReadOffPreproof.v
+theories/Transform/Extract.v
 
 theories/Equiv/Bisimulation.v
