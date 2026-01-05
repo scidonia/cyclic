@@ -4,6 +4,7 @@ From stdpp Require Import prelude countable.
 From Autosubst Require Import Autosubst.
 
 From Cyclic.Syntax Require Import StrictPos Term.
+From Cyclic.Semantics Require Import Cbn.
 From Cyclic.Preproof Require Import Preproof.
 
 Import ListNotations.
@@ -336,6 +337,7 @@ Module Typing.
   Module Cyclic.
     Inductive judgement : Type :=
     | jTy (Γ : ctx) (t A : T.tm)
+    | jEq (Γ : ctx) (t u A : T.tm)
     | jSub (Δ : ctx) (s : sub) (Γ : ctx).
 
     Definition jTy_params (Γ : ctx) (ps As : list T.tm) : list judgement :=
@@ -403,6 +405,12 @@ Module Typing.
             /\ premises = [jTy Γ scrut (T.tInd ind); jTy Γ C (T.tSort i)] ++ jTy_branches Γ ind ΣI C brs
 
       | jTy _ _ _ => False
+
+      | jEq Γ t u A =>
+          (t = u ∧ premises = [jTy Γ t A])
+          ∨ (premises = [jEq Γ u t A])
+          ∨ (exists m, premises = [jEq Γ t m A; jEq Γ m u A])
+          ∨ (step t u ∧ premises = [jTy Γ t A; jTy Γ u A])
       end
       ∨
       match j with
@@ -410,6 +418,12 @@ Module Typing.
           exists Γ0 t0 A0 s,
             premises = [jTy Γ0 t0 A0; jSub Γ s Γ0] ∧
             t = subst_sub s t0 ∧
+            A = subst_sub s A0
+      | jEq Γ t u A =>
+          exists Γ0 t0 u0 A0 s,
+            premises = [jEq Γ0 t0 u0 A0; jSub Γ s Γ0] ∧
+            t = subst_sub s t0 ∧
+            u = subst_sub s u0 ∧
             A = subst_sub s A0
       | jSub _ _ _ => False
       end.

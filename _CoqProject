@@ -6,4 +6,16 @@ theories/Judgement/Typing.v
 theories/Semantics/Cbn.v
 theories/Graph/FiniteDigraph.v
 theories/Preproof/Preproof.v
+theories/CyclicProof/CyclicProof.v
+theories/CyclicProof/Ranked.v
+
+theories/Progress/Ranking.v
+theories/Progress/Measures.v
+theories/Progress/Embedding.v
+theories/Progress/PatternUnification.v
+
+theories/Transform/ReadOffSpec.v
+theories/Transform/ReadOff.v
+theories/Transform/CyclicVertexSpec.v
+
 theories/Equiv/Bisimulation.v

@@ -23,6 +23,26 @@ Module Syntax.
   Definition branch (brs : list tm) (c : nat) : option tm :=
     nth_error brs c.
 
+  Fixpoint size (t : tm) : nat :=
+    match t with
+    | tVar _ => 1
+    | tSort _ => 1
+    | tPi A B => 1 + size A + size B
+    | tLam A t => 1 + size A + size t
+    | tApp t u => 1 + size t + size u
+    | tFix A t => 1 + size A + size t
+    | tInd _ => 1
+    | tRoll _ _ params recs =>
+        1
+        + fold_right (fun u n => size u + n) 0 params
+        + fold_right (fun u n => size u + n) 0 recs
+    | tCase _ scrut C brs =>
+        1
+        + size scrut
+        + size C
+        + fold_right (fun u n => size u + n) 0 brs
+    end.
+
   Global Instance Ids_tm : Ids tm := tVar.
   Global Instance Rename_tm : Rename tm. derive. Defined.
   Global Instance Subst_tm : Subst tm. derive. Defined.

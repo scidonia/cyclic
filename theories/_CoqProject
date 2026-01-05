@@ -6,4 +6,16 @@ Judgement/Typing.v
 Semantics/Cbn.v
 Graph/FiniteDigraph.v
 Preproof/Preproof.v
+CyclicProof/CyclicProof.v
+CyclicProof/Ranked.v
+
+Progress/Ranking.v
+Progress/Measures.v
+Progress/Embedding.v
+Progress/PatternUnification.v
+
+Transform/ReadOffSpec.v
+Transform/ReadOff.v
+Transform/CyclicVertexSpec.v
+
 Equiv/Bisimulation.v

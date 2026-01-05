@@ -19,7 +19,6 @@ Section Ranking.
   (* Ranking domain + a well-founded strict order. *)
   Context (M : Type).
   Context (ltM : M -> M -> Prop).
-  Context (ltM_wf : well_founded ltM).
 
   Definition leM : M -> M -> Prop := clos_refl M ltM.
 
@@ -46,14 +45,28 @@ Section Ranking.
   Lemma has_progress_edge_from_cons (v w : V) (xs : list V) :
     has_progress_edge_from v (w :: xs) ↔
       progress_edge v w ∨ has_progress_edge_from w xs.
-  Proof using M V progress_edge rank.
+  Proof using M V ltM progress_edge rank.
     simpl. tauto.
   Qed.
 
   Lemma has_progress_edge_cons (v : V) (xs : list V) :
     has_progress_edge (v :: xs) ↔ has_progress_edge_from v xs.
-  Proof using M V progress_edge rank.
+  Proof using M V ltM progress_edge rank.
     simpl. tauto.
+  Qed.
+
+  Lemma last_error_nonempty (xs : list V) :
+    xs ≠ [] -> ∃ u, last_error V xs = Some u.
+  Proof using Type.
+    induction xs as [|x xs IH]; intro Hne.
+    - exfalso. apply Hne. reflexivity.
+    - destruct xs as [|y xs'].
+      + exists x. reflexivity.
+      + assert (Hne' : y :: xs' ≠ []) by discriminate.
+        destruct (IH Hne') as [u Hu].
+        exists u.
+        simpl.
+        exact Hu.
   Qed.
 
   Lemma has_progress_edge_from_app (v : V) (xs ys : list V) :
@@ -63,7 +76,7 @@ Section Ranking.
       | None => has_progress_edge_from v ys
       | Some u => has_progress_edge_from u ys
       end.
-  Proof using M V progress_edge rank.
+  Proof using M V ltM progress_edge rank.
     revert v.
     induction xs as [|x xs IH]; intro v.
     - simpl. tauto.
@@ -71,14 +84,32 @@ Section Ranking.
       + simpl. tauto.
       + simpl.
         specialize (IH x).
+        assert (Hne : x' :: xs' ≠ []) by discriminate.
+        destruct (last_error_nonempty (x' :: xs') Hne) as [u Hu0].
+        pose proof Hu0 as Hu.
+        simpl in Hu.
         rewrite IH.
-        tauto.
+        simpl.
+        rewrite Hu.
+        simpl.
+        split.
+        * intro Hp.
+          destruct Hp as [Hvx|[Hx|Hy]];
+            [ left; left; exact Hvx
+            | left; right; exact Hx
+            | right; exact Hy ].
+        * intro Hp.
+          destruct Hp as [[Hvx|Hx]|Hy];
+            [ left; exact Hvx
+            | right; left; exact Hx
+            | right; right; exact Hy ].
   Qed.
 
   (* Ranking-based global condition, parameterized by a chosen progress predicate.
      Intuition: along every edge rank does not increase; on designated progress
      edges it strictly decreases; and every directed cycle has a progress edge. *)
   Record ranking_condition : Prop := {
+    rc_wf : well_founded ltM;
     rc_monotone : rank_monotone;
     rc_strict : rank_strict_on_progress;
     rc_cycle_progress : ∀ xs, @FiniteDigraph.is_cycle V _ _ G xs -> has_progress_edge xs;
