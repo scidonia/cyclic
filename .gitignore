@@ -1,0 +1,22 @@
+# Coq / Rocq build artifacts
+**/*.vo
+**/*.vos
+**/*.vok
+**/*.glob
+**/.*.aux
+
+# Editor/backup files
+**/*~
+**/#*#
+
+# Placeholder files
+**/.keep
+
+# Dune
+_build/
+
+# Tool traces / caches
+.lia.cache
+coq_lsp_manual_trace.txt
+coq_lsp_mcp_trace.txt
+coq_lsp_standalone_trace.txt
