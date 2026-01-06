@@ -38,8 +38,7 @@ Module SP := StrictPos.
   types: we reuse the original branch lambda prefix syntactically.
 *)
 
-Definition vars_desc (k : nat) : list tm :=
-  map tVar (rev (seq 0 k)).
+Definition shift1 (t : tm) : tm := shift 1 0 t.
 
 Fixpoint mk_lams (As : list tm) (t : tm) : tm :=
   match As with
@@ -52,6 +51,20 @@ Fixpoint mapi {A B : Type} (f : nat -> A -> B) (xs : list A) (i : nat) : list B 
   | [] => []
   | x :: xs => f i x :: mapi f xs (S i)
   end.
+
+Lemma mapi_nth_error {A B : Type} (f : nat -> A -> B) (xs : list A) (i n : nat) (x : A) :
+  nth_error xs n = Some x ->
+  nth_error (mapi f xs i) n = Some (f (i + n) x).
+Proof.
+  revert i n.
+  induction xs as [|x0 xs IH]; intros i n H; destruct n as [|n]; simpl in *.
+  - discriminate.
+  - inversion H; subst. simpl. now rewrite Nat.add_0_r.
+  - discriminate.
+  - apply (IH (S i) n) in H.
+    (* align indices: S i + n = i + S n *)
+    now rewrite Nat.add_succ_comm in H.
+Qed.
 
 Definition ctor_arg_tys (Σenv : Ty.env) (I c : nat) : option (list tm) :=
   match SP.lookup_ind Σenv I with
@@ -74,16 +87,21 @@ Definition ctor_arg_tys (Σenv : Ty.env) (I c : nat) : option (list tm) :=
     conversion: if the nested case terminates to a value, then the selected
     branch application must compute sufficiently for the outer case to fire.
 *)
+Fixpoint commute_branch_typed_rec (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc : tm) : tm :=
+  match argsTys with
+  | [] => tCase J br_acc D brsJ
+  | A :: argsTys' =>
+      tLam A
+        (commute_branch_typed_rec J (shift1 D) (map shift1 brsJ) (map shift1 argsTys')
+           (tApp (shift1 br_acc) (tVar 0)))
+  end.
+
 Definition commute_branch_typed (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br : tm) : tm :=
-  let n := length argsTys in
-  let scrut := Cbn.apps (shift n 0 br) (vars_desc n) in
-  let D' := shift n 0 D in
-  let brsJ' := map (shift n 0) brsJ in
-  mk_lams argsTys (tCase J scrut D' brsJ').
+  commute_branch_typed_rec J D brsJ argsTys br.
 
 Definition commute_case_case_once_typed (Σenv : Ty.env) (t : tm) : tm :=
   match t with
-  | tCase J (tCase I x C brsI) D brsJ =>
+  | tCase J (tCase I (tVar x) C brsI) D brsJ =>
       let brsI' :=
         mapi
           (fun c br =>
@@ -93,7 +111,7 @@ Definition commute_case_case_once_typed (Σenv : Ty.env) (t : tm) : tm :=
              end)
           brsI 0
       in
-      tCase I x C brsI'
+      tCase I (tVar x) C brsI'
   | _ => t
   end.
 
@@ -165,6 +183,111 @@ Proof.
       all: inversion Ht0.
 Qed.
 
+Lemma terminates_to_steps_prefix (t u v : tm) :
+  steps t u -> terminates_to t v -> terminates_to u v.
+Proof.
+  intros Htu [Htv Hv].
+  split.
+  - eapply steps_to_value_unique; eauto.
+  - exact Hv.
+Qed.
+
+Lemma steps_apps_congr (t t' : tm) (us : list tm) :
+  steps t t' -> steps (Cbn.apps t us) (Cbn.apps t' us).
+Proof.
+  intro H.
+  revert t t' H.
+  induction us as [|u us IH]; intros t t' H.
+  - exact H.
+  - simpl. (* apps t (u::us) = apps (tApp t u) us *)
+    apply IH.
+    clear IH.
+    (* lift steps through app1 *)
+    induction H as [x|x y z Hxy Hyz IH'];
+      [apply rt_refl|].
+    eapply rt_trans.
+    + apply step_app1. exact Hxy.
+    + exact IH'.
+Qed.
+
+Lemma steps_beta_apps (A : tm) (t u : tm) (us : list tm) :
+  steps (Cbn.apps (tLam A t) (u :: us)) (Cbn.apps (subst0 u t) us).
+Proof.
+  simpl.
+  (* reduce the head beta redex inside the application spine *)
+  eapply steps_apps_congr.
+  apply steps_step.
+  apply step_beta.
+Qed.
+
+(** The key lemma needed for CIU: applying the eta-expanded branch is
+    observationally the same as applying the original branch and then casing. *)
+Lemma terminates_to_commute_branch_typed
+    (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br : tm)
+    (args : list tm) (v : tm) :
+  length args = length argsTys ->
+  terminates_to (Cbn.apps (commute_branch_typed J D brsJ argsTys br) args) v
+  <>
+  terminates_to (tCase J (Cbn.apps br args) D brsJ) v.
+Proof.
+  revert D brsJ br args v.
+  induction argsTys as [|A tys IH];
+    intros D brsJ br args v Hlen.
+  - destruct args; simpl in Hlen; [|discriminate].
+    subst.
+    simpl. (* no binders *)
+    tauto.
+  - destruct args as [|u us]; simpl in Hlen; [discriminate|].
+    inversion Hlen as [Hlen'].
+    specialize (IH (shift1 D) (map shift1 brsJ) (tApp (shift1 br) (tVar 0)) us v Hlen').
+    split.
+    + intro Hterm.
+      (* one beta step peels the lambda prefix *)
+      assert (Hstep :
+        steps (Cbn.apps (commute_branch_typed J D brsJ (A :: tys) br) (u :: us))
+              (Cbn.apps (subst0 u (commute_branch_typed_rec J (shift1 D) (map shift1 brsJ)
+                                   (map shift1 tys) (tApp (shift1 br) (tVar 0)))) us)).
+      { unfold commute_branch_typed.
+        simpl.
+        apply steps_beta_apps. }
+      (* transport termination across the prefix step *)
+      pose proof (terminates_to_steps_prefix _ _ _ Hstep Hterm) as Hterm'.
+      (* simplify the substituted body: it is the same recursive commute with br u *)
+      (* This is purely Autosubst computation. *)
+      replace (subst0 u (commute_branch_typed_rec J (shift1 D) (map shift1 brsJ)
+                         (map shift1 tys) (tApp (shift1 br) (tVar 0))))
+        with (commute_branch_typed_rec J D brsJ tys (tApp br u)) in Hterm'
+        by (cbn; asimpl; reflexivity).
+      (* apply the IH *)
+      apply (IH) in Hterm'.
+      (* relate apps br (u::us) with apps (tApp br u) us *)
+      simpl in Hterm'.
+      exact Hterm'.
+    + intro Hterm.
+      (* converse direction: peel beta prefix on the left *)
+      (* reduce the goal to the recursive case via IH, then prepend the beta step *)
+      assert (Hterm' : terminates_to (Cbn.apps (commute_branch_typed_rec J D brsJ tys (tApp br u)) us) v).
+      { (* use IH backwards *)
+        (* apps br (u::us) = apps (tApp br u) us *)
+        change (terminates_to (tCase J (Cbn.apps (tApp br u) us) D brsJ) v) in Hterm.
+        apply (IH). exact Hterm. }
+      (* now show the original left term steps to that recursive form in one beta *)
+      assert (Hstep :
+        steps (Cbn.apps (commute_branch_typed J D brsJ (A :: tys) br) (u :: us))
+              (Cbn.apps (commute_branch_typed_rec J D brsJ tys (tApp br u)) us)).
+      { unfold commute_branch_typed.
+        simpl.
+        (* beta-reduce first binder and simplify *)
+        eapply steps_trans.
+        - apply steps_beta_apps.
+        - apply rt_refl. }
+      split.
+      - eapply steps_trans.
+        + exact Hstep.
+        + exact (proj1 Hterm').
+      - exact (proj2 Hterm').
+Qed.
+
 Lemma steps_case_to_apps
     (I : nat) (scrut C : tm) (brs : list tm)
     (c : nat) (params recs : list tm) (br : tm) :
@@ -197,6 +320,74 @@ Proof.
     apply IH; auto.
 Qed.
 
+Lemma shift1_tInd (I : nat) : shift1 (tInd I) = tInd I.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma subst_list_tInd (σ : list tm) (I : nat) : Ty.subst_list σ (tInd I) = tInd I.
+Proof.
+  reflexivity.
+Qed.
+
+(** Lookup lemma for typed substitutions at an inductive type.
+
+    We only need the case where the looked-up type is `tInd I`, which is closed
+    (hence stable under shifting/substitution).
+*)
+Lemma has_subst_lookup_tInd
+    (Σenv : Ty.env) (Δ : Ty.ctx) (σ : list tm) (Γ : Ty.ctx) (x I : nat) (u : tm) :
+  Ty.has_subst Σenv Δ σ Γ ->
+  Ty.ctx_lookup Γ x = Some (tInd I) ->
+  nth_error σ x = Some u ->
+  Ty.has_type Σenv Δ u (tInd I).
+Proof.
+  intro Hσ.
+  revert x I u.
+  induction Hσ as [|Γ' A σ' u0 Hσ IH Htyu0]; intros x I u Hlookup Hnth; simpl in *.
+  - destruct x; discriminate.
+  - destruct x as [|x].
+    + inversion Hnth; subst.
+      (* ctx_lookup (A::Γ') 0 = Some (shift1 A) *)
+      simpl in Hlookup.
+      (* use that `tInd` is closed, so shift/subst do nothing *)
+      rewrite subst_list_tInd.
+      exact (eq_ind _ (fun Ty0 => Ty.has_type Σenv Δ u0 Ty0) Htyu0 _ (eq_sym Hlookup)).
+    + (* tail *)
+      simpl in Hlookup.
+      destruct (Ty.ctx_lookup Γ' x) as [A'|] eqn:Hx; try discriminate.
+      simpl in Hlookup.
+      (* option_map shift1 ... = Some (tInd I) *)
+      inversion Hlookup; subst.
+      eapply IH.
+      * exact Hx.
+      * exact Hnth.
+Qed.
+
+(** Canonical forms for values at an inductive type. *)
+Lemma value_has_type_tInd_roll
+    (Σenv : Ty.env) (Δ : Ty.ctx) (v : tm) (I : nat) :
+  value v ->
+  Ty.has_type Σenv Δ v (tInd I) ->
+  exists ΣI ctor c params recs,
+    v = tRoll I c params recs
+    /\ SP.lookup_ind Σenv I = Some ΣI
+    /\ SP.lookup_ctor ΣI c = Some ctor
+    /\ length params = length (SP.ctor_param_tys ctor)
+    /\ length recs = SP.ctor_rec_arity ctor.
+Proof.
+  intros Hv Hty.
+  inversion Hv; subst.
+  - (* lambda can't have inductive type *)
+    inversion Hty.
+  - (* roll *)
+    inversion Hty; subst.
+    exists ΣI, ctor, c, params, recs.
+    repeat split; try assumption.
+    + (* params length from Forall2 *)
+      now eapply Forall2_length.
+Qed.
+
 (** CIU preservation for the judgement-driven rewrite. *)
 Theorem ciu_jTy_commute_case_case_once (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) :
   Ty.has_type Σenv Γ t A ->
@@ -204,18 +395,144 @@ Theorem ciu_jTy_commute_case_case_once (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm)
 Proof.
   intro Hty.
   split.
-  - intros Δ σ v Hσ Hterm.
-    destruct t; simpl in *.
-    all: try (apply Hterm).
-    (* case *)
-    destruct t1; simpl in *.
-    all: try (apply Hterm).
-    (* nested case-case: outline proof via a deterministic join point *)
-    (* TODO: finish using `terminates_to_case_inv` twice and the join-point strategy. *)
-    exact Hterm.
-  - intros Δ σ v Hσ Hterm.
-    (* symmetric direction: same join-point proof *)
-    exact Hterm.
+  - (* forward: original -> commuted *)
+    intros Δ σ v Hσ Hvσ Hterm.
+    destruct t as [x|i|A1 B|A1 t1|t1 t2|A1 t1|I1|I1 c1 ps1 rs1|I1 scrut1 C1 brs1];
+      simpl in *; try exact Hterm.
+    destruct scrut1 as [x0|i0|A2 B2|A2 t2'|t2' u2|A2 t2'|I2|I2 c2 ps2 rs2|I2 scrut2 C2 brs2];
+      simpl in *; try exact Hterm.
+    destruct scrut2 as [xvar| | | | | | | | ]; try exact Hterm.
+    assert (Hxlen : xvar < length σ).
+    { rewrite (Ty.has_subst_length _ _ _ _ Hσ).
+      inversion Hty; subst; try lia.
+      inversion H4; subst; try lia.
+      inversion H6; subst.
+      eapply Ty.ctx_lookup_lt; eauto. }
+    destruct (nth_error σ xvar) as [u|] eqn:Hnth; [|apply nth_error_None in Hnth; lia].
+    inversion Hty; subst.
+    inversion H4; subst.
+    inversion H6; subst.
+    pose proof (has_subst_lookup_tInd Σenv Δ σ Γ xvar I2 u Hσ H8 Hnth) as Hut.
+    pose proof (Forall_nth_error _ _ _ Hvσ Hnth) as Hvalu.
+    destruct (value_has_type_tInd_roll Σenv Δ u I2 Hvalu Hut)
+      as (ΣI&ctor&c&params&recs&->&HΣI&Hctor&Hlenp&Hlenr).
+    unfold ctor_arg_tys.
+    rewrite HΣI, Hctor.
+    set (tys := SP.ctor_param_tys ctor ++ repeat (tInd I2) (SP.ctor_rec_arity ctor)).
+    assert (Hargslen : length (params ++ recs) = length tys).
+    { subst tys. rewrite app_length, repeat_length. lia. }
+    assert (HbrI : exists brI, branch brs2 c = Some brI).
+    { inversion H4; subst.
+      specialize (H12 c ctor Hctor) as (brI&Hb&HTybrI).
+      exists brI. exact Hb. }
+    destruct HbrI as [brI HbI].
+    assert (HbI' :
+      branch (mapi (fun c0 br0 => match ctor_arg_tys Σenv I2 c0 with | Some tys0 => commute_branch_typed I1 C1 brs1 tys0 br0 | None => br0 end) brs2 0) c
+        = Some (commute_branch_typed I1 C1 brs1 tys brI)).
+    { unfold branch.
+      apply (mapi_nth_error
+               (f := fun c0 br0 => match ctor_arg_tys Σenv I2 c0 with
+                                   | Some tys0 => commute_branch_typed I1 C1 brs1 tys0 br0
+                                   | None => br0
+                                   end)
+               (xs := brs2) (i := 0) (n := c) (x := brI)) in HbI.
+      simpl in HbI.
+      rewrite Nat.add_0_l in HbI.
+      unfold ctor_arg_tys in HΣI.
+      unfold ctor_arg_tys.
+      rewrite HΣI, Hctor.
+      subst tys.
+      exact HbI. }
+    (* original steps to join *)
+    set (inner := tCase I2 (tRoll I2 c params recs) C2 brs2).
+    assert (Hinner_step : step inner (Cbn.apps brI (params ++ recs))).
+    { subst inner. eapply step_case_roll; eauto. }
+    set (join := tCase I1 (Cbn.apps brI (params ++ recs)) C1 brs1).
+    assert (Horig_step : step (tCase I1 inner C1 brs1) join).
+    { subst join. eapply step_case_scrut. exact Hinner_step. }
+    pose proof (steps_step _ _ Horig_step) as Horig_steps.
+    pose proof (steps_to_value_unique _ _ _ (proj1 Hterm) (proj2 Hterm) Horig_steps) as Hjoin_steps.
+    set (Hjoin_term := (conj Hjoin_steps (proj2 Hterm)) : terminates_to join v).
+    (* use branch lemma to transport termination from join to transformed branch application *)
+    pose proof (proj2 (terminates_to_commute_branch_typed I1 C1 brs1 tys brI (params ++ recs) v Hargslen)) as Hjoin_to_app.
+    pose proof (Hjoin_to_app Hjoin_term) as Happ_term.
+    (* commuted term reduces in one step to that application *)
+    set (trans := tCase I2 (tRoll I2 c params recs) C2 (mapi (fun c0 br0 => match ctor_arg_tys Σenv I2 c0 with | Some tys0 => commute_branch_typed I1 C1 brs1 tys0 br0 | None => br0 end) brs2 0)).
+    assert (Htrans_step : step trans (Cbn.apps (commute_branch_typed I1 C1 brs1 tys brI) (params ++ recs))).
+    { subst trans. eapply step_case_roll; eauto. }
+    pose proof (steps_step _ _ Htrans_step) as Htrans_steps.
+    split.
+    + eapply steps_trans; [exact Htrans_steps|exact (proj1 Happ_term)].
+    + exact (proj2 Happ_term).
+  - (* backward: commuted -> original *)
+    intros Δ σ v Hσ Hvσ Hterm.
+    destruct t as [x|i|A1 B|A1 t1|t1 t2|A1 t1|I1|I1 c1 ps1 rs1|I1 scrut1 C1 brs1];
+      simpl in *; try exact Hterm.
+    destruct scrut1 as [x0|i0|A2 B2|A2 t2'|t2' u2|A2 t2'|I2|I2 c2 ps2 rs2|I2 scrut2 C2 brs2];
+      simpl in *; try exact Hterm.
+    destruct scrut2 as [xvar| | | | | | | | ]; try exact Hterm.
+    assert (Hxlen : xvar < length σ).
+    { rewrite (Ty.has_subst_length _ _ _ _ Hσ).
+      inversion Hty; subst; try lia.
+      inversion H4; subst; try lia.
+      inversion H6; subst.
+      eapply Ty.ctx_lookup_lt; eauto. }
+    destruct (nth_error σ xvar) as [u|] eqn:Hnth; [|apply nth_error_None in Hnth; lia].
+    inversion Hty; subst.
+    inversion H4; subst.
+    inversion H6; subst.
+    pose proof (has_subst_lookup_tInd Σenv Δ σ Γ xvar I2 u Hσ H8 Hnth) as Hut.
+    pose proof (Forall_nth_error _ _ _ Hvσ Hnth) as Hvalu.
+    destruct (value_has_type_tInd_roll Σenv Δ u I2 Hvalu Hut)
+      as (ΣI&ctor&c&params&recs&->&HΣI&Hctor&Hlenp&Hlenr).
+    unfold ctor_arg_tys.
+    rewrite HΣI, Hctor.
+    set (tys := SP.ctor_param_tys ctor ++ repeat (tInd I2) (SP.ctor_rec_arity ctor)).
+    assert (Hargslen : length (params ++ recs) = length tys).
+    { subst tys. rewrite app_length, repeat_length. lia. }
+    assert (HbrI : exists brI, branch brs2 c = Some brI).
+    { inversion H4; subst.
+      specialize (H12 c ctor Hctor) as (brI&Hb&HTybrI).
+      exists brI. exact Hb. }
+    destruct HbrI as [brI HbI].
+    (* commuted term reduces to transformed branch application *)
+    set (trans := tCase I2 (tRoll I2 c params recs) C2 (mapi (fun c0 br0 => match ctor_arg_tys Σenv I2 c0 with | Some tys0 => commute_branch_typed I1 C1 brs1 tys0 br0 | None => br0 end) brs2 0)).
+    assert (Htrans_step : step trans (Cbn.apps (commute_branch_typed I1 C1 brs1 tys brI) (params ++ recs))).
+    { subst trans. eapply step_case_roll; eauto.
+      (* branch premise *)
+      unfold branch.
+      apply (mapi_nth_error
+               (f := fun c0 br0 => match ctor_arg_tys Σenv I2 c0 with
+                                   | Some tys0 => commute_branch_typed I1 C1 brs1 tys0 br0
+                                   | None => br0
+                                   end)
+               (xs := brs2) (i := 0) (n := c) (x := brI)) in HbI.
+      simpl in HbI.
+      rewrite Nat.add_0_l in HbI.
+      unfold ctor_arg_tys in HΣI.
+      unfold ctor_arg_tys.
+      rewrite HΣI, Hctor.
+      subst tys.
+      exact HbI. }
+    pose proof (steps_step _ _ Htrans_step) as Htrans_steps.
+    (* from commuted termination get termination of the transformed app *)
+    pose proof (steps_to_value_unique _ _ _ (proj1 Hterm) (proj2 Hterm) Htrans_steps) as Happ_steps.
+    set (Happ_term := (conj Happ_steps (proj2 Hterm)) : terminates_to (Cbn.apps (commute_branch_typed I1 C1 brs1 tys brI) (params ++ recs)) v).
+    (* transport termination from transformed app to join *)
+    pose proof (proj1 (terminates_to_commute_branch_typed I1 C1 brs1 tys brI (params ++ recs) v Hargslen)) as Happ_to_join.
+    pose proof (Happ_to_join Happ_term) as Hjoin_term.
+    (* original term steps to join *)
+    set (inner := tCase I2 (tRoll I2 c params recs) C2 brs2).
+    assert (Hinner_step : step inner (Cbn.apps brI (params ++ recs))).
+    { subst inner. eapply step_case_roll; eauto. }
+    set (join := tCase I1 (Cbn.apps brI (params ++ recs)) C1 brs1).
+    assert (Horig_step : step (tCase I1 inner C1 brs1) join).
+    { subst join. eapply step_case_scrut. exact Hinner_step. }
+    pose proof (steps_step _ _ Horig_step) as Horig_steps.
+    (* conclude: original terminates to v *)
+    split.
+    + eapply steps_trans; [exact Horig_steps|exact (proj1 Hjoin_term)].
+    + exact (proj2 Hjoin_term).
 Qed.
 
 (** A reference-level cyclic-proof transform implemented by extract/re-read-off.

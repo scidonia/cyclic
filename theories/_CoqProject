@@ -21,6 +21,8 @@ Transform/ReadOffPreproof.v
 Transform/Extract.v
 Transform/CyclicRules.v
 Transform/CaseCase.v
+Transform/CaseCaseProof.v
+Transform/ReadOffExtractCorrectness.v
 
 Equiv/Bisimulation.v
 Equiv/CIU.v

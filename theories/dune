@@ -24,6 +24,8 @@
     Transform.Extract
     Transform.CyclicRules
     Transform.CaseCase
+    Transform.CaseCaseProof
+    Transform.ReadOffExtractCorrectness
     Equiv.Bisimulation
     Equiv.CIU
     Equiv.CIUJudgement))
