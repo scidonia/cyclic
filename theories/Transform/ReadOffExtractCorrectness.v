@@ -64,6 +64,44 @@ Fixpoint targets_of (ρ : RO.back_env) : list nat :=
 
 Definition nodup_targets (ρ : RO.back_env) : Prop := NoDup (targets_of ρ).
 
+Definition targets_lt (ρ : RO.back_env) (n : nat) : Prop :=
+  Forall (fun v => v < n) (targets_of ρ).
+
+Lemma targets_lt_nil (n : nat) : targets_lt [] n.
+Proof. constructor. Qed.
+
+Lemma targets_lt_tail (o : option nat) (ρ : RO.back_env) (n : nat) :
+  targets_lt (o :: ρ) n -> targets_lt ρ n.
+Proof.
+  destruct o; simpl; intro H; [inversion H|]; assumption.
+Qed.
+
+Lemma targets_lt_cons_some (v : nat) (ρ : RO.back_env) (n : nat) :
+  v < n -> targets_lt ρ n -> targets_lt (Some v :: ρ) n.
+Proof.
+  intros Hv H.
+  simpl. constructor; assumption.
+Qed.
+
+Lemma targets_lt_cons_none (ρ : RO.back_env) (n : nat) :
+  targets_lt ρ n -> targets_lt (None :: ρ) n.
+Proof.
+  intro H. simpl. exact H.
+Qed.
+
+Lemma targets_lt_notin
+    (ρ : RO.back_env) (n : nat) (v : nat) :
+  targets_lt ρ n -> n = v -> ~ In v (targets_of ρ).
+Proof.
+  intros H -> Hin.
+  induction H.
+  - contradiction.
+  - simpl in Hin.
+    destruct Hin as [->|Hin].
+    + lia.
+    + apply IHH. exact Hin.
+Qed.
+
 Lemma nodup_targets_tail (o : option nat) (ρ : RO.back_env) :
   nodup_targets (o :: ρ) -> nodup_targets ρ.
 Proof.
@@ -210,6 +248,48 @@ Proof.
   - intros k vA Hk. specialize (Hf k vA Hk). lia.
 Qed.
 
+(** Compilation never overwrites existing vertices < old `b_next`. *)
+Definition preserves_lt (b b' : RO.builder) : Prop :=
+  forall k,
+    k < RO.b_next b ->
+    b'.(RO.b_label) !! k = b.(RO.b_label) !! k
+    /\ b'.(RO.b_succ) !! k = b.(RO.b_succ) !! k
+    /\ b'.(RO.b_fix_ty) !! k = b.(RO.b_fix_ty) !! k.
+
+Lemma preserves_lt_refl (b : RO.builder) : preserves_lt b b.
+Proof.
+  intros k Hk. repeat split.
+Qed.
+
+Lemma preserves_lt_fresh (b : RO.builder) : preserves_lt b (snd (RO.fresh b)).
+Proof.
+  intros k Hk.
+  unfold RO.fresh.
+  simpl.
+  repeat split.
+Qed.
+
+Lemma preserves_lt_put (b : RO.builder) (v : nat) (lbl : RO.node) (succ : list nat) :
+  v >= RO.b_next b -> preserves_lt b (RO.put v lbl succ b).
+Proof.
+  intros Hv k Hk.
+  unfold RO.put.
+  simpl.
+  assert (k <> v) by lia.
+  repeat split; rewrite lookup_insert_ne; auto.
+Qed.
+
+Lemma preserves_lt_put_fix_ty (b : RO.builder) (v vA : nat) :
+  v >= RO.b_next b -> preserves_lt b (RO.put_fix_ty v vA b).
+Proof.
+  intros Hv k Hk.
+  unfold RO.put_fix_ty.
+  simpl.
+  assert (k <> v) by lia.
+  repeat split; try reflexivity.
+  rewrite lookup_insert_ne; auto.
+Qed.
+
 (**
   Main round-trip theorem.
 
@@ -223,32 +303,107 @@ Qed.
   The only currently open sub-lemma above is the freshness/no-duplication fact
   needed to finish `fix_env_of_nth_some` cleanly.
 *)
+Lemma targets_lt_mono (ρ : RO.back_env) (n m : nat) :
+  targets_lt ρ n -> n <= m -> targets_lt ρ m.
+Proof.
+  intros H Hle.
+  unfold targets_lt in *.
+  eapply Forall_impl; [|exact H].
+  intros v Hv. lia.
+Qed.
+
+Lemma nodup_targets_cons_fresh
+    (ρ : RO.back_env) (n : nat) :
+  nodup_targets ρ ->
+  targets_lt ρ n ->
+  nodup_targets (Some n :: ρ).
+Proof.
+  intros Hnd Hlt.
+  unfold nodup_targets in *.
+  simpl.
+  constructor.
+  - intro Hin.
+    apply (targets_lt_notin ρ n n); auto.
+  - exact Hnd.
+Qed.
+
+Lemma targets_lt_cons_fresh
+    (ρ : RO.back_env) (n : nat) :
+  targets_lt ρ n -> targets_lt (Some n :: ρ) (S n).
+Proof.
+  intro H.
+  apply targets_lt_cons_some; [lia|].
+  eapply targets_lt_mono; [exact H|lia].
+Qed.
+
 Lemma extract_compile_tm
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
   fuel >= T.size t ->
   dom_lt b ->
   nodup_targets ρ ->
+  targets_lt ρ (RO.b_next b) ->
   let '(v, b') := RO.compile_tm fuel ρ t b in
   EX.extract_v (RO.b_next b' + 1) b' (fix_env_of ρ) v = t.
 Proof.
   revert ρ t b.
-  induction fuel as [|fuel IH]; intros ρ t b Hfuel Hdom Hnodup.
+  induction fuel as [|fuel IH];
+    intros ρ t b Hfuel Hdom Hnodup Htlt.
   - exfalso. destruct t; simpl in Hfuel; lia.
-  - (* fuel = S fuel *)
-    destruct t; simpl in *.
+  - destruct t; simpl in *.
     all: unfold RO.compile_tm; simpl.
-    all: try ( (* constructors using fresh+put *)
-      unfold RO.fresh; simpl;
-      (* allocate v = b_next b *)
-      set (v := RO.b_next b);
-      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |});
-      (* now put at v *)
-      simpl;
-      (* extract: should read back this label *)
-      cbn;
-      (* finish later *)
-      admit).
-Admitted.
+    + (* tVar *)
+      unfold RO.fresh; simpl.
+      set (v := RO.b_next b).
+      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
+      simpl.
+      (* builder after put at v *)
+      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      rewrite lookup_insert.
+      reflexivity.
+    + (* tSort *)
+      unfold RO.fresh; simpl.
+      set (v := RO.b_next b).
+      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
+      simpl.
+      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      rewrite lookup_insert.
+      reflexivity.
+    + (* tPi *)
+      (* allocate root, compile A and B, then extract node structure *)
+      unfold RO.fresh; simpl.
+      set (v := RO.b_next b).
+      set (b0 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
+      (* compile A *)
+      specialize (IH ρ t1 b0).
+      assert (HfuelA : fuel >= T.size t1) by (simpl in Hfuel; lia).
+      assert (Hdom0 : dom_lt b0) by (apply dom_lt_fresh; exact Hdom).
+      assert (Hnodup0 : nodup_targets ρ) by exact Hnodup.
+      assert (Htlt0 : targets_lt ρ (RO.b_next b0)).
+      { eapply targets_lt_mono; [exact Htlt|simpl; lia]. }
+      specialize (IH HfuelA Hdom0 Hnodup0 Htlt0).
+      destruct (RO.compile_tm fuel ρ t1 b0) as [vA b1] eqn:HA.
+      (* compile B under binder *)
+      specialize (IH (None :: ρ) t2 b1).
+      assert (HfuelB : fuel >= T.size t2) by (simpl in Hfuel; lia).
+      assert (HnodupB : nodup_targets (None :: ρ)) by (simpl; exact Hnodup).
+      assert (HtltB : targets_lt (None :: ρ) (RO.b_next b1)).
+      { simpl. exact (targets_lt_mono _ _ _ Htlt0 (le_n _)). }
+      (* FIXME: finish Pi case via recursive IH applications *)
+      admit
+    + (* tLam *) admit
+    + (* tApp *) admit
+    + (* tFix *) admit
+    + (* tInd *)
+      unfold RO.fresh; simpl.
+      set (v := RO.b_next b).
+      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
+      simpl.
+      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      rewrite lookup_insert.
+      reflexivity.
+    + (* tRoll *) admit
+    + (* tCase *) admit
+Qed.
 
 Theorem extract_read_off_id (t : T.tm) : EX.extract_read_off t = t.
 Proof.
