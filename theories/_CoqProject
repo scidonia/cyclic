@@ -20,5 +20,7 @@ Transform/CyclicVertexSpec.v
 Transform/ReadOffPreproof.v
 Transform/Extract.v
 Transform/CyclicRules.v
+Transform/CaseCase.v
 
 Equiv/Bisimulation.v
+Equiv/CIU.v

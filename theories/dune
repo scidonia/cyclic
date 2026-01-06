@@ -2,27 +2,29 @@
  (name Cyclic)
  (theories stdpp Stdlib Autosubst)
   (flags (:standard -w -notation-overridden))
-  (modules
-   Syntax.StrictPos
-   Syntax.Term
-   Judgement.Typing
-   Semantics.Cbn
-
-   Graph.FiniteDigraph
-   Preproof.Preproof
-   CyclicProof.CyclicProof
-   CyclicProof.Ranked
+   (modules
+    Syntax.StrictPos
+    Syntax.Term
+    Judgement.Typing
+    Semantics.Cbn
  
-   Progress.Ranking
-   Progress.Measures
-   Progress.Embedding
-   Progress.PatternUnification
-   Transform.ReadOffSpec
-   Transform.ReadOff
-   Transform.CyclicVertexSpec
-   Transform.ReadOffPreproof
-   Transform.Extract
-   Transform.CyclicRules
-   Equiv.Bisimulation))
+    Graph.FiniteDigraph
+    Preproof.Preproof
+    CyclicProof.CyclicProof
+    CyclicProof.Ranked
+  
+    Progress.Ranking
+    Progress.Measures
+    Progress.Embedding
+    Progress.PatternUnification
+    Transform.ReadOffSpec
+    Transform.ReadOff
+    Transform.CyclicVertexSpec
+    Transform.ReadOffPreproof
+    Transform.Extract
+    Transform.CyclicRules
+    Transform.CaseCase
+    Equiv.Bisimulation
+    Equiv.CIU))
 
 

@@ -238,3 +238,10 @@ Before implementing `read_off` fully, decide:
 For the first milestone, aim for:
 - structural equality of extracted terms up to α/renaming,
 - and cyclic proof equivalence as bisimulation up to vertex renaming.
+
+For post-processing transforms on cyclic graphs (partial evaluation / normalization / refolding), do **not** expect literal term equality after extraction. Instead, use a semantic equivalence on terms.
+
+Concrete choice (agreed):
+- **term equivalence** is CIU-style (closing substitutions, rather than syntactic contexts),
+- the **observable** is termination to the same **value** (CBN values from `theories/Semantics/Cbn.v`),
+- we only use this equivalence in settings where **termination is already proved** (so divergence does not need to be modeled in the equivalence definition).

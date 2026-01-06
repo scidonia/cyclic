@@ -14,6 +14,8 @@ across opencode restarts.
 - Operational semantics: call-by-name small-step (`theories/Semantics/Cbn.v`), with `case` applying the selected branch to all non-recursive parameters and recursive fields.
 - Equality / program transformation correctness stays meta-theoretic for now.
 - Canonicalization goal: define an operational procedure `Reduce` on proof objects and a behavioural relation `~` such that `p ~ Reduce(p)`.
+- Normalisation plan TODO list lives in `cyclic_normalisation_todo.md`.
+- Term/program equivalence for correctness statements: CIU-style observational equivalence, using **values** as observables (assume termination proven before applying equivalence).
 
 ## Toolchain status (important)
 
