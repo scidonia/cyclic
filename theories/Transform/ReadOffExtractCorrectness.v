@@ -138,16 +138,76 @@ Lemma app_view_correct (t : T.tm) :
   t = apps_tm h args.
 Proof.
   induction t; simpl; try reflexivity.
-  (* tApp case *)
   destruct (RO.app_view t1) as [h args] eqn:H.
   simpl.
   rewrite IHt1.
-  (* show: apps_tm h (args ++ [t2]) = apps_tm (apps_tm h args) [t2] *)
   clear IHt1.
   revert h.
   induction args as [|a args IH]; intro h; simpl.
   - reflexivity.
   - rewrite IH. reflexivity.
+Qed.
+
+(** Builder domain invariant: no keys >= b_next. *)
+Definition dom_lt (b : RO.builder) : Prop :=
+  (forall k n, b.(RO.b_label) !! k = Some n -> k < b.(RO.b_next))
+  /\ (forall k s, b.(RO.b_succ) !! k = Some s -> k < b.(RO.b_next))
+  /\ (forall k vA, b.(RO.b_fix_ty) !! k = Some vA -> k < b.(RO.b_next)).
+
+Lemma dom_lt_empty : dom_lt RO.empty_builder.
+Proof.
+  repeat split; intros; rewrite lookup_empty in H; discriminate.
+Qed.
+
+Lemma dom_lt_put (b : RO.builder) (v : nat) (lbl : RO.node) (succ : list nat) :
+  dom_lt b -> v < RO.b_next b -> dom_lt (RO.put v lbl succ b).
+Proof.
+  intros [Hl [Hs Hf]] Hv.
+  repeat split.
+  - intros k n Hk.
+    destruct (decide (k = v)) as [->|Hne].
+    + rewrite RO.b_next in *. (* no-op, b_next unchanged *)
+      simpl. exact Hv.
+    + simpl in Hk.
+      rewrite lookup_insert_ne in Hk by exact Hne.
+      apply Hl in Hk. exact Hk.
+  - intros k s Hk.
+    destruct (decide (k = v)) as [->|Hne].
+    + simpl. exact Hv.
+    + simpl in Hk.
+      rewrite lookup_insert_ne in Hk by exact Hne.
+      apply Hs in Hk. exact Hk.
+  - intros k vA Hk.
+    simpl in Hk.
+    apply Hf in Hk. exact Hk.
+Qed.
+
+Lemma dom_lt_put_fix_ty (b : RO.builder) (v vA : nat) :
+  dom_lt b -> v < RO.b_next b -> dom_lt (RO.put_fix_ty v vA b).
+Proof.
+  intros [Hl [Hs Hf]] Hv.
+  repeat split.
+  - intros k n Hk. apply Hl in Hk. exact Hk.
+  - intros k s Hk. apply Hs in Hk. exact Hk.
+  - intros k w Hk.
+    destruct (decide (k = v)) as [->|Hne].
+    + simpl. exact Hv.
+    + simpl in Hk.
+      rewrite lookup_insert_ne in Hk by exact Hne.
+      apply Hf in Hk. exact Hk.
+Qed.
+
+Lemma dom_lt_fresh (b : RO.builder) :
+  dom_lt b ->
+  dom_lt (snd (RO.fresh b)).
+Proof.
+  intros [Hl [Hs Hf]].
+  unfold RO.fresh.
+  simpl.
+  repeat split.
+  - intros k n Hk. specialize (Hl k n Hk). lia.
+  - intros k s Hk. specialize (Hs k s Hk). lia.
+  - intros k vA Hk. specialize (Hf k vA Hk). lia.
 Qed.
 
 (**
@@ -163,11 +223,43 @@ Qed.
   The only currently open sub-lemma above is the freshness/no-duplication fact
   needed to finish `fix_env_of_nth_some` cleanly.
 *)
+Lemma extract_compile_tm
+    (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
+  fuel >= T.size t ->
+  dom_lt b ->
+  nodup_targets ρ ->
+  let '(v, b') := RO.compile_tm fuel ρ t b in
+  EX.extract_v (RO.b_next b' + 1) b' (fix_env_of ρ) v = t.
+Proof.
+  revert ρ t b.
+  induction fuel as [|fuel IH]; intros ρ t b Hfuel Hdom Hnodup.
+  - exfalso. destruct t; simpl in Hfuel; lia.
+  - (* fuel = S fuel *)
+    destruct t; simpl in *.
+    all: unfold RO.compile_tm; simpl.
+    all: try ( (* constructors using fresh+put *)
+      unfold RO.fresh; simpl;
+      (* allocate v = b_next b *)
+      set (v := RO.b_next b);
+      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |});
+      (* now put at v *)
+      simpl;
+      (* extract: should read back this label *)
+      cbn;
+      (* finish later *)
+      admit).
+Admitted.
+
 Theorem extract_read_off_id (t : T.tm) : EX.extract_read_off t = t.
 Proof.
-  unfold EX.extract_read_off, RO.read_off_raw, EX.extract.
-  cbn.
-  (* TODO: prove that extracting the compiled root yields `t`. *)
+  unfold EX.extract_read_off.
+  destruct (RO.read_off_raw t) as [root b] eqn:H.
+  unfold RO.read_off_raw in H.
+  (* read_off_raw is compile_tm (size t) [] t empty_builder *)
+  cbn in H.
+  (* use extract_compile_tm with empty builder/back env *)
+  specialize (extract_compile_tm (T.size t) [] t RO.empty_builder).
+  (* TODO: finish using extract_compile_tm once its proof is complete. *)
 Admitted.
 
 Theorem extract_read_off_ciu
