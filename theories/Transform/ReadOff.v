@@ -134,9 +134,14 @@ Section ReadOff.
             match h with
             | T.tVar x =>
                 match nth_error ρ x with
-                | Some (Some target) =>
-                    (* Compile each argument as a vertex. *)
-                    let '(v_args, b1) := compile_list fuel' ρ args b in
+                 | Some (Some target) =>
+                     (* Compile each argument as a vertex.
+
+                        We use a fuel-decreasing list compilation so that the
+                        i-th argument is compiled with the same fuel that
+                        `Extract.subst_args` will later use to extract it.
+                     *)
+                     let '(v_args, b1) := compile_args fuel' ρ args b in
                     (* Build an explicit substitution evidence chain.
 
                        We represent substitutions as linked vertices:
@@ -215,6 +220,20 @@ Section ReadOff.
         let '(v, b1) := compile_tm fuel ρ t b in
         let '(vs, b2) := compile_list fuel ρ ts b1 in
         (v :: vs, b2)
+    end.
+
+  Fixpoint compile_args (fuel : nat) (ρ : back_env) (ts : list T.tm) (b : builder)
+    {struct fuel} : list nat * builder :=
+    match fuel with
+    | 0 => ([], b)
+    | S fuel' =>
+        match ts with
+        | [] => ([], b)
+        | t :: ts =>
+            let '(v, b1) := compile_tm fuel' ρ t b in
+            let '(vs, b2) := compile_args fuel' ρ ts b1 in
+            (v :: vs, b2)
+        end
     end.
 
 
