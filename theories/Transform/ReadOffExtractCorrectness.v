@@ -186,6 +186,30 @@ Proof.
   - rewrite IH. reflexivity.
 Qed.
 
+(** Fuel-decreasing extraction of a list of vertices. *)
+Fixpoint extract_vs (fuel : nat) (b : RO.builder) (ρ : EX.fix_env) (vs : list nat) : list T.tm :=
+  match fuel with
+  | 0 => []
+  | S fuel' =>
+      match vs with
+      | [] => []
+      | v :: vs => EX.extract_v fuel' b ρ v :: extract_vs fuel' b ρ vs
+      end
+  end.
+
+(** Build a substitution evidence chain exactly like ReadOff's fold_right. *)
+Fixpoint build_subst_chain (vs : list nat) (sv_tail : nat) (b : RO.builder) : nat * RO.builder :=
+  match vs with
+  | [] => (sv_tail, b)
+  | u :: us =>
+      let '(sv_tail', b1) := build_subst_chain us sv_tail b in
+      let '(sv_head, b2) := RO.fresh b1 in
+      (sv_head, RO.put sv_head (RO.nSubstCons 0) [u; sv_tail'] b2)
+  end.
+
+(* Substitution-chain correctness lemma is stated below, once we
+   have the builder freshness invariants available. *)
+
 (** Builder domain invariant: no keys >= b_next. *)
 Definition dom_lt (b : RO.builder) : Prop :=
   (forall k n, b.(RO.b_label) !! k = Some n -> k < b.(RO.b_next))
@@ -289,6 +313,183 @@ Proof.
   repeat split; try reflexivity.
   rewrite lookup_insert_ne; auto.
 Qed.
+
+(** Closedness of the first [n] vertices of a builder.
+
+    This is the property needed to show extraction of vertices < n is stable
+    under edits to vertices >= n.
+*)
+Definition closed_lt (b : RO.builder) (n : nat) : Prop :=
+  (forall k succ, b.(RO.b_succ) !! k = Some succ -> k < n -> Forall (fun w => w < n) succ)
+  /\ (forall k vA, b.(RO.b_fix_ty) !! k = Some vA -> k < n -> vA < n).
+
+Section ExtractExt.
+  Context (b b' : RO.builder) (ρ : EX.fix_env) (n : nat).
+  Hypothesis Hagree : forall k,
+      k < n ->
+      b'.(RO.b_label) !! k = b.(RO.b_label) !! k
+      /\ b'.(RO.b_succ) !! k = b.(RO.b_succ) !! k
+      /\ b'.(RO.b_fix_ty) !! k = b.(RO.b_fix_ty) !! k.
+  Hypothesis Hclosed : closed_lt b n.
+
+  Lemma lookup_node_agree (v : nat) : v < n -> EX.lookup_node b v = EX.lookup_node b' v.
+  Proof.
+    intro Hv.
+    unfold EX.lookup_node.
+    destruct (Hagree v Hv) as [Hl _].
+    rewrite Hl.
+    reflexivity.
+  Qed.
+
+  Lemma lookup_succ_agree (v : nat) : v < n -> EX.lookup_succ b v = EX.lookup_succ b' v.
+  Proof.
+    intro Hv.
+    unfold EX.lookup_succ.
+    destruct (Hagree v Hv) as [_ [Hs _]].
+    rewrite Hs.
+    reflexivity.
+  Qed.
+
+  Lemma fix_ty_agree (v : nat) : v < n -> RO.b_fix_ty b !! v = RO.b_fix_ty b' !! v.
+  Proof.
+    intro Hv.
+    destruct (Hagree v Hv) as [_ [_ Hf]].
+    exact (eq_sym Hf).
+  Qed.
+
+  Lemma extract_ext (fuel : nat) :
+    (forall v, v < n -> EX.extract_v fuel b ρ v = EX.extract_v fuel b' ρ v)
+    /\ (forall v, v < n -> EX.extract_node fuel b ρ v = EX.extract_node fuel b' ρ v)
+    /\ (forall sv, sv < n -> EX.subst_args fuel b ρ sv = EX.subst_args fuel b' ρ sv).
+  Proof.
+    induction fuel as [|fuel IH]; simpl.
+    - repeat split; intros; reflexivity.
+    - destruct IH as [IHv [IHn IHs]].
+      (* helper: pointwise equality for maps over closed lists *)
+      assert (Hmap : forall vs,
+                Forall (fun w => w < n) vs ->
+                map (EX.extract_v fuel b ρ) vs = map (EX.extract_v fuel b' ρ) vs).
+      { induction vs as [|w ws IHws]; intro Hcl; simpl; [reflexivity|].
+        inversion Hcl; subst.
+        rewrite (IHv w H2).
+        rewrite IHws; auto.
+      }
+      repeat split.
+      + (* extract_v *)
+        intros v Hv.
+        simpl.
+        destruct (ρ !! v) as [k|] eqn:Hρ; [reflexivity|].
+        rewrite (fix_ty_agree v Hv).
+        destruct (RO.b_fix_ty b !! v) as [vA|] eqn:Hfix.
+        * destruct Hclosed as [_ Hfixval].
+          assert (HvA : vA < n) by (eapply Hfixval; eauto).
+          rewrite (IHv vA HvA).
+          rewrite (IHn v Hv).
+          reflexivity.
+        * rewrite (IHn v Hv). reflexivity.
+      + (* extract_node *)
+        intros v Hv.
+        simpl.
+        rewrite (lookup_node_agree v Hv).
+        destruct (EX.lookup_node b v) eqn:Hlbl; simpl; try reflexivity.
+        * (* nPi *)
+          rewrite (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|vA [|vB xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          (* show vA,vB < n via closedness on succ list *)
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [vA; vB] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHv vA H2).
+          inversion H4; subst.
+          rewrite (IHv vB H5).
+          reflexivity.
+        * (* nLam *)
+          rewrite (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|vA [|vt xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [vA; vt] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHv vA H2).
+          inversion H4; subst.
+          rewrite (IHv vt H5).
+          reflexivity.
+        * (* nApp *)
+          rewrite (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|vf [|va xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [vf; va] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHv vf H2).
+          inversion H4; subst.
+          rewrite (IHv va H5).
+          reflexivity.
+        * (* nRoll *)
+          rewrite (lookup_succ_agree v Hv).
+          unfold EX.lookup_succ.
+          destruct (RO.b_succ b !! v) as [xs|] eqn:Hsv; simpl; [|reflexivity].
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v xs Hsv Hv).
+          (* use map congruence on take/drop *)
+          rewrite !map_take, !map_drop.
+          rewrite (Hmap xs Hsucc).
+          reflexivity.
+        * (* nCase *)
+          rewrite (lookup_succ_agree v Hv).
+          unfold EX.lookup_succ.
+          destruct (RO.b_succ b !! v) as [xs|] eqn:Hsv; simpl; [|reflexivity].
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v xs Hsv Hv).
+          (* the map over take nbrs brs is also preserved *)
+          rewrite (Hmap xs Hsucc).
+          reflexivity.
+        * (* nBack *)
+          rewrite (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|tgt [|sv xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          destruct (ρ !! tgt); try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [tgt; sv] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHs sv).
+          { reflexivity. }
+          (* sv < n *)
+          inversion H4; subst; assumption.
+      + (* subst_args *)
+        intros sv Hsv.
+        simpl.
+        rewrite (lookup_node_agree sv Hsv).
+        destruct (EX.lookup_node b sv); try reflexivity.
+        * (* nSubstCons *)
+          rewrite (lookup_succ_agree sv Hsv).
+          destruct (EX.lookup_succ b sv) as [|u [|sv_tail xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! sv) as [succ|] eqn:Hsvs; simpl in *; try discriminate.
+          inversion Hsvs; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc sv [u; sv_tail] eq_refl Hsv).
+          inversion Hsucc; subst.
+          rewrite (IHv u H2).
+          inversion H4; subst.
+          rewrite (IHs sv_tail H5).
+          reflexivity.
+  Qed.
+End ExtractExt.
 
 (**
   Main round-trip theorem.
