@@ -25,6 +25,7 @@
     Transform.CyclicRules
     Transform.CaseCase
     Equiv.Bisimulation
-    Equiv.CIU))
+    Equiv.CIU
+    Equiv.CIUJudgement))
 
 
