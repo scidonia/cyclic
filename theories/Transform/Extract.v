@@ -74,29 +74,29 @@ Section Extract.
   with extract_node (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) : T.tm :=
     match fuel with
     | 0 => T.tVar 0
-    | S fuel' =>
+    | S _ =>
         match lookup_node b v with
         | RO.nVar x => T.tVar x
         | RO.nSort i => T.tSort i
         | RO.nPi =>
             match lookup_succ b v with
             | [vA; vB] =>
-                let A := extract_v fuel' b ρ vA in
-                let B := extract_v fuel' b (env_shift ρ) vB in
+                let A := extract_v fuel b ρ vA in
+                let B := extract_v fuel b (env_shift ρ) vB in
                 T.tPi A B
             | _ => T.tVar 0
             end
         | RO.nLam =>
             match lookup_succ b v with
             | [vA; vt] =>
-                let A := extract_v fuel' b ρ vA in
-                let t := extract_v fuel' b (env_shift ρ) vt in
+                let A := extract_v fuel b ρ vA in
+                let t := extract_v fuel b (env_shift ρ) vt in
                 T.tLam A t
             | _ => T.tVar 0
             end
         | RO.nApp =>
             match lookup_succ b v with
-            | [vf; va] => T.tApp (extract_v fuel' b ρ vf) (extract_v fuel' b ρ va)
+            | [vf; va] => T.tApp (extract_v fuel b ρ vf) (extract_v fuel b ρ va)
             | _ => T.tVar 0
             end
         | RO.nInd ind => T.tInd ind
@@ -104,12 +104,12 @@ Section Extract.
             let xs := lookup_succ b v in
             let ps := take nparams xs in
             let rs := drop nparams xs in
-            T.tRoll ind ctor (map (extract_v fuel' b ρ) ps) (map (extract_v fuel' b ρ) rs)
+            T.tRoll ind ctor (map (extract_v fuel b ρ) ps) (map (extract_v fuel b ρ) rs)
         | RO.nCase ind nbrs =>
             match lookup_succ b v with
             | vscrut :: vC :: brs =>
-                T.tCase ind (extract_v fuel' b ρ vscrut) (extract_v fuel' b ρ vC)
-                  (map (extract_v fuel' b ρ) (take nbrs brs))
+                T.tCase ind (extract_v fuel b ρ vscrut) (extract_v fuel b ρ vC)
+                  (map (extract_v fuel b ρ) (take nbrs brs))
             | _ => T.tVar 0
             end
         | RO.nSubstNil _ =>
@@ -124,7 +124,7 @@ Section Extract.
                 (* Backlink becomes a call to the synthesized fix binder for `target`. *)
                 match ρ !! target with
                 | Some k =>
-                    apps (T.tVar k) (subst_args fuel' b ρ sv)
+                    apps (T.tVar k) (subst_args fuel b ρ sv)
                 | None =>
                     (* Backlink without an enclosing synthesized fix binder. *)
                     T.tVar 0
@@ -152,7 +152,13 @@ Section Extract.
   Definition extract (b : RO.builder) (root : nat) : T.tm :=
     extract_v (RO.b_next b + 1) b (∅ : fix_env) root.
 
+  (** Specialised extraction for round-trip proofs.
+
+      When extracting from `read_off_raw t`, we can use a fuel based on the
+      syntactic size of `t`. This avoids having the fuel depend on graph size,
+      which simplifies the read-off/extract correctness proof.
+  *)
   Definition extract_read_off (t : T.tm) : T.tm :=
     let '(root, b) := RO.read_off_raw t in
-    extract b root.
+    extract_v (T.size t + 1) b (∅ : fix_env) root.
 End Extract.

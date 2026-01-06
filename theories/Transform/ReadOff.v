@@ -90,6 +90,16 @@ Section ReadOff.
        b_succ := b.(b_succ);
        b_fix_ty := <[v := vA]> b.(b_fix_ty) |}.
 
+  Fixpoint build_subst_chain (us : list nat) (sv_tail : nat) (b : builder)
+    {struct us} : nat * builder :=
+    match us with
+    | [] => (sv_tail, b)
+    | u :: us =>
+        let '(sv_tail', b1) := build_subst_chain us sv_tail b in
+        let '(sv_head, b2) := fresh b1 in
+        (sv_head, put sv_head (nSubstCons 0) [u; sv_tail'] b2)
+    end.
+
   Fixpoint compile_tm (fuel : nat) (ρ : back_env) (t : T.tm) (b : builder)
     {struct fuel} : nat * builder :=
     match fuel with
@@ -97,15 +107,6 @@ Section ReadOff.
         let '(v, b1) := fresh b in
         (v, put v (nVar 0) [] b1)
     | S fuel' =>
-        let fix compile_list (ts : list T.tm) (b : builder) {struct ts} : list nat * builder :=
-          match ts with
-          | [] => ([], b)
-          | t :: ts =>
-              let '(v, b1) := compile_tm fuel' ρ t b in
-              let '(vs, b2) := compile_list ts b1 in
-              (v :: vs, b2)
-          end
-        in
         match t with
         | T.tVar x =>
             let '(v, b1) := fresh b in
@@ -116,16 +117,16 @@ Section ReadOff.
             (v, put v (nSort i) [] b1)
 
         | T.tPi A B =>
-            let '(v, b0) := fresh b in
-            let '(vA, b1) := compile_tm fuel' ρ A b0 in
+            let '(vA, b1) := compile_tm fuel' ρ A b in
             let '(vB, b2) := compile_tm fuel' (None :: ρ) B b1 in
-            (v, put v nPi [vA; vB] b2)
+            let '(v, b3) := fresh b2 in
+            (v, put v nPi [vA; vB] b3)
 
         | T.tLam A t =>
-            let '(v, b0) := fresh b in
-            let '(vA, b1) := compile_tm fuel' ρ A b0 in
+            let '(vA, b1) := compile_tm fuel' ρ A b in
             let '(vt, b2) := compile_tm fuel' (None :: ρ) t b1 in
-            (v, put v nLam [vA; vt] b2)
+            let '(v, b3) := fresh b2 in
+            (v, put v nLam [vA; vt] b3)
 
         | T.tApp t1 u1 =>
             (* Backlink detection uses the full spine. *)
@@ -135,7 +136,7 @@ Section ReadOff.
                 match nth_error ρ x with
                 | Some (Some target) =>
                     (* Compile each argument as a vertex. *)
-                    let '(v_args, b1) := compile_list args b in
+                    let '(v_args, b1) := compile_list fuel' ρ args b in
                     (* Build an explicit substitution evidence chain.
 
                        We represent substitutions as linked vertices:
@@ -147,30 +148,22 @@ Section ReadOff.
                     *)
                     let '(sv_nil, b2) := fresh b1 in
                     let b3 := put sv_nil (nSubstNil 0) [] b2 in
-                    let '(sv, b4) :=
-                      fold_right
-                        (fun u acc =>
-                           let '(sv_tail, b_acc) := acc in
-                           let '(sv_head, b_head0) := fresh b_acc in
-                           (sv_head, put sv_head (nSubstCons 0) [u; sv_tail] b_head0))
-                        (sv_nil, b3)
-                        v_args
-                    in
+                    let '(sv, b4) := build_subst_chain v_args sv_nil b3 in
                     (* Allocate the backlink node `v` pointing to target and substitution. *)
                     let '(v, b5) := fresh b4 in
                     let b6 := put v nBack [target; sv] b5 in
                     (v, b6)
                 | _ =>
-                    let '(v, b0) := fresh b in
-                    let '(v1, b1) := compile_tm fuel' ρ t1 b0 in
+                    let '(v1, b1) := compile_tm fuel' ρ t1 b in
                     let '(v2, b2) := compile_tm fuel' ρ u1 b1 in
-                    (v, put v nApp [v1; v2] b2)
+                    let '(v, b3) := fresh b2 in
+                    (v, put v nApp [v1; v2] b3)
                 end
             | _ =>
-                let '(v, b0) := fresh b in
-                let '(v1, b1) := compile_tm fuel' ρ t1 b0 in
+                let '(v1, b1) := compile_tm fuel' ρ t1 b in
                 let '(v2, b2) := compile_tm fuel' ρ u1 b1 in
-                (v, put v nApp [v1; v2] b2)
+                let '(v, b3) := fresh b2 in
+                (v, put v nApp [v1; v2] b3)
             end
 
         | T.tFix A body =>
@@ -200,19 +193,30 @@ Section ReadOff.
             (v, put v (nInd ind) [] b1)
 
         | T.tRoll ind ctor params recs =>
-            let '(v, b0) := fresh b in
-            let '(vps, b1) := compile_list params b0 in
-            let '(vrs, b2) := compile_list recs b1 in
-            (v, put v (nRoll ind ctor (length vps) (length vrs)) (vps ++ vrs) b2)
+            let '(vps, b1) := compile_list fuel' ρ params b in
+            let '(vrs, b2) := compile_list fuel' ρ recs b1 in
+            let '(v, b3) := fresh b2 in
+            (v, put v (nRoll ind ctor (length vps) (length vrs)) (vps ++ vrs) b3)
 
         | T.tCase ind scrut C brs =>
-            let '(v, b0) := fresh b in
-            let '(vscrut, b1) := compile_tm fuel' ρ scrut b0 in
+            let '(vscrut, b1) := compile_tm fuel' ρ scrut b in
             let '(vC, b2) := compile_tm fuel' ρ C b1 in
-            let '(vbrs, b3) := compile_list brs b2 in
-            (v, put v (nCase ind (length vbrs)) ([vscrut; vC] ++ vbrs) b3)
-        end
+            let '(vbrs, b3) := compile_list fuel' ρ brs b2 in
+            let '(v, b4) := fresh b3 in
+            (v, put v (nCase ind (length vbrs)) ([vscrut; vC] ++ vbrs) b4)
+         end
+     end
+
+  with compile_list (fuel : nat) (ρ : back_env) (ts : list T.tm) (b : builder)
+    {struct ts} : list nat * builder :=
+    match ts with
+    | [] => ([], b)
+    | t :: ts =>
+        let '(v, b1) := compile_tm fuel ρ t b in
+        let '(vs, b2) := compile_list fuel ρ ts b1 in
+        (v :: vs, b2)
     end.
+
 
   Definition read_off_raw (t : T.tm) : nat * builder :=
     compile_tm (T.size t) [] t empty_builder.
