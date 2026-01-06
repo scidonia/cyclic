@@ -126,6 +126,30 @@ Proof.
       reflexivity.
 Qed.
 
+(** Term-level application spine (left-associated). *)
+Fixpoint apps_tm (t : T.tm) (us : list T.tm) : T.tm :=
+  match us with
+  | [] => t
+  | u :: us => apps_tm (T.tApp t u) us
+  end.
+
+Lemma app_view_correct (t : T.tm) :
+  let '(h, args) := RO.app_view t in
+  t = apps_tm h args.
+Proof.
+  induction t; simpl; try reflexivity.
+  (* tApp case *)
+  destruct (RO.app_view t1) as [h args] eqn:H.
+  simpl.
+  rewrite IHt1.
+  (* show: apps_tm h (args ++ [t2]) = apps_tm (apps_tm h args) [t2] *)
+  clear IHt1.
+  revert h.
+  induction args as [|a args IH]; intro h; simpl.
+  - reflexivity.
+  - rewrite IH. reflexivity.
+Qed.
+
 (**
   Main round-trip theorem.
 
