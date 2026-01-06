@@ -7,7 +7,6 @@ From Cyclic.Judgement Require Import Typing.
 From Cyclic.Equiv Require Import CIUJudgement.
 
 Import ListNotations.
-Import Term.Syntax.
 
 Set Default Proof Using "Type".
 
@@ -19,18 +18,132 @@ Module Ty := Typing.Typing.
 (**
   Read-off/extract correctness bridge.
 
-  This file closes the loop needed by proof-level transforms:
-  it shows that `extract_read_off` is semantically the identity at the level of
-  judgement-CIU (`ciu_jTy`).
+  This file closes the loop needed by proof-level transforms.
 
-  We prove a stronger statement first: on the nose syntactic identity of the
-  raw pipeline (`extract_read_off t = t`). The CIU lemma is then immediate by
-  reflexivity/`ciu_jTy_of_eq`.
+  Target theorem (bridge):
+
+    `extract_read_off_ciu : ciu_jTy Σ Γ t (extract_read_off t) A`
+
+  We currently prove this via a stronger, syntactic round-trip lemma:
+
+    `extract_read_off_id : extract_read_off t = t`.
+
+  This is the main remaining isomorphism law for the raw pipeline.
 *)
 
+(** Build the extraction fix environment from a compilation back environment.
+
+    This matches the intended correspondence:
+    - entering a binder (`None :: ρ`) shifts indices
+    - entering a fix (`Some target :: ρ`) both shifts and binds the target to 0
+*)
+Fixpoint fix_env_of (ρ : RO.back_env) : EX.fix_env :=
+  match ρ with
+  | [] => (∅ : EX.fix_env)
+  | None :: ρ' => EX.env_shift (fix_env_of ρ')
+  | Some target :: ρ' => <[target := 0]> (EX.env_shift (fix_env_of ρ'))
+  end.
+
+Lemma fix_env_of_nil : fix_env_of [] = (∅ : EX.fix_env).
+Proof. reflexivity. Qed.
+
+Lemma fix_env_of_cons_none (ρ : RO.back_env) :
+  fix_env_of (None :: ρ) = EX.env_shift (fix_env_of ρ).
+Proof. reflexivity. Qed.
+
+Lemma fix_env_of_cons_some (v : nat) (ρ : RO.back_env) :
+  fix_env_of (Some v :: ρ) = <[v := 0]> (EX.env_shift (fix_env_of ρ)).
+Proof. reflexivity. Qed.
+
+Fixpoint targets_of (ρ : RO.back_env) : list nat :=
+  match ρ with
+  | [] => []
+  | None :: ρ' => targets_of ρ'
+  | Some v :: ρ' => v :: targets_of ρ'
+  end.
+
+Definition nodup_targets (ρ : RO.back_env) : Prop := NoDup (targets_of ρ).
+
+Lemma nodup_targets_tail (o : option nat) (ρ : RO.back_env) :
+  nodup_targets (o :: ρ) -> nodup_targets ρ.
+Proof.
+  intro H.
+  destruct o; simpl in *.
+  - inversion H; subst; assumption.
+  - exact H.
+Qed.
+
+Lemma fix_env_of_nth_some (ρ : RO.back_env) (x target : nat) :
+  nodup_targets ρ ->
+  nth_error ρ x = Some (Some target) ->
+  fix_env_of ρ !! target = Some x.
+Proof.
+  revert x.
+  induction ρ as [|o ρ IH]; intros [|x] Hnd H; simpl in *.
+  - discriminate.
+  - discriminate.
+  - destruct o; simpl in H.
+    + inversion H; subst.
+      rewrite fix_env_of_cons_some.
+      rewrite lookup_insert.
+      reflexivity.
+    + discriminate.
+  - destruct o as [v|].
+    + simpl in H.
+      rewrite fix_env_of_cons_some.
+      specialize (IH x (nodup_targets_tail _ _ Hnd) H).
+      (* target comes from tail, so it cannot be v by NoDup *)
+      assert (target <> v).
+      { intro ->.
+        (* v appears at head and also in tail at index x *)
+        inversion Hnd as [|?? Hnotin]; subst.
+        apply Hnotin.
+        (* show v in targets_of ρ using nth_error hypothesis *)
+        clear -H.
+        revert ρ H.
+        induction x as [|x IHx]; intros ρ H.
+        - destruct ρ as [|o ρ']; simpl in H; try discriminate.
+          destruct o; inversion H; subst; simpl; auto.
+        - destruct ρ as [|o ρ']; simpl in H; try discriminate.
+          destruct o; simpl.
+          + right. eapply IHx. exact H.
+          + eapply IHx. exact H.
+      }
+      rewrite lookup_insert_ne by exact H0.
+      unfold EX.env_shift.
+      rewrite lookup_fmap.
+      rewrite IH.
+      simpl.
+      reflexivity.
+    + (* None binder *)
+      simpl in H.
+      rewrite fix_env_of_cons_none.
+      specialize (IH x (nodup_targets_tail _ _ Hnd) H).
+      unfold EX.env_shift.
+      rewrite lookup_fmap.
+      rewrite IH.
+      simpl.
+      reflexivity.
+Qed.
+
+(**
+  Main round-trip theorem.
+
+  NOTE: This is still in progress. The intended proof is by induction on the fuel
+  in `RO.compile_tm`, maintaining invariants relating:
+  - the compilation back environment `ρ`
+  - the extraction fix environment `fix_env_of ρ`
+  - the fact that every `Some target` in `ρ` is a previously allocated vertex
+    (so extraction introduces `fix` binders exactly at cycle targets)
+
+  The only currently open sub-lemma above is the freshness/no-duplication fact
+  needed to finish `fix_env_of_nth_some` cleanly.
+*)
 Theorem extract_read_off_id (t : T.tm) : EX.extract_read_off t = t.
 Proof.
-  (* TODO: full round-trip proof. *)
+  unfold EX.extract_read_off, RO.read_off_raw, EX.extract.
+  cbn.
+  (* TODO: prove that extracting the compiled root yields `t`. *)
 Admitted.
 
 Theorem extract_read_off_ciu
