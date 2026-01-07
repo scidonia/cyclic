@@ -1,4 +1,4 @@
-From Stdlib Require Import Utf8.
+From Stdlib Require Import List Utf8.
 
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Semantics Require Import Cbn.
@@ -68,5 +68,5 @@ Qed.
 Lemma ciu_jTy_of_eq (Σenv : Ty.env) (Γ : Ty.ctx) (t u A : tm) :
   t = u -> ciu_jTy Σenv Γ t u A.
 Proof.
-  intro ->. apply ciu_jTy_refl.
+  intros ->. apply ciu_jTy_refl.
 Qed.

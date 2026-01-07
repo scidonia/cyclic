@@ -1,5 +1,7 @@
 From Stdlib Require Import Utf8.
 
+From Autosubst Require Import Autosubst.
+
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Semantics Require Import Cbn.
 
@@ -45,5 +47,5 @@ Qed.
 
 Lemma ciu_of_eq (t u : tm) : t = u -> ciu t u.
 Proof.
-  intro ->. apply ciu_refl.
+  intros ->. apply ciu_refl.
 Qed.
