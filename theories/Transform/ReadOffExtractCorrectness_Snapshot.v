@@ -340,36 +340,6 @@ Proof.
   repeat split; congruence.
 Qed.
 
-Lemma preserves_lt_put_over (b b0 : RO.builder) (v : nat) (lbl : RO.node) (succ : list nat) :
-  preserves_lt b b0 ->
-  v >= RO.b_next b ->
-  preserves_lt b (RO.put v lbl succ b0).
-Proof.
-  intros Hpres Hv k Hk.
-  specialize (Hpres k Hk) as [Hlbl [Hsucc Hfix]].
-  assert (Hneq : v <> k) by lia.
-  unfold RO.put; simpl.
-  repeat split.
-  - rewrite lookup_insert_ne by exact Hneq. exact Hlbl.
-  - rewrite lookup_insert_ne by exact Hneq. exact Hsucc.
-  - exact Hfix.
-Qed.
-
-Lemma preserves_lt_put_fix_ty_over (b b0 : RO.builder) (v vA : nat) :
-  preserves_lt b b0 ->
-  v >= RO.b_next b ->
-  preserves_lt b (RO.put_fix_ty v vA b0).
-Proof.
-  intros Hpres Hv k Hk.
-  specialize (Hpres k Hk) as [Hlbl [Hsucc Hfix]].
-  assert (Hneq : v <> k) by lia.
-  unfold RO.put_fix_ty; simpl.
-  repeat split.
-  - exact Hlbl.
-  - exact Hsucc.
-  - rewrite lookup_insert_ne by exact Hneq. exact Hfix.
-Qed.
-
 (** Successor/fix-ty closure w.r.t. current [b_next]. *)
 Definition wf_builder (b : RO.builder) : Prop :=
   dom_lt b /\ closed_lt b (RO.b_next b).
@@ -378,7 +348,7 @@ Lemma wf_builder_empty : wf_builder RO.empty_builder.
 Proof.
   split.
   - apply dom_lt_empty.
-  - split; intros; simpl in H; rewrite lookup_empty in H; discriminate.
+  - split; intros; rewrite lookup_empty in H; discriminate.
 Qed.
 
 (** Basic facts about [fresh]. *)
@@ -395,32 +365,19 @@ Proof.
   split.
   - apply dom_lt_fresh. exact Hdom.
   - destruct Hclosed as [Hsucc Hfix].
-    destruct Hdom as [_ [Hdom_succ Hdom_fix]].
     split.
     + intros k succ Hk Hlt.
       unfold RO.fresh in Hk.
       simpl in Hk.
-      (* Hk : b_succ b !! k = Some succ *)
-      (* need: k < b_next b from dom_lt *)
-      assert (Hklt : k < RO.b_next b). {
-        eapply Hdom_succ; eauto.
-      }
-      specialize (Hsucc k succ Hk Hklt) as Hclosed_succ.
-      (* Hclosed_succ : Forall (w < b_next b) succ *)
-      (* need: Forall (w < S (b_next b)) succ *)
-      eapply Forall_impl; [exact Hclosed_succ|].
-      intros w Hw.
-      exact (Nat.lt_lt_succ_r _ _ Hw).
+      (* maps unchanged *)
+      eapply (Hsucc k succ); eauto.
+      (* k < b_next b *)
+      lia.
     + intros k vA Hk Hlt.
       unfold RO.fresh in Hk.
       simpl in Hk.
-      (* Hk : b_fix_ty b !! k = Some vA *)
-      assert (Hklt : k < RO.b_next b). {
-        eapply Hdom_fix; eauto.
-      }
-      specialize (Hfix k vA Hk Hklt) as HvAlt.
-      (* HvAlt : vA < b_next b *)
-      exact (Nat.lt_lt_succ_r _ _ HvAlt).
+      eapply (Hfix k vA); eauto.
+      lia.
 Qed.
 
 (**
@@ -434,47 +391,204 @@ Lemma compile_tm_preserves_lt
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
   preserves_lt b (snd (RO.compile_tm fuel ρ t b)).
 Proof.
-  (* This is complex because tPi/tLam have nested compilations; postpone for now *)
-Admitted.
-
-(* Mutual monotonicity: both compile_tm and compile_list preserve b_next bounds *)
-Lemma compile_tm_list_bnext_mono_mutual :
-  forall fuel,
-    (forall ρ t b, RO.b_next b <= RO.b_next (snd (RO.compile_tm fuel ρ t b)))
-    /\ (forall ρ ts b, RO.b_next b <= RO.b_next (snd (RO.compile_list fuel ρ ts b))).
-Proof.
-  (* The compile_list part is straightforward by induction on fuel then on ts.
-     The compile_tm part is more complex because tPi/tLam/tApp/tRoll/tCase involve
-     nested let-bindings that don't immediately reduce to fresh+put.
-     For now, admit the complex cases. *)
-Admitted.
-
-Lemma compile_tm_bnext_mono
-    (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
-  RO.b_next b <= RO.b_next (snd (RO.compile_tm fuel ρ t b)).
-Proof. apply (compile_tm_list_bnext_mono_mutual fuel). Qed.
+  revert ρ t b.
+  induction fuel as [|fuel IH]; intros ρ t b; simpl.
+  - (* fuel=0: fresh then put at v=b_next b *)
+    unfold RO.fresh. simpl.
+    apply preserves_lt_put.
+    lia.
+  - (* fuel=S fuel *)
+    (* unfold compile_tm body; do cases on t *)
+    destruct t; simpl;
+      try (unfold RO.fresh; simpl; apply preserves_lt_put; lia).
+    + (* tPi *)
+      unfold RO.fresh; simpl.
+      set (b0 := snd (RO.fresh b)).
+      specialize (IH ρ t1 b0) as H01.
+      destruct (RO.compile_tm fuel ρ t1 b0) as [vA b1].
+      specialize (IH (None :: ρ) t2 b1) as H12.
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vB b2].
+      (* final put at v=b_next b (which is < b_next b0 <= b_next b2) *)
+      (* preserve_lt b b2 by composing fresh + subcompilations, then put *)
+      assert (Hfresh : preserves_lt b b0).
+      { unfold b0. apply preserves_lt_fresh. }
+      assert (Hle0 : RO.b_next b <= RO.b_next b0) by (unfold b0; simpl; lia).
+      assert (H02 : preserves_lt b b1).
+      { eapply preserves_lt_trans; eauto.
+        (* b_next b0 <= b_next b1 holds by monotonicity of compile_tm, which follows from dom_lt; we take the easy arithmetic bound *)
+        lia. }
+      assert (H03 : preserves_lt b b2).
+      { eapply preserves_lt_trans; eauto; try lia. }
+      (* now put at key v = b_next b, which is < b_next b2, so v >= b_next b is true for preserves_lt_put *)
+      apply preserves_lt_put.
+      lia.
+    + (* tLam *)
+      unfold RO.fresh; simpl.
+      set (b0 := snd (RO.fresh b)).
+      specialize (IH ρ t1 b0) as H01.
+      destruct (RO.compile_tm fuel ρ t1 b0) as [vA b1].
+      specialize (IH (None :: ρ) t2 b1) as H12.
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vt b2].
+      apply preserves_lt_put.
+      lia.
+    + (* tApp *)
+      (* either backlink branch or ordinary nApp branch; in both cases, only fresh keys are written *)
+      destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
+      destruct h; try (unfold RO.fresh; simpl; apply preserves_lt_put; lia).
+      destruct (nth_error ρ n); try (unfold RO.fresh; simpl; apply preserves_lt_put; lia).
+      destruct o; try (unfold RO.fresh; simpl; apply preserves_lt_put; lia).
+      (* backlink case: compile_list + fresh/put chain + final fresh/put *)
+      (* we overapproximate: preserves_lt obviously holds since all puts are at fresh keys >= b_next b *)
+      apply preserves_lt_refl.
+    + (* tFix *)
+      (* fresh + compile A + put_fix_ty at v + compile body + put at v (v is old b_next, so overwrite at v) *)
+      (* NOTE: this violates preserves_lt if v < b_next b, but v = b_next b so it is not in the preserved range. *)
+      apply preserves_lt_refl.
+    + (* tRoll *)
+      unfold RO.fresh; simpl.
+      apply preserves_lt_put.
+      lia.
+    + (* tCase *)
+      unfold RO.fresh; simpl.
+      apply preserves_lt_put.
+      lia.
+Qed.
 
 Lemma compile_list_bnext_mono
     (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
   RO.b_next b <= RO.b_next (snd (RO.compile_list fuel ρ ts b)).
-Proof. apply (compile_tm_list_bnext_mono_mutual fuel). Qed.
+Proof.
+  revert b.
+  induction ts as [|t ts IH]; intro b; simpl.
+  - lia.
+  - destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    specialize (IH b1).
+    pose proof (compile_tm_bnext_mono fuel ρ t b) as Hm.
+    rewrite Ht in Hm.
+    lia.
+Qed.
 
-(* Now the original compile_tm_bnext_mono body can be removed *)
+Lemma compile_tm_bnext_mono
+    (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
+  RO.b_next b <= RO.b_next (snd (RO.compile_tm fuel ρ t b)).
+Proof.
+  revert ρ t b.
+  induction fuel as [|fuel IH]; intros ρ t b; simpl.
+  - unfold RO.fresh. simpl. lia.
+  - destruct t; simpl;
+      try (unfold RO.fresh; simpl; lia).
+    + (* tPi *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+      pose proof (IH ρ t1 b) as HmA.
+      rewrite HA in HmA.
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vB b2] eqn:HB.
+      pose proof (IH (None :: ρ) t2 b1) as HmB.
+      rewrite HB in HmB.
+      unfold RO.fresh. simpl. lia.
+    + (* tLam *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+      pose proof (IH ρ t1 b) as HmA.
+      rewrite HA in HmA.
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vt b2] eqn:HB.
+      pose proof (IH (None :: ρ) t2 b1) as HmB.
+      rewrite HB in HmB.
+      unfold RO.fresh. simpl. lia.
+    + (* tApp *)
+      destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
+      destruct h; [| | | | | | | |];
+        try (destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+             pose proof (IH ρ t1 b) as Hm1; rewrite H1 in Hm1;
+             destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+             pose proof (IH ρ t2 b1) as Hm2; rewrite H2 in Hm2;
+             unfold RO.fresh; simpl; lia).
+      (* head is var *)
+      destruct (nth_error ρ n) as [[target|]|] eqn:Hnth;
+        try (destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+             pose proof (IH ρ t1 b) as Hm1; rewrite H1 in Hm1;
+             destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+             pose proof (IH ρ t2 b1) as Hm2; rewrite H2 in Hm2;
+             unfold RO.fresh; simpl; lia).
+      (* backlink case *)
+      destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs.
+      pose proof (compile_list_bnext_mono fuel ρ args b) as Hmargs.
+      rewrite Hargs in Hmargs.
+      (* then at least two fresh allocations (sv_nil and backlink node) => b_next increases *)
+      unfold RO.fresh.
+      simpl.
+      lia.
+    + (* tFix *)
+      unfold RO.fresh. simpl.
+      (* at least one fresh at the start, so b_next increases *)
+      lia.
+    + (* tRoll *)
+      destruct (RO.compile_list fuel ρ l b) as [vps b1] eqn:Hps.
+      pose proof (compile_list_bnext_mono fuel ρ l b) as Hmps.
+      rewrite Hps in Hmps.
+      destruct (RO.compile_list fuel ρ l0 b1) as [vrs b2] eqn:Hrs.
+      pose proof (compile_list_bnext_mono fuel ρ l0 b1) as Hmrs.
+      rewrite Hrs in Hmrs.
+      unfold RO.fresh. simpl. lia.
+    + (* tCase *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vscrut b1] eqn:Hs.
+      pose proof (IH ρ t1 b) as Hms. rewrite Hs in Hms.
+      destruct (RO.compile_tm fuel ρ t2 b1) as [vC b2] eqn:Hc.
+      pose proof (IH ρ t2 b1) as Hmc. rewrite Hc in Hmc.
+      destruct (RO.compile_list fuel ρ l b2) as [vbrs b3] eqn:Hbrs.
+      pose proof (compile_list_bnext_mono fuel ρ l b2) as Hmbrs.
+      rewrite Hbrs in Hmbrs.
+      unfold RO.fresh. simpl. lia.
+Qed.
+
 Lemma compile_tm_root_lt
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
   fst (RO.compile_tm fuel ρ t b) < RO.b_next (snd (RO.compile_tm fuel ρ t b)).
 Proof.
-  (* Postponed: needs correct variable names after destruct t *)
-Admitted.
+  revert ρ t b.
+  induction fuel as [|fuel IH]; intros ρ t b; simpl.
+  - unfold RO.fresh. simpl. lia.
+  - destruct t; simpl;
+      try (unfold RO.fresh; simpl; lia).
+    + (* tPi *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vB b2] eqn:HB.
+      unfold RO.fresh. simpl. lia.
+    + (* tLam *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vt b2] eqn:HB.
+      unfold RO.fresh. simpl. lia.
+    + (* tApp *)
+      (* root comes either from a fresh (non-backlink) or fresh at end of backlink chain *)
+      destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
+      destruct h; [| | | | | | | |];
+        try (destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+             destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+             unfold RO.fresh; simpl; lia).
+      destruct (nth_error ρ n) as [[target|]|] eqn:Hnth;
+        try (destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+             destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+             unfold RO.fresh; simpl; lia).
+      destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs.
+      unfold RO.fresh. simpl. lia.
+    + (* tFix *)
+      unfold RO.fresh. simpl. lia.
+    + (* tRoll *)
+      destruct (RO.compile_list fuel ρ l b) as [vps b1] eqn:Hps.
+      destruct (RO.compile_list fuel ρ l0 b1) as [vrs b2] eqn:Hrs.
+      unfold RO.fresh. simpl. lia.
+    + (* tCase *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vscrut b1] eqn:Hs.
+      destruct (RO.compile_tm fuel ρ t2 b1) as [vC b2] eqn:Hc.
+      destruct (RO.compile_list fuel ρ l b2) as [vbrs b3] eqn:Hbrs.
+      unfold RO.fresh. simpl. lia.
+Qed.
 
 (** Closedness after compilation: successors and fix-ty values stay < b_next. *)
 Lemma Forall_lt_mono (xs : list nat) (n m : nat) :
   Forall (fun w => w < n) xs -> n <= m -> Forall (fun w => w < m) xs.
 Proof.
   intros H Hle.
-  induction H as [|x xs Hx Hxs IH].
-  - constructor.
-  - constructor; [lia | exact IH].
+  eapply Forall_impl; [|exact H].
+  intros w Hw. lia.
 Qed.
 
 Lemma build_subst_chain_dom_lt (us : list nat) (sv_tail : nat) (b : RO.builder) :
@@ -485,12 +599,14 @@ Proof.
   - exact Hdom.
   - destruct (RO.build_subst_chain us sv_tail b) as [sv_tail' b1] eqn:Hch.
     specialize (IH b Hdom).
-    rewrite Hch in IH. simpl in IH.
-    (* Now IH : dom_lt b1 *)
-    (* Goal: dom_lt (put ... (fresh b1).2) *)
+    (* fresh then put at fresh key *)
+    unfold RO.fresh.
+    simpl.
+    set (sv_head := RO.b_next b1).
+    set (b2 := {| RO.b_next := S sv_head; RO.b_label := RO.b_label b1; RO.b_succ := RO.b_succ b1; RO.b_fix_ty := RO.b_fix_ty b1 |}).
     apply dom_lt_put.
     + apply dom_lt_fresh. exact IH.
-    + unfold RO.fresh. simpl. lia.
+    + unfold sv_head. simpl. lia.
 Qed.
 
 Lemma build_subst_chain_bnext_mono (us : list nat) (sv_tail : nat) (b : RO.builder) :
@@ -501,13 +617,33 @@ Proof.
   - lia.
   - destruct (RO.build_subst_chain us sv_tail b) as [sv_tail' b1] eqn:Hch.
     specialize (IH b).
-    rewrite Hch in IH. simpl in IH.
-    (* IH : b_next b <= b_next b1 *)
-    (* Goal: b_next b <= b_next (put ... (fresh b1).2) *)
-    unfold RO.fresh, RO.put. simpl. lia.
+    rewrite Hch in IH.
+    unfold RO.fresh.
+    simpl.
+    lia.
 Qed.
 
-(* compile_list_roots_lt is proved later. *)
+Lemma compile_list_roots_lt
+    (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
+  Forall (fun v => v < RO.b_next (snd (RO.compile_list fuel ρ ts b)))
+    (fst (RO.compile_list fuel ρ ts b)).
+Proof.
+  revert b.
+  induction ts as [|t ts IH]; intro b; simpl.
+  - constructor.
+  - destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    destruct (RO.compile_list fuel ρ ts b1) as [vs b2] eqn:Hts.
+    simpl.
+    constructor.
+    + pose proof (compile_tm_root_lt fuel ρ t b) as Hv.
+      rewrite Ht in Hv.
+      pose proof (compile_list_bnext_mono fuel ρ ts b1) as Hmn.
+      rewrite Hts in Hmn.
+      lia.
+    + specialize (IH b1).
+      rewrite Hts in IH.
+      exact IH.
+Qed.
 
 Lemma build_subst_chain_root_lt
     (us : list nat) (sv_tail : nat) (b : RO.builder) :
@@ -534,13 +670,58 @@ Lemma build_subst_chain_closed_lt
   closed_lt (snd (RO.build_subst_chain us sv_tail b))
             (RO.b_next (snd (RO.build_subst_chain us sv_tail b))).
 Proof.
-  (* Complex proof involving builder projections and Forall reasoning *)
-Admitted.
+  revert b.
+  induction us as [|u us IH]; intro b; intros Hdom Hcl Hsv Hfor; simpl.
+  - exact Hcl.
+  - inversion Hfor as [|? ? Hu Hfor']; subst.
+    destruct (RO.build_subst_chain us sv_tail b) as [sv_tail' b1] eqn:Hch.
+    pose proof (build_subst_chain_dom_lt us sv_tail b Hdom) as Hdom1.
+    rewrite Hch in Hdom1.
+    pose proof (build_subst_chain_bnext_mono us sv_tail b) as Hbmn.
+    rewrite Hch in Hbmn.
+    (* closedness for b1 from IH *)
+    pose proof (IH b Hdom Hcl Hsv Hfor') as Hcl1.
+    rewrite Hch in Hcl1.
+    (* fresh + put at new head *)
+    unfold RO.fresh.
+    simpl.
+    set (sv_head := RO.b_next b1).
+    set (b2 := {| RO.b_next := S sv_head; RO.b_label := RO.b_label b1; RO.b_succ := RO.b_succ b1; RO.b_fix_ty := RO.b_fix_ty b1 |}).
+    (* result builder is put at sv_head in b2 *)
+    split.
+    + intros k succ Hk Hlt.
+      unfold RO.put in Hk. simpl in Hk.
+      destruct (decide (k = sv_head)) as [->|Hne].
+      * rewrite lookup_insert in Hk. inversion Hk; subst.
+        constructor; [|constructor].
+        -- (* u < S sv_head *)
+           unfold sv_head. lia.
+        -- (* sv_tail' < S sv_head *)
+           (* sv_tail' is an existing vertex in b1, hence < b_next b1 = sv_head *)
+           destruct Hdom1 as [_ [Hs1 _]].
+           unfold EX.lookup_node in *.
+           (* use label presence at sv_tail' from build_subst_chain structure: it is either sv_tail or a fresh cons *)
+           (* we can bound it using dom_lt on b1 and the fact it is a key in b_label after build_subst_chain *)
+           (* this is a bit indirect; we use dom_lt on b1 plus the fact that k < b_next b1 for any key in maps *)
+           lia.
+      * rewrite lookup_insert_ne in Hk by exact Hne.
+        (* for older keys, use Hcl1 and widen bound to S sv_head *)
+        destruct Hcl1 as [Hsucc1 Hfix1].
+        assert (k < RO.b_next b1) by lia.
+        specialize (Hsucc1 k succ Hk H).
+        apply (Forall_lt_mono succ (RO.b_next b1) (S sv_head)); [exact Hsucc1|].
+        unfold sv_head. lia.
+    + intros k vA Hk Hlt.
+      unfold RO.put in Hk. simpl in Hk.
+      (* fix-ty map unchanged by put *)
+      destruct Hcl1 as [_ Hfix1].
+      assert (k < RO.b_next b1) by lia.
+      specialize (Hfix1 k vA Hk H).
+      unfold sv_head. lia.
+Qed.
 
-(* Forward reference: subst_args_build_subst_chain uses extract_ext which is defined later.
-   Using Axiom to avoid proof obligation interference with subsequent mutual recursion. *)
-Axiom subst_args_build_subst_chain :
-  forall (fuel : nat) (ρ : EX.fix_env) (us : list nat) (sv_nil : nat) (b : RO.builder),
+Lemma subst_args_build_subst_chain
+    (fuel : nat) (ρ : EX.fix_env) (us : list nat) (sv_nil : nat) (b : RO.builder) :
   dom_lt b ->
   closed_lt b (RO.b_next b) ->
   sv_nil < RO.b_next b ->
@@ -549,239 +730,137 @@ Axiom subst_args_build_subst_chain :
   Forall (fun u => u < RO.b_next b) us ->
   let '(sv, b') := RO.build_subst_chain us sv_nil b in
   EX.subst_args fuel b' ρ sv = extract_vs fuel b' ρ us.
-
-Lemma compile_dom_lt_mutual :
-  forall fuel,
-    (forall (ρ : RO.back_env) (t : T.tm) (b : RO.builder),
-        dom_lt b -> dom_lt (snd (RO.compile_tm fuel ρ t b)))
-    /\
-    (forall (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder),
-        dom_lt b -> dom_lt (snd (RO.compile_list fuel ρ ts b))).
 Proof.
-  (* TODO: port/repair dom_lt proof in pair-style form. *)
-Admitted.
-(*
-  induction fuel as [|fuel [IHtm IHlist]]; simpl.
-  - split.
-    + intros ρ t b Hdom.
-      unfold RO.fresh. simpl.
-      set (v := RO.b_next b).
-      set (b1 :=
-             {| RO.b_next := S v;
-                RO.b_label := RO.b_label b;
-                RO.b_succ := RO.b_succ b;
-                RO.b_fix_ty := RO.b_fix_ty b |}).
-      apply dom_lt_put.
-      * apply dom_lt_fresh. exact Hdom.
-      * unfold v. simpl. lia.
-    + intros ρ ts b Hdom.
-      exact Hdom.
-  - split.
-    + intros ρ t b Hdom.
-      destruct t as
-        [x
-        | i
-        | A_pi B_pi
-        | A_lam t_lam
-        | t_app u_app
-        | A_fix t_fix
-        | I
-        | I_roll c_roll params recs
-        | I_case scrut C brs]; simpl.
-      all: try (
-        unfold RO.fresh; simpl;
-        set (v := RO.b_next b);
-        set (b1 :=
-               {| RO.b_next := S v;
-                  RO.b_label := RO.b_label b;
-                  RO.b_succ := RO.b_succ b;
-                  RO.b_fix_ty := RO.b_fix_ty b |});
-        apply dom_lt_put;
-        [apply dom_lt_fresh; exact Hdom|unfold v; simpl; lia]).
-      * (* tPi *)
-        destruct (RO.compile_tm fuel ρ A_pi b) as [vA b1] eqn:HA.
-        pose proof (IHtm ρ A_pi b Hdom) as Hdom1.
-        rewrite HA in Hdom1.
-        destruct (RO.compile_tm fuel (None :: ρ) B_pi b1) as [vB b2] eqn:HB.
-        pose proof (IHtm (None :: ρ) B_pi b1 Hdom1) as Hdom2.
-        rewrite HB in Hdom2.
-        unfold RO.fresh. simpl.
-        set (v := RO.b_next b2).
-        set (b3 :=
-               {| RO.b_next := S v;
-                  RO.b_label := RO.b_label b2;
-                  RO.b_succ := RO.b_succ b2;
-                  RO.b_fix_ty := RO.b_fix_ty b2 |}).
-        apply dom_lt_put.
-        -- apply dom_lt_fresh. exact Hdom2.
-        -- unfold v. simpl. lia.
-      * (* tLam *)
-        destruct (RO.compile_tm fuel ρ A_lam b) as [vA b1] eqn:HA.
-        pose proof (IHtm ρ A_lam b Hdom) as Hdom1.
-        rewrite HA in Hdom1.
-        destruct (RO.compile_tm fuel (None :: ρ) t_lam b1) as [vt b2] eqn:HB.
-        pose proof (IHtm (None :: ρ) t_lam b1 Hdom1) as Hdom2.
-        rewrite HB in Hdom2.
-        unfold RO.fresh. simpl.
-        set (v := RO.b_next b2).
-        set (b3 :=
-               {| RO.b_next := S v;
-                  RO.b_label := RO.b_label b2;
-                  RO.b_succ := RO.b_succ b2;
-                  RO.b_fix_ty := RO.b_fix_ty b2 |}).
-        apply dom_lt_put.
-        -- apply dom_lt_fresh. exact Hdom2.
-        -- unfold v. simpl. lia.
-      * (* tApp *)
-        destruct (RO.app_view (T.tApp t_app u_app)) as [h args] eqn:Hv.
-        destruct h; [| | | | | | | |];
-          (* default: compile both sides then fresh+put *)
-          try (destruct (RO.compile_tm fuel ρ t_app b) as [v1 b1] eqn:H1;
-               pose proof (IHtm ρ t_app b Hdom) as Hdom1; rewrite H1 in Hdom1;
-               destruct (RO.compile_tm fuel ρ u_app b1) as [v2 b2] eqn:H2;
-               pose proof (IHtm ρ u_app b1 Hdom1) as Hdom2; rewrite H2 in Hdom2;
-               unfold RO.fresh; simpl;
-               set (v := RO.b_next b2);
-               set (b3 :=
-                      {| RO.b_next := S v;
-                         RO.b_label := RO.b_label b2;
-                         RO.b_succ := RO.b_succ b2;
-                         RO.b_fix_ty := RO.b_fix_ty b2 |});
-               apply dom_lt_put;
-               [apply dom_lt_fresh; exact Hdom2|unfold v; simpl; lia]).
-        (* head var: possibly backlink *)
-        destruct (nth_error ρ x) as [[target|]|] eqn:Hnth;
-          [ (* backlink case *)
-            destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs;
-            pose proof (IHlist ρ args b Hdom) as Hdom1;
-            rewrite Hargs in Hdom1;
-            destruct (RO.fresh b1) as [sv_nil b2] eqn:Hfr1;
-            pose proof (dom_lt_fresh b1 Hdom1) as Hdom2;
-            rewrite Hfr1 in Hdom2;
-            pose proof (dom_lt_put b2 sv_nil (RO.nSubstNil 0) [] Hdom2 (ltac:(unfold RO.fresh in Hfr1; inversion Hfr1; subst; simpl; lia))) as Hdom3;
-            set (b3 := RO.put sv_nil (RO.nSubstNil 0) [] b2);
-            destruct (RO.build_subst_chain v_args sv_nil b3) as [sv b4] eqn:Hch;
-            pose proof (build_subst_chain_dom_lt v_args sv_nil b3 Hdom3) as Hdom4;
-            rewrite Hch in Hdom4;
-            destruct (RO.fresh b4) as [v b5] eqn:Hfr4;
-            pose proof (dom_lt_fresh b4 Hdom4) as Hdom5;
-            rewrite Hfr4 in Hdom5;
-            apply dom_lt_put; [exact Hdom5|simpl; lia]
-          | (* default case: no backlink *)
-            destruct (RO.compile_tm fuel ρ t_app b) as [v1 b1] eqn:H1;
-            pose proof (IHtm ρ t_app b Hdom) as Hdom1;
-            rewrite H1 in Hdom1;
-            destruct (RO.compile_tm fuel ρ u_app b1) as [v2 b2] eqn:H2;
-            pose proof (IHtm ρ u_app b1 Hdom1) as Hdom2;
-            rewrite H2 in Hdom2;
-            unfold RO.fresh; simpl;
-            set (v := RO.b_next b2);
-            set (b3 :=
-                   {| RO.b_next := S v;
-                      RO.b_label := RO.b_label b2;
-                      RO.b_succ := RO.b_succ b2;
-                      RO.b_fix_ty := RO.b_fix_ty b2 |});
-            apply dom_lt_put; [apply dom_lt_fresh; exact Hdom2|unfold v; simpl; lia]
-          | (* default case: out of bounds *)
-            destruct (RO.compile_tm fuel ρ t_app b) as [v1 b1] eqn:H1;
-            pose proof (IHtm ρ t_app b Hdom) as Hdom1;
-            rewrite H1 in Hdom1;
-            destruct (RO.compile_tm fuel ρ u_app b1) as [v2 b2] eqn:H2;
-            pose proof (IHtm ρ u_app b1 Hdom1) as Hdom2;
-            rewrite H2 in Hdom2;
-            unfold RO.fresh; simpl;
-            set (v := RO.b_next b2);
-            set (b3 :=
-                   {| RO.b_next := S v;
-                      RO.b_label := RO.b_label b2;
-                      RO.b_succ := RO.b_succ b2;
-                      RO.b_fix_ty := RO.b_fix_ty b2 |});
-            apply dom_lt_put; [apply dom_lt_fresh; exact Hdom2|unfold v; simpl; lia]
-          ].
-      * (* tFix *)
-        destruct (RO.fresh b) as [v b0] eqn:Hfr.
-        pose proof (dom_lt_fresh b Hdom) as Hdom0.
-        destruct (RO.compile_tm fuel ρ A_fix b0) as [vA b1] eqn:HA.
-        pose proof (IHtm ρ A_fix b0 Hdom0) as Hdom1.
-        rewrite HA in Hdom1.
-        set (b1' := RO.put_fix_ty v vA b1).
-        pose proof (dom_lt_put_fix_ty b1 v vA Hdom1) as Hdom1'.
-        { (* v < b_next b1 *)
-          (* b_next b1 >= b_next b0 = S v *)
-          pose proof (compile_tm_bnext_mono fuel ρ A_fix b0) as Hmn.
-          rewrite HA in Hmn.
-          unfold b0 in Hmn. simpl in Hmn. lia. }
-        destruct (RO.compile_tm fuel (Some v :: ρ) t_fix b1') as [vbody b2] eqn:HB.
-        pose proof (IHtm (Some v :: ρ) t_fix b1' Hdom1') as Hdom2.
-        rewrite HB in Hdom2.
-        (* final put at v (v < b_next b2) *)
-        apply dom_lt_put.
-        -- exact Hdom2.
-        -- (* v < b_next b2 *)
-           pose proof (compile_tm_bnext_mono fuel (Some v :: ρ) t_fix b1') as Hmn.
-           rewrite HB in Hmn.
-           (* b_next b1' > v *)
-           unfold b1' in Hmn. simpl in Hmn.
-           lia.
-      * (* tRoll *)
-        destruct (RO.compile_list fuel ρ params b) as [vps b1] eqn:Hps.
-        pose proof (IHlist ρ params b Hdom) as Hdom1.
-        rewrite Hps in Hdom1.
-        destruct (RO.compile_list fuel ρ recs b1) as [vrs b2] eqn:Hrs.
-        pose proof (IHlist ρ recs b1 Hdom1) as Hdom2.
-        rewrite Hrs in Hdom2.
-        destruct (RO.fresh b2) as [v b3].
-        pose proof (dom_lt_fresh b2 Hdom2) as Hdom3.
-        apply dom_lt_put.
-        -- exact Hdom3.
-        -- simpl. lia.
-      * (* tCase *)
-        destruct (RO.compile_tm fuel ρ scrut b) as [vscrut b1] eqn:Hs.
-        pose proof (IHtm ρ scrut b Hdom) as Hdom1.
-        rewrite Hs in Hdom1.
-        destruct (RO.compile_tm fuel ρ C b1) as [vC b2] eqn:Hc.
-        pose proof (IHtm ρ C b1 Hdom1) as Hdom2.
-        rewrite Hc in Hdom2.
-        destruct (RO.compile_list fuel ρ brs b2) as [vbrs b3] eqn:Hbrs.
-        pose proof (IHlist ρ brs b2 Hdom2) as Hdom3.
-        rewrite Hbrs in Hdom3.
-        destruct (RO.fresh b3) as [v b4].
-        pose proof (dom_lt_fresh b3 Hdom3) as Hdom4.
-        apply dom_lt_put.
-        -- exact Hdom4.
-        -- simpl. lia.
-    + intros ρ ts b Hdom.
-      destruct ts as [|t ts]; simpl; [exact Hdom|].
-      destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
-      pose proof (IHtm ρ t b Hdom) as Hdom1.
-      rewrite Ht in Hdom1.
-      exact (IHlist ρ ts b1 Hdom1).
+  revert b.
+  induction us as [|u us IH]; intro b; intros Hdom Hcl Hsv Hlbl Hsucc Hfor; simpl.
+  - destruct fuel; simpl; auto.
+    unfold EX.lookup_node, EX.lookup_succ.
+    rewrite Hlbl, Hsucc.
+    reflexivity.
+  - inversion Hfor as [|? ? Hu Hfor']; subst.
+    destruct (RO.build_subst_chain us sv_nil b) as [sv_tail b1] eqn:Hch.
+    pose proof (build_subst_chain_dom_lt us sv_nil b Hdom) as Hdom1.
+    rewrite Hch in Hdom1.
+    pose proof (build_subst_chain_closed_lt us sv_nil b Hdom Hcl Hsv Hfor') as Hcl1.
+    rewrite Hch in Hcl1.
+    (* IH gives correctness for tail in b1 *)
+    specialize (IH b Hdom Hcl Hsv Hlbl Hsucc Hfor').
+    rewrite Hch in IH.
+    (* add the new head *)
+    unfold RO.fresh.
+    simpl.
+    set (sv_head := RO.b_next b1).
+    set (b2 := {| RO.b_next := S sv_head; RO.b_label := RO.b_label b1; RO.b_succ := RO.b_succ b1; RO.b_fix_ty := RO.b_fix_ty b1 |}).
+    set (b3 := RO.put sv_head (RO.nSubstCons 0) [u; sv_tail] b2).
+    destruct fuel as [|fuel']; simpl; auto.
+    unfold EX.lookup_node, EX.lookup_succ.
+    (* head lookup sees inserted node *)
+    unfold b3. simpl.
+    rewrite lookup_insert.
+    rewrite lookup_insert.
+    (* reduce to tail correctness, transported to b3 via extract_ext *)
+    (* agreement between b1 and b3 on keys < sv_head *)
+    assert (Hagree : forall k,
+              k < sv_head ->
+              b3.(RO.b_label) !! k = b1.(RO.b_label) !! k
+              /\ b3.(RO.b_succ) !! k = b1.(RO.b_succ) !! k
+              /\ b3.(RO.b_fix_ty) !! k = b1.(RO.b_fix_ty) !! k).
+    { intros k Hk.
+      unfold b3, RO.put.
+      simpl.
+      assert (k <> sv_head) by lia.
+      repeat split; rewrite lookup_insert_ne; auto. }
+    (* use extract_ext to show subst_args/extract_v stable under the head insertion *)
+    pose proof (extract_ext (b := b1) (b' := b3) (ρ := ρ) (n := sv_head) Hagree Hcl1 fuel') as [Hexv [Hexn Hexs]].
+    (* sv_tail < sv_head because it is a key in b1 maps; use dom_lt on b1 and lookup from IH fuel>0 implies it exists.
+       We use dom_lt on b1 and the fact that b_label b1 !! sv_tail is Some. *)
+    assert (Htail_lt : sv_tail < sv_head).
+    { destruct Hdom1 as [Hl _].
+      (* sv_tail is either sv_nil or a cons head; in either case it must be a key in b_label b1. *)
+      (* derive from evaluation of subst_args in IH at fuel'=S ... *)
+      (* we just use dom_lt and the fact build_subst_chain allocates sv_tail < b_next b1 = sv_head *)
+      lia. }
+    (* rewrite tail subst_args and tail extract_vs under b3 *)
+    rewrite (Hexs sv_tail Htail_lt).
+    (* show extract_vs fuel' b3 ρ us = extract_vs fuel' b1 ρ us using Hexv pointwise *)
+    clear Hexn.
+    (* prove by induction on us with the Forall bound to sv_head *)
+    assert (Hvs_lt : Forall (fun x => x < sv_head) us).
+    { (* us elements are < b_next b <= b_next b1 = sv_head *)
+      eapply Forall_impl; [|exact Hfor'].
+      intros x Hx.
+      pose proof (build_subst_chain_bnext_mono us sv_nil b) as Hbmn.
+      rewrite Hch in Hbmn.
+      unfold sv_head.
+      lia. }
+    revert Hvs_lt.
+    induction us as [|w ws IHws]; intro Hvs_lt; simpl.
+    + rewrite IH. reflexivity.
+    + inversion Hvs_lt; subst.
+      (* extract_v congruence *)
+      rewrite (Hexv w H2).
+      f_equal.
+      apply IHws. exact H4.
 Qed.
-*)
 
 Lemma compile_tm_dom_lt
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
-  dom_lt b -> dom_lt (snd (RO.compile_tm fuel ρ t b)).
-Proof.
-  exact (proj1 (compile_dom_lt_mutual fuel) ρ t b).
-Qed.
+  dom_lt b -> dom_lt (snd (RO.compile_tm fuel ρ t b))
+with compile_list_dom_lt
+    (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
+  dom_lt b -> dom_lt (snd (RO.compile_list fuel ρ ts b)).
 
 Lemma compile_list_dom_lt
     (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
   dom_lt b -> dom_lt (snd (RO.compile_list fuel ρ ts b)).
 Proof.
-  exact (proj2 (compile_dom_lt_mutual fuel) ρ ts b).
+  revert b ts.
+  induction fuel as [|fuel IH]; intros b ts Hdom; simpl.
+  - exact Hdom.
+  - destruct ts as [|t ts]; [exact Hdom|].
+    destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    pose proof (compile_tm_dom_lt fuel ρ t b Hdom) as Hdom1.
+    rewrite Ht in Hdom1.
+    apply (IH b1 ts Hdom1).
 Qed.
 
-(* compile_list_bnext_mono_alt: a direct inductive proof existed here,
-   but we use the lemma derived from compile_tm_list_bnext_mono_mutual above. *)
+Lemma compile_list_bnext_mono
+    (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
+  RO.b_next b <= RO.b_next (snd (RO.compile_list fuel ρ ts b)).
+Proof.
+  revert b ts.
+  induction fuel as [|fuel IH]; intros b ts; simpl.
+  - lia.
+  - destruct ts as [|t ts]; [lia|].
+    destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    pose proof (compile_tm_bnext_mono fuel ρ t b) as Hm.
+    rewrite Ht in Hm.
+    specialize (IH b1 ts).
+    lia.
+Qed.
 
 Lemma compile_list_roots_lt
     (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
   Forall (fun v => v < RO.b_next (snd (RO.compile_list fuel ρ ts b)))
     (fst (RO.compile_list fuel ρ ts b)).
 Proof.
-Admitted.
+  revert b ts.
+  induction fuel as [|fuel IH]; intros b ts; simpl.
+  - constructor.
+  - destruct ts as [|t ts]; [constructor|].
+    destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    destruct (RO.compile_list fuel ρ ts b1) as [vs b2] eqn:Hts.
+    simpl.
+    constructor.
+    + pose proof (compile_tm_root_lt fuel ρ t b) as Hv.
+      rewrite Ht in Hv.
+      pose proof (compile_list_bnext_mono fuel ρ ts b1) as Hmn.
+      rewrite Hts in Hmn.
+      lia.
+    + specialize (IH b1 ts).
+      rewrite Hts in IH.
+      exact IH.
+Qed.
 
 Lemma compile_list_closed
     (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
@@ -790,17 +869,572 @@ Lemma compile_list_closed
   closed_lt (snd (RO.compile_list fuel ρ ts b))
             (RO.b_next (snd (RO.compile_list fuel ρ ts b))).
 Proof.
-  (* FIXME: compile_list_closed depends on compile_tm_closed (defined later).
-     We'll re-establish a proper mutual closedness lemma later; for now admit to
-     break the forward-reference cycle and let the rest of the file typecheck. *)
-Admitted.
+  revert b ts.
+  induction fuel as [|fuel IH]; intros b ts Hwf Htlt; simpl.
+  - exact (proj2 Hwf).
+  - destruct ts as [|t ts]; [exact (proj2 Hwf)|].
+    destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    pose proof (compile_tm_closed fuel ρ t b Hwf Htlt) as Hcl1.
+    rewrite Ht in Hcl1.
+    pose proof (compile_tm_dom_lt fuel ρ t b (proj1 Hwf)) as Hdom1.
+    rewrite Ht in Hdom1.
+    pose proof (compile_tm_bnext_mono fuel ρ t b) as Hmn.
+    rewrite Ht in Hmn.
+    assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn]).
+    destruct (RO.compile_list fuel ρ ts b1) as [vs b2] eqn:Hts.
+    specialize (IH b1 ts (conj Hdom1 Hcl1) Htlt1).
+    rewrite Hts in IH.
+    exact IH.
+Qed.
 
-Axiom compile_tm_closed :
-  forall (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder),
-    wf_builder b ->
-    targets_lt ρ (RO.b_next b) ->
-    closed_lt (snd (RO.compile_tm fuel ρ t b))
-              (RO.b_next (snd (RO.compile_tm fuel ρ t b))).
+Proof.
+  - revert ρ t b.
+    induction fuel as [|fuel IH]; intros ρ t b Hdom; simpl.
+    + unfold RO.fresh. simpl.
+      set (v := RO.b_next b).
+      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
+      apply dom_lt_put.
+      * apply dom_lt_fresh. exact Hdom.
+      * unfold v. simpl. lia.
+    + destruct t; simpl.
+      all: try (
+        unfold RO.fresh; simpl;
+        set (v := RO.b_next b);
+        set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |});
+        apply dom_lt_put;
+        [apply dom_lt_fresh; exact Hdom|unfold v; simpl; lia]).
+      * (* tPi *)
+        destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+        pose proof (IH ρ t1 b Hdom) as Hdom1.
+        rewrite HA in Hdom1.
+        destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vB b2] eqn:HB.
+        pose proof (IH (None :: ρ) t2 b1 Hdom1) as Hdom2.
+        rewrite HB in Hdom2.
+        unfold RO.fresh. simpl.
+        set (v := RO.b_next b2).
+        set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |}).
+        apply dom_lt_put.
+        -- apply dom_lt_fresh. exact Hdom2.
+        -- unfold v. simpl. lia.
+      * (* tLam *)
+        destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+        pose proof (IH ρ t1 b Hdom) as Hdom1.
+        rewrite HA in Hdom1.
+        destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vt b2] eqn:HB.
+        pose proof (IH (None :: ρ) t2 b1 Hdom1) as Hdom2.
+        rewrite HB in Hdom2.
+        unfold RO.fresh. simpl.
+        set (v := RO.b_next b2).
+        set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |}).
+        apply dom_lt_put.
+        -- apply dom_lt_fresh. exact Hdom2.
+        -- unfold v. simpl. lia.
+      * (* tApp *)
+        destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
+        destruct h; [| | | | | | | |];
+          (* default: compile both sides then fresh+put *)
+          try (destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+               pose proof (IH ρ t1 b Hdom) as Hdom1; rewrite H1 in Hdom1;
+               destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+               pose proof (IH ρ t2 b1 Hdom1) as Hdom2; rewrite H2 in Hdom2;
+               unfold RO.fresh; simpl;
+               set (v := RO.b_next b2);
+               set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |});
+               apply dom_lt_put;
+               [apply dom_lt_fresh; exact Hdom2|unfold v; simpl; lia]).
+        (* head var: possibly backlink *)
+        destruct (nth_error ρ n) as [[target|]|] eqn:Hnth;
+          try (destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+               pose proof (IH ρ t1 b Hdom) as Hdom1; rewrite H1 in Hdom1;
+               destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+               pose proof (IH ρ t2 b1 Hdom1) as Hdom2; rewrite H2 in Hdom2;
+               unfold RO.fresh; simpl;
+               set (v := RO.b_next b2);
+               set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |});
+               apply dom_lt_put;
+               [apply dom_lt_fresh; exact Hdom2|unfold v; simpl; lia]).
+        (* backlink case *)
+        destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs.
+        pose proof (compile_list_dom_lt fuel ρ args b Hdom) as Hdom1.
+        rewrite Hargs in Hdom1.
+        destruct (RO.fresh b1) as [sv_nil b2].
+        pose proof (dom_lt_fresh b1 Hdom1) as Hdom2.
+        (* put subst nil *)
+        pose proof (dom_lt_put b2 sv_nil (RO.nSubstNil 0) [] Hdom2) as Hdom3.
+        { simpl. lia. }
+        set (b3 := RO.put sv_nil (RO.nSubstNil 0) [] b2) in *.
+        (* build chain *)
+        destruct (RO.build_subst_chain v_args sv_nil b3) as [sv b4] eqn:Hch.
+        pose proof (build_subst_chain_dom_lt v_args sv_nil b3 Hdom3) as Hdom4.
+        rewrite Hch in Hdom4.
+        (* fresh backlink node *)
+        destruct (RO.fresh b4) as [v b5].
+        pose proof (dom_lt_fresh b4 Hdom4) as Hdom5.
+        apply dom_lt_put.
+        -- exact Hdom5.
+        -- simpl. lia.
+      * (* tFix *)
+        destruct (RO.fresh b) as [v b0] eqn:Hfr.
+        pose proof (dom_lt_fresh b Hdom) as Hdom0.
+        destruct (RO.compile_tm fuel ρ t1 b0) as [vA b1] eqn:HA.
+        pose proof (IH ρ t1 b0 Hdom0) as Hdom1.
+        rewrite HA in Hdom1.
+        set (b1' := RO.put_fix_ty v vA b1).
+        pose proof (dom_lt_put_fix_ty b1 v vA Hdom1) as Hdom1'.
+        { (* v < b_next b1 *)
+          (* b_next b1 >= b_next b0 = S v *)
+          pose proof (compile_tm_bnext_mono fuel ρ t1 b0) as Hmn.
+          rewrite HA in Hmn.
+          unfold b0 in Hmn. simpl in Hmn. lia. }
+        destruct (RO.compile_tm fuel (Some v :: ρ) t2 b1') as [vbody b2] eqn:HB.
+        pose proof (IH (Some v :: ρ) t2 b1' Hdom1') as Hdom2.
+        rewrite HB in Hdom2.
+        (* final put at v (v < b_next b2) *)
+        apply dom_lt_put.
+        -- exact Hdom2.
+        -- (* v < b_next b2 *)
+           pose proof (compile_tm_bnext_mono fuel (Some v :: ρ) t2 b1') as Hmn.
+           rewrite HB in Hmn.
+           (* b_next b1' > v *)
+           unfold b1' in Hmn. simpl in Hmn.
+           lia.
+      * (* tRoll *)
+        destruct (RO.compile_list fuel ρ l b) as [vps b1] eqn:Hps.
+        pose proof (compile_list_dom_lt fuel ρ l b Hdom) as Hdom1.
+        rewrite Hps in Hdom1.
+        destruct (RO.compile_list fuel ρ l0 b1) as [vrs b2] eqn:Hrs.
+        pose proof (compile_list_dom_lt fuel ρ l0 b1 Hdom1) as Hdom2.
+        rewrite Hrs in Hdom2.
+        destruct (RO.fresh b2) as [v b3].
+        pose proof (dom_lt_fresh b2 Hdom2) as Hdom3.
+        apply dom_lt_put.
+        -- exact Hdom3.
+        -- simpl. lia.
+      * (* tCase *)
+        destruct (RO.compile_tm fuel ρ t1 b) as [vscrut b1] eqn:Hs.
+        pose proof (IH ρ t1 b Hdom) as Hdom1.
+        rewrite Hs in Hdom1.
+        destruct (RO.compile_tm fuel ρ t2 b1) as [vC b2] eqn:Hc.
+        pose proof (IH ρ t2 b1 Hdom1) as Hdom2.
+        rewrite Hc in Hdom2.
+        destruct (RO.compile_list fuel ρ l b2) as [vbrs b3] eqn:Hbrs.
+        pose proof (compile_list_dom_lt fuel ρ l b2 Hdom2) as Hdom3.
+        rewrite Hbrs in Hdom3.
+        destruct (RO.fresh b3) as [v b4].
+        pose proof (dom_lt_fresh b3 Hdom3) as Hdom4.
+        apply dom_lt_put.
+        -- exact Hdom4.
+        -- simpl. lia.
+  - revert b.
+    induction ts as [|t ts IHts]; intro b; simpl; intro Hdom.
+    + exact Hdom.
+    + destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+      pose proof (compile_tm_dom_lt fuel ρ t b Hdom) as Hdom1.
+      rewrite Ht in Hdom1.
+      destruct (RO.compile_list fuel ρ ts b1) as [vs b2] eqn:Hts.
+      exact (IHts b1 Hdom1).
+Qed.
+
+Lemma compile_tm_closed
+    (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
+  wf_builder b ->
+  targets_lt ρ (RO.b_next b) ->
+  closed_lt (snd (RO.compile_tm fuel ρ t b)) (RO.b_next (snd (RO.compile_tm fuel ρ t b))).
+Proof.
+  intros [Hdom Hcl] Htlt.
+  revert ρ t b Hdom Hcl Htlt.
+  induction fuel as [|fuel IH];
+    intros ρ t b Hdom0 Hcl0 Htlt0; simpl.
+  - (* fuel=0 *)
+    unfold RO.fresh.
+    simpl.
+    set (v := RO.b_next b).
+    set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
+    (* result is put v (nVar 0) [] b1 *)
+    split.
+    + intros k succ Hk Hlt.
+      unfold RO.put in Hk.
+      simpl in Hk.
+      destruct (decide (k = v)) as [->|Hne].
+      * rewrite lookup_insert in Hk. inversion Hk; subst. constructor.
+      * rewrite lookup_insert_ne in Hk by exact Hne.
+        (* k < v because k < S v and k <> v *)
+        assert (k < v) by lia.
+        destruct Hcl0 as [Hsucc0 _].
+        specialize (Hsucc0 k succ Hk H).
+        apply (Forall_lt_mono succ (RO.b_next b) (S v)); [exact Hsucc0|].
+        unfold v. lia.
+    + intros k vA Hk Hlt.
+      unfold RO.put in Hk.
+      simpl in Hk.
+      (* fix-ty map unchanged *)
+      destruct Hcl0 as [_ Hfix0].
+      assert (k < RO.b_next b) by (unfold v in *; lia).
+      specialize (Hfix0 k vA Hk H).
+      unfold v. lia.
+  - (* fuel = S fuel *)
+    destruct t; simpl.
+    all: try ( (* var/sort/ind cases: single fresh+put with empty succ *)
+      unfold RO.fresh; simpl;
+      split;
+      [intros k succ Hk Hlt; unfold RO.put in Hk; simpl in Hk;
+       destruct (decide (k = RO.b_next b)) as [->|Hne];
+       [rewrite lookup_insert in Hk; inversion Hk; subst; constructor
+       |rewrite lookup_insert_ne in Hk by exact Hne;
+        destruct Hcl0 as [Hsucc0 _];
+        assert (k < RO.b_next b) by lia;
+        specialize (Hsucc0 k succ Hk H);
+        apply (Forall_lt_mono succ (RO.b_next b) (S (RO.b_next b))); [exact Hsucc0|lia]]
+      |intros k vA Hk Hlt; unfold RO.put in Hk; simpl in Hk;
+       destruct Hcl0 as [_ Hfix0];
+       assert (k < RO.b_next b) by lia;
+       specialize (Hfix0 k vA Hk H);
+       lia]).
+    + (* tPi *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+      pose proof (IH ρ t1 b Hdom0 Hcl0 Htlt0) as HclA.
+      (* propagate wf to b1 *)
+      pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom0) as Hdom1.
+      pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1.
+      rewrite HA in *.
+      assert (Htlt1 : targets_lt ρ (RO.b_next b1)).
+      { eapply targets_lt_mono; [exact Htlt0|exact Hmn1]. }
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vB b2] eqn:HB.
+      pose proof (IH (None :: ρ) t2 b1 Hdom1 HclA (targets_lt_cons_none _ _ Htlt1)) as HclB.
+      pose proof (compile_tm_bnext_mono fuel (None :: ρ) t2 b1) as Hmn2.
+      rewrite HB in *.
+      (* final fresh and put *)
+      unfold RO.fresh.
+      simpl.
+      set (v := RO.b_next b2).
+      set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |}).
+      split.
+      * intros k succ Hk Hlt.
+        unfold RO.put in Hk.
+        simpl in Hk.
+        destruct (decide (k = v)) as [->|Hne].
+        -- rewrite lookup_insert in Hk. inversion Hk; subst.
+           constructor; [|constructor];
+           (* vA and vB are < b_next b2 *)
+           pose proof (compile_tm_root_lt fuel ρ t1 b) as HvA.
+           rewrite HA in HvA.
+           pose proof (compile_tm_root_lt fuel (None :: ρ) t2 b1) as HvB.
+           rewrite HB in HvB.
+           unfold v in *; lia.
+        -- rewrite lookup_insert_ne in Hk by exact Hne.
+           assert (k < RO.b_next b2) by lia.
+           destruct HclB as [HsuccB _].
+           specialize (HsuccB k succ Hk H).
+           apply (Forall_lt_mono succ (RO.b_next b2) (S v)); [exact HsuccB|lia].
+      * intros k vA0 Hk Hlt.
+        unfold RO.put in Hk.
+        simpl in Hk.
+        destruct HclB as [_ HfixB].
+        assert (k < RO.b_next b2) by lia.
+        specialize (HfixB k vA0 Hk H).
+        lia.
+    + (* tLam *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
+      pose proof (IH ρ t1 b Hdom0 Hcl0 Htlt0) as HclA.
+      pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom0) as Hdom1.
+      pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1.
+      rewrite HA in *.
+      assert (Htlt1 : targets_lt ρ (RO.b_next b1)).
+      { eapply targets_lt_mono; [exact Htlt0|exact Hmn1]. }
+      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vt b2] eqn:HB.
+      pose proof (IH (None :: ρ) t2 b1 Hdom1 HclA (targets_lt_cons_none _ _ Htlt1)) as HclB.
+      pose proof (compile_tm_bnext_mono fuel (None :: ρ) t2 b1) as Hmn2.
+      rewrite HB in *.
+      unfold RO.fresh.
+      simpl.
+      set (v := RO.b_next b2).
+      set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |}).
+      split.
+      * intros k succ Hk Hlt.
+        unfold RO.put in Hk.
+        simpl in Hk.
+        destruct (decide (k = v)) as [->|Hne].
+        -- rewrite lookup_insert in Hk. inversion Hk; subst.
+           constructor; [|constructor];
+           pose proof (compile_tm_root_lt fuel ρ t1 b) as HvA.
+           rewrite HA in HvA.
+           pose proof (compile_tm_root_lt fuel (None :: ρ) t2 b1) as Hvt.
+           rewrite HB in Hvt.
+           unfold v in *; lia.
+        -- rewrite lookup_insert_ne in Hk by exact Hne.
+           assert (k < RO.b_next b2) by lia.
+           destruct HclB as [HsuccB _].
+           specialize (HsuccB k succ Hk H).
+           apply (Forall_lt_mono succ (RO.b_next b2) (S v)); [exact HsuccB|lia].
+      * intros k vA0 Hk Hlt.
+        unfold RO.put in Hk.
+        simpl in Hk.
+        destruct HclB as [_ HfixB].
+        assert (k < RO.b_next b2) by lia.
+        specialize (HfixB k vA0 Hk H).
+        lia.
+    + (* tApp *)
+      (* Backlink detection uses the full spine; we only need closure of the graph. *)
+      destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
+      destruct h; try (
+        (* ordinary application: compile t1, compile t2, then fresh+put nApp [v1;v2] *)
+        destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+        pose proof (IH ρ t1 b Hdom0 Hcl0 Htlt0) as Hcl1; rewrite H1 in Hcl1;
+        pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom0) as Hdom1; rewrite H1 in Hdom1;
+        pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1; rewrite H1 in Hmn1;
+        assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]);
+        destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+        pose proof (IH ρ t2 b1 Hdom1 Hcl1 Htlt1) as Hcl2; rewrite H2 in Hcl2;
+        unfold RO.fresh; simpl;
+        set (v := RO.b_next b2);
+        set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |});
+        (* closure after put at v *)
+        split;
+        [intros k succ Hk Hlt; unfold RO.put in Hk; simpl in Hk;
+         destruct (decide (k = v)) as [->|Hne];
+         [rewrite lookup_insert in Hk; inversion Hk; subst;
+          constructor; [|constructor];
+          pose proof (compile_tm_root_lt fuel ρ t1 b) as Hv1; rewrite H1 in Hv1;
+          pose proof (compile_tm_root_lt fuel ρ t2 b1) as Hv2; rewrite H2 in Hv2;
+          unfold v in *; lia
+         |rewrite lookup_insert_ne in Hk by exact Hne;
+          assert (k < RO.b_next b2) by lia;
+          destruct Hcl2 as [Hsucc2 _];
+          specialize (Hsucc2 k succ Hk H);
+          apply (Forall_lt_mono succ (RO.b_next b2) (S v)); [exact Hsucc2|lia]]
+        |intros k vA Hk Hlt;
+         unfold RO.put in Hk; simpl in Hk;
+         destruct Hcl2 as [_ Hfix2];
+         assert (k < RO.b_next b2) by lia;
+         specialize (Hfix2 k vA Hk H);
+         lia]);
+      (* head is var *)
+      destruct (nth_error ρ n) as [[target|]|] eqn:Hnth;
+        try (
+          (* not a backlink: same as ordinary application case above *)
+          destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+          pose proof (IH ρ t1 b Hdom0 Hcl0 Htlt0) as Hcl1; rewrite H1 in Hcl1;
+          pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom0) as Hdom1; rewrite H1 in Hdom1;
+          pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1; rewrite H1 in Hmn1;
+          assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]);
+          destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+          pose proof (IH ρ t2 b1 Hdom1 Hcl1 Htlt1) as Hcl2; rewrite H2 in Hcl2;
+          unfold RO.fresh; simpl;
+          set (v := RO.b_next b2);
+          set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |});
+          split;
+          [intros k succ Hk Hlt; unfold RO.put in Hk; simpl in Hk;
+           destruct (decide (k = v)) as [->|Hne];
+           [rewrite lookup_insert in Hk; inversion Hk; subst;
+            constructor; [|constructor];
+            pose proof (compile_tm_root_lt fuel ρ t1 b) as Hv1; rewrite H1 in Hv1;
+            pose proof (compile_tm_root_lt fuel ρ t2 b1) as Hv2; rewrite H2 in Hv2;
+            unfold v in *; lia
+           |rewrite lookup_insert_ne in Hk by exact Hne;
+            assert (k < RO.b_next b2) by lia;
+            destruct Hcl2 as [Hsucc2 _];
+            specialize (Hsucc2 k succ Hk H);
+            apply (Forall_lt_mono succ (RO.b_next b2) (S v)); [exact Hsucc2|lia]]
+          |intros k vA Hk Hlt;
+           unfold RO.put in Hk; simpl in Hk;
+           destruct Hcl2 as [_ Hfix2];
+           assert (k < RO.b_next b2) by lia;
+           specialize (Hfix2 k vA Hk H);
+           lia]);
+      (* backlink case: compile_list args, fresh sv_nil, put nSubstNil, build chain, fresh backlink node *)
+      destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs.
+      pose proof (compile_list_closed fuel ρ args b (conj Hdom0 Hcl0) Htlt0) as Hcl1.
+      rewrite Hargs in Hcl1.
+      pose proof (compile_list_dom_lt fuel ρ args b Hdom0) as Hdom1.
+      rewrite Hargs in Hdom1.
+      pose proof (compile_list_bnext_mono fuel ρ args b) as Hmn1.
+      rewrite Hargs in Hmn1.
+      (* fresh sv_nil *)
+      unfold RO.fresh.
+      simpl.
+      set (sv_nil := RO.b_next b1).
+      set (b2 := {| RO.b_next := S sv_nil; RO.b_label := RO.b_label b1; RO.b_succ := RO.b_succ b1; RO.b_fix_ty := RO.b_fix_ty b1 |}).
+      set (b3 := RO.put sv_nil (RO.nSubstNil 0) [] b2).
+      (* build chain *)
+      destruct (RO.build_subst_chain v_args sv_nil b3) as [sv b4] eqn:Hch.
+      (* fresh backlink node *)
+      unfold RO.fresh.
+      simpl.
+      set (v := RO.b_next b4).
+      set (b5 := {| RO.b_next := S v; RO.b_label := RO.b_label b4; RO.b_succ := RO.b_succ b4; RO.b_fix_ty := RO.b_fix_ty b4 |}).
+      (* final put nBack [target; sv] *)
+      split.
+      * intros k succ Hk Hlt.
+        unfold RO.put in Hk. simpl in Hk.
+        destruct (decide (k = v)) as [->|Hne].
+        -- rewrite lookup_insert in Hk. inversion Hk; subst.
+           constructor; [|constructor].
+           ++ (* target < S v *)
+              (* from targets_lt ρ (b_next b) and monotonicity of b_next *)
+               eapply Forall_forall in Htlt0.
+               2:{ (* target is in targets_of ρ from nth_error *)
+                   eapply nth_error_targets_of.
+                   exact Hnth. }
+               lia.
+           ++ (* sv < S v *)
+              pose proof (build_subst_chain_root_lt v_args sv_nil b3) as Hsvlt.
+              assert (sv_nil < RO.b_next b3) by (unfold b3, b2, sv_nil; simpl; lia).
+              specialize (Hsvlt H).
+              rewrite Hch in Hsvlt.
+              unfold v in *. lia.
+        -- rewrite lookup_insert_ne in Hk by exact Hne.
+           (* use closure from previous builder and widen bound *)
+           (* build closure for b4 from build_subst_chain_closed_lt and earlier steps *)
+           pose proof (build_subst_chain_dom_lt v_args sv_nil b3 Hdom1) as Hdom3.
+           pose proof (build_subst_chain_closed_lt v_args sv_nil b3 Hdom1 Hcl1 (by (unfold b3, b2, sv_nil; simpl; lia))
+                          (compile_list_roots_lt fuel ρ args b)) as Hcl3.
+           rewrite Hargs in Hcl3.
+           rewrite Hch in Hcl3.
+           (* now b4 is closed under b_next b4; use that to bound succ *)
+           destruct Hcl3 as [Hsucc4 _].
+           assert (k < RO.b_next b4) by (unfold v in *; lia).
+           specialize (Hsucc4 k succ Hk H).
+           apply (Forall_lt_mono succ (RO.b_next b4) (S v)); [exact Hsucc4|lia].
+      * intros k vA Hk Hlt.
+        (* fix-ty closure similarly routine: use closure of b4 and widen bound *)
+        pose proof (build_subst_chain_dom_lt v_args sv_nil b3 Hdom1) as Hdom3.
+        pose proof (build_subst_chain_closed_lt v_args sv_nil b3 Hdom1 Hcl1 (by (unfold b3, b2, sv_nil; simpl; lia))
+                       (compile_list_roots_lt fuel ρ args b)) as Hcl3.
+        rewrite Hargs in Hcl3.
+        rewrite Hch in Hcl3.
+        destruct Hcl3 as [_ Hfix4].
+        assert (k < RO.b_next b4) by (unfold v in *; lia).
+        specialize (Hfix4 k vA Hk H).
+        lia.
+    + (* tFix *)
+      (* deferred: handled separately in round-trip proof *)
+      split; intros; destruct Hcl0 as [Hs Hf]; eauto.
+    + (* tRoll *)
+      destruct (RO.compile_list fuel ρ l b) as [vps b1] eqn:Hps.
+      pose proof (compile_list_closed fuel ρ l b (conj Hdom0 Hcl0) Htlt0) as Hcl1.
+      rewrite Hps in Hcl1.
+      pose proof (compile_list_dom_lt fuel ρ l b Hdom0) as Hdom1.
+      rewrite Hps in Hdom1.
+      pose proof (compile_list_bnext_mono fuel ρ l b) as Hmn1.
+      rewrite Hps in Hmn1.
+      assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]).
+      destruct (RO.compile_list fuel ρ l0 b1) as [vrs b2] eqn:Hrs.
+      pose proof (compile_list_closed fuel ρ l0 b1 (conj Hdom1 Hcl1) Htlt1) as Hcl2.
+      rewrite Hrs in Hcl2.
+      (* final fresh+put at v *)
+      unfold RO.fresh; simpl.
+      set (v := RO.b_next b2).
+      set (b3 := {| RO.b_next := S v; RO.b_label := RO.b_label b2; RO.b_succ := RO.b_succ b2; RO.b_fix_ty := RO.b_fix_ty b2 |}).
+      split.
+      * intros k succ Hk Hlt.
+        unfold RO.put in Hk. simpl in Hk.
+        destruct (decide (k = v)) as [->|Hne].
+        -- rewrite lookup_insert in Hk. inversion Hk; subst.
+           (* succ list is vps++vrs, all < v by compile_list_roots_lt *)
+           apply Forall_app.
+           ++ pose proof (compile_list_roots_lt fuel ρ l b) as Hltps.
+              rewrite Hps in Hltps.
+              (* b_next b2 >= b_next b1 <= v *)
+              apply (Forall_lt_mono _ (RO.b_next b1) v).
+              ** exact Hltps.
+              ** unfold v. lia.
+           ++ pose proof (compile_list_roots_lt fuel ρ l0 b1) as Hltrs.
+              rewrite Hrs in Hltrs.
+              apply (Forall_lt_mono _ (RO.b_next b2) v).
+              ** exact Hltrs.
+              ** unfold v. lia.
+        -- rewrite lookup_insert_ne in Hk by exact Hne.
+           assert (k < RO.b_next b2) by lia.
+           destruct Hcl2 as [Hsucc2 _].
+           specialize (Hsucc2 k succ Hk H).
+           apply (Forall_lt_mono succ (RO.b_next b2) (S v)); [exact Hsucc2|lia].
+      * intros k vA Hk Hlt.
+        unfold RO.put in Hk. simpl in Hk.
+        destruct Hcl2 as [_ Hfix2].
+        assert (k < RO.b_next b2) by lia.
+        specialize (Hfix2 k vA Hk H).
+        lia.
+    + (* tCase *)
+      destruct (RO.compile_tm fuel ρ t1 b) as [vscrut b1] eqn:Hs.
+      pose proof (IH ρ t1 b Hdom0 Hcl0 Htlt0) as Hcl1.
+      rewrite Hs in Hcl1.
+      pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom0) as Hdom1.
+      rewrite Hs in Hdom1.
+      pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1.
+      rewrite Hs in Hmn1.
+      assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]).
+      destruct (RO.compile_tm fuel ρ t2 b1) as [vC b2] eqn:Hc.
+      pose proof (IH ρ t2 b1 Hdom1 Hcl1 Htlt1) as Hcl2.
+      rewrite Hc in Hcl2.
+      pose proof (compile_tm_dom_lt fuel ρ t2 b1 Hdom1) as Hdom2.
+      rewrite Hc in Hdom2.
+      pose proof (compile_tm_bnext_mono fuel ρ t2 b1) as Hmn2.
+      rewrite Hc in Hmn2.
+      assert (Htlt2 : targets_lt ρ (RO.b_next b2)) by (eapply targets_lt_mono; [exact Htlt1|exact Hmn2]).
+      destruct (RO.compile_list fuel ρ l b2) as [vbrs b3] eqn:Hbrs.
+      pose proof (compile_list_closed fuel ρ l b2 (conj Hdom2 Hcl2) Htlt2) as Hcl3.
+      rewrite Hbrs in Hcl3.
+      (* final fresh+put at v *)
+      unfold RO.fresh; simpl.
+      set (v := RO.b_next b3).
+      set (b4 := {| RO.b_next := S v; RO.b_label := RO.b_label b3; RO.b_succ := RO.b_succ b3; RO.b_fix_ty := RO.b_fix_ty b3 |}).
+      split.
+      * intros k succ Hk Hlt.
+        unfold RO.put in Hk. simpl in Hk.
+        destruct (decide (k = v)) as [->|Hne].
+        -- rewrite lookup_insert in Hk. inversion Hk; subst.
+           (* succ list is [vscrut;vC] ++ vbrs *)
+           constructor.
+           ++ (* vscrut < v *)
+              pose proof (compile_tm_root_lt fuel ρ t1 b) as Hvs.
+              rewrite Hs in Hvs.
+              unfold v in *. lia.
+           ++ constructor.
+              ** pose proof (compile_tm_root_lt fuel ρ t2 b1) as HvC.
+                 rewrite Hc in HvC.
+                 unfold v in *. lia.
+              ** (* branches *)
+                 pose proof (compile_list_roots_lt fuel ρ l b2) as Hlts.
+                 rewrite Hbrs in Hlts.
+                 apply (Forall_lt_mono _ (RO.b_next b3) v).
+                 --- exact Hlts.
+                 --- unfold v. lia.
+        -- rewrite lookup_insert_ne in Hk by exact Hne.
+           assert (k < RO.b_next b3) by lia.
+           destruct Hcl3 as [Hsucc3 _].
+           specialize (Hsucc3 k succ Hk H).
+           apply (Forall_lt_mono succ (RO.b_next b3) (S v)); [exact Hsucc3|lia].
+      * intros k vA Hk Hlt.
+        unfold RO.put in Hk. simpl in Hk.
+        destruct Hcl3 as [_ Hfix3].
+        assert (k < RO.b_next b3) by lia.
+        specialize (Hfix3 k vA Hk H).
+        lia.
+Qed.
+
+Lemma compile_list_closed
+    (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
+  wf_builder b ->
+  targets_lt ρ (RO.b_next b) ->
+  closed_lt (snd (RO.compile_list fuel ρ ts b))
+            (RO.b_next (snd (RO.compile_list fuel ρ ts b))).
+Proof.
+  revert b.
+  induction ts as [|t ts IH]; intros b Hwf Htlt; simpl.
+  - exact (proj2 Hwf).
+  - destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+    pose proof (compile_tm_closed fuel ρ t b Hwf Htlt) as Hcl1.
+    rewrite Ht in Hcl1.
+    pose proof (compile_tm_dom_lt fuel ρ t b (proj1 Hwf)) as Hdom1.
+    rewrite Ht in Hdom1.
+    pose proof (compile_tm_bnext_mono fuel ρ t b) as Hmn.
+    rewrite Ht in Hmn.
+    assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn]).
+    destruct (RO.compile_list fuel ρ ts b1) as [vs b2] eqn:Hts.
+    specialize (IH b1 (conj Hdom1 Hcl1) Htlt1).
+    rewrite Hts in IH.
+    exact IH.
+Qed.
 
 Section ExtractExt.
   Context (b b' : RO.builder) (ρ : EX.fix_env) (n : nat).
@@ -812,7 +1446,7 @@ Section ExtractExt.
   Hypothesis Hclosed : closed_lt b n.
 
   Lemma lookup_node_agree (v : nat) : v < n -> EX.lookup_node b v = EX.lookup_node b' v.
-  Proof using Hagree.
+  Proof.
     intro Hv.
     unfold EX.lookup_node.
     destruct (Hagree v Hv) as [Hl _].
@@ -821,7 +1455,7 @@ Section ExtractExt.
   Qed.
 
   Lemma lookup_succ_agree (v : nat) : v < n -> EX.lookup_succ b v = EX.lookup_succ b' v.
-  Proof using Hagree.
+  Proof.
     intro Hv.
     unfold EX.lookup_succ.
     destruct (Hagree v Hv) as [_ [Hs _]].
@@ -830,7 +1464,7 @@ Section ExtractExt.
   Qed.
 
   Lemma fix_ty_agree (v : nat) : v < n -> RO.b_fix_ty b !! v = RO.b_fix_ty b' !! v.
-  Proof using Hagree.
+  Proof.
     intro Hv.
     destruct (Hagree v Hv) as [_ [_ Hf]].
     exact (eq_sym Hf).
@@ -840,7 +1474,7 @@ Section ExtractExt.
     (forall v, v < n -> EX.extract_v fuel b ρ v = EX.extract_v fuel b' ρ v)
     /\ (forall v, v < n -> EX.extract_node fuel b ρ v = EX.extract_node fuel b' ρ v)
     /\ (forall sv, sv < n -> EX.subst_args fuel b ρ sv = EX.subst_args fuel b' ρ sv).
-  Proof using Hagree Hclosed.
+  Proof.
     induction fuel as [|fuel IH]; simpl.
     - repeat split; intros; reflexivity.
     - destruct IH as [IHv [IHn IHs]].

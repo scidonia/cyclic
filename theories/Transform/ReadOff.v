@@ -67,6 +67,12 @@ Section ReadOff.
     | _ => (t, [])
     end.
 
+  Lemma app_view_tApp (t u : T.tm) :
+    app_view (T.tApp t u) =
+      let '(h, args) := app_view t in
+      (h, args ++ [u]).
+  Proof. reflexivity. Qed.
+
   (* Allocate a fresh vertex id. *)
   Definition fresh (b : builder) : nat * builder :=
     let v := b.(b_next) in
