@@ -246,6 +246,8 @@ Proof.
   reflexivity.
 Qed.
 
+Local Opaque RO.app_view.
+
 (** Fuel-decreasing extraction of a list of vertices. *)
 Fixpoint extract_vs (fuel : nat) (b : RO.builder) (ρ : EX.fix_env) (vs : list nat) : list T.tm :=
   match fuel with
@@ -508,7 +510,7 @@ Proof.
     + intros ρ ts b. simpl. lia.
   - destruct IH as [IHtm IHlist].
     split.
-    + intros ρ t b. simpl.
+    + intros ρ t b.
       destruct t as
           [x
           |i
@@ -518,18 +520,26 @@ Proof.
           |A body
           |I
           |I c params recs
-          |I scrut C brs];
-        simpl.
+          |I scrut C brs].
+      cbn [RO.compile_tm].
       * (* tVar *) unfold RO.fresh, RO.put. simpl. lia.
       * (* tSort *) unfold RO.fresh, RO.put. simpl. lia.
       * (* tPi *)
         destruct (RO.compile_tm fuel ρ A b) as [vA b1] eqn:HA.
         pose proof (IHtm ρ A b) as Hb1.
         rewrite HA in Hb1. simpl in Hb1.
+        rewrite HA. cbn.
         destruct (RO.compile_tm fuel (None :: ρ) B b1) as [vB b2] eqn:HB.
         pose proof (IHtm (None :: ρ) B b1) as Hb2.
         rewrite HB in Hb2. simpl in Hb2.
-        unfold RO.fresh, RO.put. simpl. lia.
+        rewrite HB. cbn.
+        destruct (RO.fresh b2) as [v b3] eqn:Hf.
+        rewrite Hf. cbn.
+        unfold RO.put. simpl in *.
+        (* b_next b <= b_next b1 <= b_next b2 <= S (b_next b2) *)
+        apply (Nat.le_trans _ (RO.b_next b2)).
+        { exact (Nat.le_trans Hb1 Hb2). }
+        { apply Nat.le_succ_diag_r. }
       * (* tLam *)
         destruct (RO.compile_tm fuel ρ A b) as [vA b1] eqn:HA.
         pose proof (IHtm ρ A b) as Hb1.
@@ -537,9 +547,15 @@ Proof.
         destruct (RO.compile_tm fuel (None :: ρ) t0 b1) as [vt b2] eqn:Ht.
         pose proof (IHtm (None :: ρ) t0 b1) as Hb2.
         rewrite Ht in Hb2. simpl in Hb2.
-        unfold RO.fresh, RO.put. simpl. lia.
+        destruct (RO.fresh b2) as [v b3] eqn:Hf.
+        unfold RO.fresh in Hf; inversion Hf; subst v b3.
+        unfold RO.put. simpl in *.
+        change (RO.b_next b <= S (RO.b_next b2)).
+        apply (Nat.le_trans _ (RO.b_next b2)).
+        { exact (Nat.le_trans Hb1 Hb2). }
+        { apply Nat.le_succ_diag_r. }
       * (* tApp *)
-        destruct (RO.app_view t1) as [h args] eqn:Hv.
+        destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
         simpl.
         destruct h;
           try (
@@ -548,7 +564,6 @@ Proof.
             destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
             pose proof (IHtm ρ t2 b1) as Hb2; rewrite H2 in Hb2; simpl in Hb2;
             unfold RO.fresh, RO.put; simpl; lia).
-        (* head is a variable *)
         destruct (nth_error ρ x) as [[target|]|] eqn:Hnth;
           try (
             destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
@@ -556,15 +571,14 @@ Proof.
             destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
             pose proof (IHtm ρ t2 b1) as Hb2; rewrite H2 in Hb2; simpl in Hb2;
             unfold RO.fresh, RO.put; simpl; lia).
-        (* Backlink case: args are [args ++ [t2]] *)
-        destruct (RO.compile_list fuel ρ (args ++ [t2]) b) as [v_args b1] eqn:Hargs.
-        pose proof (IHlist ρ (args ++ [t2]) b) as Hb1.
+        (* backlink case *)
+        destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs.
+        pose proof (IHlist ρ args b) as Hb1.
         rewrite Hargs in Hb1. simpl in Hb1.
         destruct (RO.fresh b1) as [sv_nil b2] eqn:Hnil.
         pose proof (fresh_snd_next b1) as Hb2next.
         rewrite Hnil in Hb2next. simpl in Hb2next.
         set (b3 := RO.put sv_nil (RO.nSubstNil 0) [] b2).
-        assert (Hb3next : RO.b_next b3 = RO.b_next b2) by reflexivity.
         destruct (RO.build_subst_chain v_args sv_nil b3) as [sv b4] eqn:Hch.
         pose proof (build_subst_chain_bnext_mono v_args sv_nil b3) as Hb4.
         rewrite Hch in Hb4. simpl in Hb4.
