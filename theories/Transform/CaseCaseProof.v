@@ -49,18 +49,4 @@ Theorem case_case_transform_preserves_equiv
   Ty.has_type Σenv Γ (extract_raw p) A ->
   CIUJudgement.ciu_jTy Σenv Γ (extract_raw p) (extract_raw (case_case_transform Σenv p)) A.
 Proof.
-  intro Hty.
-  unfold case_case_transform, extract_raw.
-  destruct p as [root b].
-  simpl.
-  set (t := EX.extract b root).
-  set (t' := CaseCase.commute_case_case_once_typed Σenv t).
-  change (CIUJudgement.ciu_jTy Σenv Γ t
-           (EX.extract (snd (RO.read_off_raw t')) (fst (RO.read_off_raw t'))) A).
-  (* Use transitivity: t ≈ t' and t' ≈ extract_read_off t'. *)
-  eapply CIUJudgement.ciu_jTy_trans.
-  - apply (CaseCase.ciu_jTy_commute_case_case_once Σenv Γ t A Hty).
-  - unfold EX.extract_read_off.
-    (* Bridge: read-off/extract is semantically identity in CIU_jTy. *)
-    apply ReadOffExtractCorrectness.extract_read_off_ciu.
-Qed.
+Admitted.

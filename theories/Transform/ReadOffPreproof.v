@@ -1,5 +1,6 @@
 From Stdlib Require Import List Arith Lia Utf8.
 From stdpp Require Import prelude countable gmap.
+From Stdlib Require Import List.
 
 From Cyclic.Graph Require Import FiniteDigraph.
 From Cyclic.Preproof Require Import Preproof.
@@ -79,7 +80,7 @@ Section Packaging.
     apply Forall_forall.
     intros w Hw.
     unfold succ_of in Hw.
-    apply elem_of_list_filter in Hw.
+    apply filter_In in Hw.
     destruct Hw as [_ Hw].
     now apply bool_decide_true in Hw.
   Qed.

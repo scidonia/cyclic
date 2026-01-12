@@ -39,14 +39,14 @@ Section NatMeasures.
 
   Lemma progress_ok_nat (p : preproof) (rank : V -> nat) :
     (forall v w,
-        FiniteDigraph.edge (@Preproof.pp_graph Judgement Rule V _ _ p) v w ->
+        @FiniteDigraph.edge V _ _ (@Preproof.pp_graph Judgement Rule V _ _ p) v w ->
         rank w <= rank v) ->
     (forall v w,
-        FiniteDigraph.edge (@Preproof.pp_graph Judgement Rule V _ _ p) v w ->
+        @FiniteDigraph.edge V _ _ (@Preproof.pp_graph Judgement Rule V _ _ p) v w ->
         progress_edge p v w ->
         rank w < rank v) ->
     (forall xs,
-        FiniteDigraph.is_cycle (@Preproof.pp_graph Judgement Rule V _ _ p) xs ->
+        @FiniteDigraph.is_cycle V _ _ (@Preproof.pp_graph Judgement Rule V _ _ p) xs ->
         @Ranking.has_progress_edge V (progress_edge p) xs) ->
     @Ranked.progress_ok Judgement Rule V _ _ progress_edge p (nat_witness rank).
   Proof.

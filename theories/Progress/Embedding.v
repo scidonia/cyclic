@@ -104,6 +104,9 @@ Section HomeomorphicEmbedding.
   | emb_jTy Γ Δ t u A B :
       emb_ctx Γ Δ -> emb_tm t u -> emb_tm A B ->
       emb_judgement (C.jTy Γ t A) (C.jTy Δ u B)
+  | emb_jEq Γ Δ t t' u u' A B :
+      emb_ctx Γ Δ -> emb_tm t t' -> emb_tm u u' -> emb_tm A B ->
+      emb_judgement (C.jEq Γ t u A) (C.jEq Δ t' u' B)
   | emb_jSub Δ Δ' s s' Γ Γ' :
       emb_ctx Δ Δ' -> emb_sub s s' -> emb_ctx Γ Γ' ->
       emb_judgement (C.jSub Δ s Γ) (C.jSub Δ' s' Γ').
@@ -139,8 +142,9 @@ Section HomeomorphicEmbedding.
 
   Lemma emb_judgement_refl (j : C.judgement) : emb_judgement j j.
   Proof.
-    destruct j as [Γ t A|Δ s Γ].
+    destruct j as [Γ t A|Γ t u A|Δ s Γ].
     - apply emb_jTy; [apply emb_ctx_refl|apply emb_tm_refl|apply emb_tm_refl].
+    - apply emb_jEq; [apply emb_ctx_refl|apply emb_tm_refl|apply emb_tm_refl|apply emb_tm_refl].
     - apply emb_jSub; [apply emb_ctx_refl|apply emb_sub_refl|apply emb_ctx_refl].
   Qed.
 End HomeomorphicEmbedding.

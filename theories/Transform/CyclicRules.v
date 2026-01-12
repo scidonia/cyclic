@@ -62,7 +62,7 @@ Section Rules.
     label v = RO.nSort i.
 
   Definition is_pi (v A B : V) : Prop :=
-    label v = RO.nPi /\\ succ v = [A; B].
+    label v = RO.nPi /\ succ v = [A; B].
 
   Definition rule (j : judgement) (premises : list judgement) : Prop :=
     match j with
@@ -80,10 +80,10 @@ Section Rules.
 
     | jTy Γ v A =>
         match label v with
-        | RO.nVar x => premises = [] /\\ ctx_lookup Γ x = Some A
+        | RO.nVar x => premises = [] /\ ctx_lookup Γ x = Some A
 
         | RO.nSort i =>
-            label A = RO.nSort (S i) /\\ premises = []
+            label A = RO.nSort (S i) /\ premises = []
 
         | RO.nPi =>
             (exists vA vB sI sJ sK i j k,
@@ -105,9 +105,9 @@ Section Rules.
         | RO.nApp =>
             (exists vf va vPi vA vB sv,
                 succ v = [vf; va]
-                /\\ is_pi vPi vA vB
-                /\\ premises = [jTy Γ vf vPi; jTy Γ va vA; jSub Γ sv (vA :: Γ)]
-                /\\ A = substV sv vB)
+                /\ is_pi vPi vA vB
+                /\ premises = [jTy Γ vf vPi; jTy Γ va vA; jSub Γ sv (vA :: Γ)]
+                /\ A = substV sv vB)
 
         | RO.nInd _ => True
         | RO.nRoll _ _ _ _ => True
