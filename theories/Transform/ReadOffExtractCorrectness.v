@@ -469,21 +469,6 @@ Proof.
       exact (Nat.lt_lt_succ_r _ _ HvAlt).
 Qed.
 
-(**
-  Compilation produces fresh vertices only (never overwrites keys < old b_next),
-  and all returned vertex ids are < new b_next.
-
-  These are the key invariants needed to apply [extract_ext] to intermediate
-  builders.
-*)
-Lemma compile_tm_preserves_lt
-    (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
-  preserves_lt b (snd (RO.compile_tm fuel ρ t b)).
-Proof.
-  (* Provable - see snapshot lines 390-455.
-     Tactical issue: after simpl, RO.fresh unfolds inside the term but the goal
-     doesn't reduce properly. The proof works in the snapshot with exact tactics. *)
-Admitted.
 
 Lemma build_subst_chain_bnext_mono (us : list nat) (sv_tail : nat) (b : RO.builder) :
   RO.b_next b <= RO.b_next (snd (RO.build_subst_chain us sv_tail b)).
@@ -678,16 +663,301 @@ Lemma compile_list_bnext_mono
   RO.b_next b <= RO.b_next (snd (RO.compile_list fuel ρ ts b)).
 Proof. apply (compile_tm_list_bnext_mono_mutual fuel). Qed.
 
-(* Now the original compile_tm_bnext_mono body can be removed *)
-Lemma compile_tm_list_root_lt_mutual :
+Lemma preserves_lt_build_subst_chain_over
+    (b : RO.builder) (us : list nat) (sv_tail : nat) (b0 : RO.builder) :
+  preserves_lt b b0 ->
+  RO.b_next b <= RO.b_next b0 ->
+  preserves_lt b (snd (RO.build_subst_chain us sv_tail b0)).
+Proof.
+  revert b0.
+  induction us as [|u us IH]; intro b0; intros Hpres Hle; simpl.
+  - exact Hpres.
+  - destruct (RO.build_subst_chain us sv_tail b0) as [sv_tail' b1] eqn:Hch.
+    specialize (IH b0 Hpres Hle).
+    rewrite Hch in IH. simpl in IH.
+    pose proof (build_subst_chain_bnext_mono us sv_tail b0) as Hbmn.
+    rewrite Hch in Hbmn. simpl in Hbmn.
+    set (b2 := snd (RO.fresh b1)).
+    pose proof (preserves_lt_fresh b1) as Hpres_fresh.
+    assert (RO.b_next b <= RO.b_next b1) by lia.
+    pose proof (preserves_lt_trans b b1 b2 IH Hpres_fresh ltac:(lia)) as Hpres2.
+    subst b2.
+    apply (preserves_lt_put_over b (snd (RO.fresh b1)) (RO.b_next b1)
+             (RO.nSubstCons 0) [u; sv_tail'] Hpres2).
+    lia.
+Qed.
+
+(** Compilation never overwrites existing vertices < old `b_next`. *)
+Lemma compile_tm_list_preserves_lt_mutual :
   forall fuel,
     (forall ρ t b,
-        fst (RO.compile_tm fuel ρ t b) < RO.b_next (snd (RO.compile_tm fuel ρ t b)))
+        preserves_lt b (snd (RO.compile_tm fuel ρ t b)))
     /\ (forall ρ ts b,
-          Forall (fun v => v < RO.b_next (snd (RO.compile_list fuel ρ ts b)))
-            (fst (RO.compile_list fuel ρ ts b))).
+          preserves_lt b (snd (RO.compile_list fuel ρ ts b))).
 Proof.
-Admitted.
+  induction fuel as [|fuel IH].
+  - split.
+    + intros ρ t b.
+      cbn [RO.compile_tm].
+      destruct (RO.fresh b) as [v b1] eqn:Hfr.
+      pose proof (preserves_lt_fresh b) as Hpres1.
+      rewrite Hfr in Hpres1. simpl in Hpres1.
+      pose proof (fresh_fst_eq b) as Hv.
+      rewrite Hfr in Hv. simpl in Hv. subst v.
+      apply (preserves_lt_put_over b b1 (RO.b_next b) (RO.nVar 0) [] Hpres1).
+      lia.
+    + intros ρ ts b.
+      cbn [RO.compile_list].
+      apply preserves_lt_refl.
+  - destruct IH as [IHtm IHlist].
+    split.
+    + intros ρ t b.
+      cbn [RO.compile_tm].
+      destruct t as
+          [x
+          |i
+          |A B
+          |A t0
+          |t1 t2
+          |A body
+          |I
+          |I c params recs
+          |I scrut C brs].
+      * (* tVar *)
+        destruct (RO.fresh b) as [v b1] eqn:Hfr.
+        pose proof (preserves_lt_fresh b) as Hpres1.
+        rewrite Hfr in Hpres1. simpl in Hpres1.
+        pose proof (fresh_fst_eq b) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b1 (RO.b_next b) (RO.nVar x) [] Hpres1).
+        lia.
+      * (* tSort *)
+        destruct (RO.fresh b) as [v b1] eqn:Hfr.
+        pose proof (preserves_lt_fresh b) as Hpres1.
+        rewrite Hfr in Hpres1. simpl in Hpres1.
+        pose proof (fresh_fst_eq b) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b1 (RO.b_next b) (RO.nSort i) [] Hpres1).
+        lia.
+      * (* tPi *)
+        destruct (RO.compile_tm fuel ρ A b) as [vA b1] eqn:HA.
+        pose proof (IHtm ρ A b) as HpresA.
+        rewrite HA in HpresA. simpl in HpresA.
+        pose proof (compile_tm_bnext_mono fuel ρ A b) as Hb01.
+        rewrite HA in Hb01. simpl in Hb01.
+        destruct (RO.compile_tm fuel (None :: ρ) B b1) as [vB b2] eqn:HB.
+        pose proof (IHtm (None :: ρ) B b1) as HpresB.
+        rewrite HB in HpresB. simpl in HpresB.
+        pose proof (compile_tm_bnext_mono fuel (None :: ρ) B b1) as Hb12.
+        rewrite HB in Hb12. simpl in Hb12.
+        pose proof (preserves_lt_trans b b1 b2 HpresA HpresB Hb01) as Hpres2.
+        destruct (RO.fresh b2) as [v b3] eqn:Hfr.
+        pose proof (preserves_lt_fresh b2) as Hpres_fresh.
+        rewrite Hfr in Hpres_fresh. simpl in Hpres_fresh.
+        assert (RO.b_next b <= RO.b_next b2) by lia.
+        pose proof (preserves_lt_trans b b2 b3 Hpres2 Hpres_fresh ltac:(lia)) as Hpres3.
+        pose proof (fresh_fst_eq b2) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b3 (RO.b_next b2) RO.nPi [vA; vB] Hpres3).
+        lia.
+      * (* tLam *)
+        destruct (RO.compile_tm fuel ρ A b) as [vA b1] eqn:HA.
+        pose proof (IHtm ρ A b) as HpresA.
+        rewrite HA in HpresA. simpl in HpresA.
+        pose proof (compile_tm_bnext_mono fuel ρ A b) as Hb01.
+        rewrite HA in Hb01. simpl in Hb01.
+        destruct (RO.compile_tm fuel (None :: ρ) t0 b1) as [vt b2] eqn:Ht0.
+        pose proof (IHtm (None :: ρ) t0 b1) as HpresB.
+        rewrite Ht0 in HpresB. simpl in HpresB.
+        pose proof (compile_tm_bnext_mono fuel (None :: ρ) t0 b1) as Hb12.
+        rewrite Ht0 in Hb12. simpl in Hb12.
+        pose proof (preserves_lt_trans b b1 b2 HpresA HpresB Hb01) as Hpres2.
+        destruct (RO.fresh b2) as [v b3] eqn:Hfr.
+        pose proof (preserves_lt_fresh b2) as Hpres_fresh.
+        rewrite Hfr in Hpres_fresh. simpl in Hpres_fresh.
+        assert (RO.b_next b <= RO.b_next b2) by lia.
+        pose proof (preserves_lt_trans b b2 b3 Hpres2 Hpres_fresh ltac:(lia)) as Hpres3.
+        pose proof (fresh_fst_eq b2) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b3 (RO.b_next b2) RO.nLam [vA; vt] Hpres3).
+        lia.
+      * (* tApp *)
+        destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
+        destruct h;
+          try solve [
+            destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+            pose proof (IHtm ρ t1 b) as Hpres1; rewrite H1 in Hpres1; simpl in Hpres1;
+            pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hb01; rewrite H1 in Hb01; simpl in Hb01;
+            destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+            pose proof (IHtm ρ t2 b1) as Hpres2; rewrite H2 in Hpres2; simpl in Hpres2;
+            pose proof (compile_tm_bnext_mono fuel ρ t2 b1) as Hb12; rewrite H2 in Hb12; simpl in Hb12;
+            pose proof (preserves_lt_trans b b1 b2 Hpres1 Hpres2 Hb01) as Hpresb2;
+            destruct (RO.fresh b2) as [v b3] eqn:Hfr;
+            pose proof (preserves_lt_fresh b2) as Hpres_fresh; rewrite Hfr in Hpres_fresh; simpl in Hpres_fresh;
+            assert (RO.b_next b <= RO.b_next b2) by lia;
+            pose proof (preserves_lt_trans b b2 b3 Hpresb2 Hpres_fresh ltac:(lia)) as Hpresb3;
+            pose proof (fresh_fst_eq b2) as Hv0; rewrite Hfr in Hv0; simpl in Hv0; subst v;
+            apply (preserves_lt_put_over b b3 (RO.b_next b2) RO.nApp [v1; v2] Hpresb3);
+            lia].
+        destruct (nth_error ρ x) as [[target|]|] eqn:Hnth;
+          try solve [
+            destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
+            pose proof (IHtm ρ t1 b) as Hpres1; rewrite H1 in Hpres1; simpl in Hpres1;
+            pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hb01; rewrite H1 in Hb01; simpl in Hb01;
+            destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
+            pose proof (IHtm ρ t2 b1) as Hpres2; rewrite H2 in Hpres2; simpl in Hpres2;
+            pose proof (compile_tm_bnext_mono fuel ρ t2 b1) as Hb12; rewrite H2 in Hb12; simpl in Hb12;
+            pose proof (preserves_lt_trans b b1 b2 Hpres1 Hpres2 Hb01) as Hpresb2;
+            destruct (RO.fresh b2) as [v b3] eqn:Hfr;
+            pose proof (preserves_lt_fresh b2) as Hpres_fresh; rewrite Hfr in Hpres_fresh; simpl in Hpres_fresh;
+            assert (RO.b_next b <= RO.b_next b2) by lia;
+            pose proof (preserves_lt_trans b b2 b3 Hpresb2 Hpres_fresh ltac:(lia)) as Hpresb3;
+            pose proof (fresh_fst_eq b2) as Hv0; rewrite Hfr in Hv0; simpl in Hv0; subst v;
+            apply (preserves_lt_put_over b b3 (RO.b_next b2) RO.nApp [v1; v2] Hpresb3);
+            lia].
+        (* backlink case *)
+        destruct (RO.compile_list fuel ρ args b) as [v_args b1] eqn:Hargs.
+        pose proof (IHlist ρ args b) as Hpres_args.
+        rewrite Hargs in Hpres_args. simpl in Hpres_args.
+        pose proof (compile_list_bnext_mono fuel ρ args b) as Hb01.
+        rewrite Hargs in Hb01. simpl in Hb01.
+        destruct (RO.fresh b1) as [sv_nil b2] eqn:Hfr1.
+        pose proof (preserves_lt_fresh b1) as Hpres_fresh1.
+        rewrite Hfr1 in Hpres_fresh1. simpl in Hpres_fresh1.
+        pose proof (preserves_lt_trans b b1 b2 Hpres_args Hpres_fresh1 Hb01) as Hpres_b2.
+        pose proof (fresh_fst_eq b1) as Hsv_nil.
+        rewrite Hfr1 in Hsv_nil. simpl in Hsv_nil. subst sv_nil.
+        set (b3 := RO.put (RO.b_next b1) (RO.nSubstNil 0) [] b2).
+        pose proof (preserves_lt_put_over b b2 (RO.b_next b1) (RO.nSubstNil 0) [] Hpres_b2 ltac:(lia)) as Hpres_b3.
+        pose proof (fresh_snd_next b1) as Hb2next.
+        rewrite Hfr1 in Hb2next. simpl in Hb2next.
+        assert (Hb_le_b3 : RO.b_next b <= RO.b_next b3).
+        { unfold b3. simpl. rewrite Hb2next. lia. }
+        destruct (RO.build_subst_chain v_args (RO.b_next b1) b3) as [sv b4] eqn:Hch.
+        pose proof (preserves_lt_build_subst_chain_over b v_args (RO.b_next b1) b3 Hpres_b3 Hb_le_b3) as Hpres_b4.
+        rewrite Hch in Hpres_b4. simpl in Hpres_b4.
+        destruct (RO.fresh b4) as [v_back b5] eqn:Hfr2.
+        pose proof (preserves_lt_fresh b4) as Hpres_fresh2.
+        rewrite Hfr2 in Hpres_fresh2. simpl in Hpres_fresh2.
+        assert (RO.b_next b <= RO.b_next b4) by (pose proof (build_subst_chain_bnext_mono v_args (RO.b_next b1) b3) as Hbmn; rewrite Hch in Hbmn; simpl in Hbmn; lia).
+        pose proof (preserves_lt_trans b b4 b5 Hpres_b4 Hpres_fresh2 ltac:(lia)) as Hpres_b5.
+        pose proof (fresh_fst_eq b4) as Hv_back.
+        rewrite Hfr2 in Hv_back. simpl in Hv_back. subst v_back.
+        apply (preserves_lt_put_over b b5 (RO.b_next b4) RO.nBack [target; sv] Hpres_b5).
+        lia.
+      * (* tFix *)
+        destruct (RO.fresh b) as [v b0] eqn:Hfr.
+        pose proof (preserves_lt_fresh b) as Hpres0.
+        rewrite Hfr in Hpres0. simpl in Hpres0.
+        pose proof (fresh_fst_eq b) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        pose proof (fresh_snd_next b) as Hb0next.
+        rewrite Hfr in Hb0next. simpl in Hb0next.
+        destruct (RO.compile_tm fuel ρ A b0) as [vA b1] eqn:HA.
+        pose proof (IHtm ρ A b0) as HpresA.
+        rewrite HA in HpresA. simpl in HpresA.
+        pose proof (compile_tm_bnext_mono fuel ρ A b0) as Hb01.
+        rewrite HA in Hb01. simpl in Hb01.
+        pose proof (preserves_lt_trans b b0 b1 Hpres0 HpresA ltac:(lia)) as Hpres_b1.
+        set (b1' := RO.put_fix_ty (RO.b_next b) vA b1).
+        pose proof (preserves_lt_put_fix_ty_over b b1 (RO.b_next b) vA Hpres_b1 ltac:(lia)) as Hpres_b1'.
+        destruct (RO.compile_tm fuel (Some (RO.b_next b) :: ρ) body b1') as [vbody b2] eqn:HB.
+        pose proof (IHtm (Some (RO.b_next b) :: ρ) body b1') as HpresB.
+        rewrite HB in HpresB. simpl in HpresB.
+        pose proof (compile_tm_bnext_mono fuel (Some (RO.b_next b) :: ρ) body b1') as Hb12.
+        rewrite HB in Hb12. simpl in Hb12.
+        assert (RO.b_next b <= RO.b_next b1') by (subst b1'; simpl; lia).
+        pose proof (preserves_lt_trans b b1' b2 Hpres_b1' HpresB ltac:(lia)) as Hpres_b2.
+        apply (preserves_lt_put_over b b2 (RO.b_next b) (default (RO.nVar 0) (RO.b_label b2 !! vbody)) (default [] (RO.b_succ b2 !! vbody)) Hpres_b2).
+        lia.
+      * (* tInd *)
+        destruct (RO.fresh b) as [v b1] eqn:Hfr.
+        pose proof (preserves_lt_fresh b) as Hpres1.
+        rewrite Hfr in Hpres1. simpl in Hpres1.
+        pose proof (fresh_fst_eq b) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b1 (RO.b_next b) (RO.nInd I) [] Hpres1).
+        lia.
+      * (* tRoll *)
+        destruct (RO.compile_list fuel ρ params b) as [vps b1] eqn:Hps.
+        pose proof (IHlist ρ params b) as Hpres1.
+        rewrite Hps in Hpres1. simpl in Hpres1.
+        pose proof (compile_list_bnext_mono fuel ρ params b) as Hb01.
+        rewrite Hps in Hb01. simpl in Hb01.
+        destruct (RO.compile_list fuel ρ recs b1) as [vrs b2] eqn:Hrs.
+        pose proof (IHlist ρ recs b1) as Hpres2.
+        rewrite Hrs in Hpres2. simpl in Hpres2.
+        pose proof (compile_list_bnext_mono fuel ρ recs b1) as Hb12.
+        rewrite Hrs in Hb12. simpl in Hb12.
+        pose proof (preserves_lt_trans b b1 b2 Hpres1 Hpres2 Hb01) as Hpresb2.
+        destruct (RO.fresh b2) as [v b3] eqn:Hfr.
+        pose proof (preserves_lt_fresh b2) as Hpres_fresh.
+        rewrite Hfr in Hpres_fresh. simpl in Hpres_fresh.
+        assert (RO.b_next b <= RO.b_next b2) by lia.
+        pose proof (preserves_lt_trans b b2 b3 Hpresb2 Hpres_fresh ltac:(lia)) as Hpresb3.
+        pose proof (fresh_fst_eq b2) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b3 (RO.b_next b2)
+                 (RO.nRoll I c (length vps) (length vrs)) (vps ++ vrs) Hpresb3).
+        lia.
+      * (* tCase *)
+        destruct (RO.compile_tm fuel ρ scrut b) as [vscrut b1] eqn:Hs.
+        pose proof (IHtm ρ scrut b) as Hpres1.
+        rewrite Hs in Hpres1. simpl in Hpres1.
+        pose proof (compile_tm_bnext_mono fuel ρ scrut b) as Hb01.
+        rewrite Hs in Hb01. simpl in Hb01.
+        destruct (RO.compile_tm fuel ρ C b1) as [vC b2] eqn:Hc.
+        pose proof (IHtm ρ C b1) as Hpres2.
+        rewrite Hc in Hpres2. simpl in Hpres2.
+        pose proof (preserves_lt_trans b b1 b2 Hpres1 Hpres2 Hb01) as Hpresb2.
+        pose proof (compile_tm_bnext_mono fuel ρ C b1) as Hb12.
+        rewrite Hc in Hb12. simpl in Hb12.
+        assert (Htlt2 : RO.b_next b <= RO.b_next b2) by lia.
+        destruct (RO.compile_list fuel ρ brs b2) as [vbrs b3] eqn:Hbrs.
+        pose proof (IHlist ρ brs b2) as Hpres3.
+        rewrite Hbrs in Hpres3. simpl in Hpres3.
+        pose proof (compile_list_bnext_mono fuel ρ brs b2) as Hb23.
+        rewrite Hbrs in Hb23. simpl in Hb23.
+        pose proof (preserves_lt_trans b b2 b3 Hpresb2 Hpres3 ltac:(lia)) as Hpresb3.
+        destruct (RO.fresh b3) as [v b4] eqn:Hfr.
+        pose proof (preserves_lt_fresh b3) as Hpres_fresh.
+        rewrite Hfr in Hpres_fresh. simpl in Hpres_fresh.
+        assert (RO.b_next b <= RO.b_next b3) by lia.
+        pose proof (preserves_lt_trans b b3 b4 Hpresb3 Hpres_fresh ltac:(lia)) as Hpresb4.
+        pose proof (fresh_fst_eq b3) as Hv.
+        rewrite Hfr in Hv. simpl in Hv. subst v.
+        apply (preserves_lt_put_over b b4 (RO.b_next b3)
+                 (RO.nCase I (length vbrs)) ([vscrut; vC] ++ vbrs) Hpresb4).
+        lia.
+    + intros ρ ts b.
+      cbn [RO.compile_list].
+      destruct ts as [|t ts].
+      * exact (preserves_lt_refl b).
+      * destruct (RO.compile_tm fuel ρ t b) as [v b1] eqn:Ht.
+        pose proof (IHtm ρ t b) as Hpres1.
+        rewrite Ht in Hpres1. simpl in Hpres1.
+        pose proof (compile_tm_bnext_mono fuel ρ t b) as Hb01.
+        rewrite Ht in Hb01. simpl in Hb01.
+        destruct (RO.compile_list fuel ρ ts b1) as [vs b2] eqn:Hts.
+        pose proof (IHlist ρ ts b1) as Hpres2.
+        rewrite Hts in Hpres2. simpl in Hpres2.
+        exact (preserves_lt_trans b b1 b2 Hpres1 Hpres2 Hb01).
+Qed.
+
+Lemma compile_tm_preserves_lt
+    (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
+  preserves_lt b (snd (RO.compile_tm fuel ρ t b)).
+Proof.
+  exact (proj1 (compile_tm_list_preserves_lt_mutual fuel) ρ t b).
+Qed.
+
+Lemma compile_list_preserves_lt
+    (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
+  preserves_lt b (snd (RO.compile_list fuel ρ ts b)).
+Proof.
+  exact (proj2 (compile_tm_list_preserves_lt_mutual fuel) ρ ts b).
+Qed.
+
 
 Lemma compile_tm_root_lt
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
