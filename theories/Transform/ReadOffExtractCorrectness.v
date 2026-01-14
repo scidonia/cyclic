@@ -1216,6 +1216,170 @@ Proof.
       exact (Hfix2 k vA Hk Hklt).
 Qed.
 
+Section ExtractExt.
+  Context (b b' : RO.builder) (n : nat).
+  Hypothesis Hagree :
+    forall k,
+      k < n ->
+      b'.(RO.b_label) !! k = b.(RO.b_label) !! k
+      /\ b'.(RO.b_succ) !! k = b.(RO.b_succ) !! k
+      /\ b'.(RO.b_fix_ty) !! k = b.(RO.b_fix_ty) !! k.
+  Hypothesis Hclosed : closed_lt b n.
+
+  Lemma lookup_node_agree (v : nat) : v < n -> EX.lookup_node b v = EX.lookup_node b' v.
+  Proof.
+    intro Hv.
+    unfold EX.lookup_node.
+    destruct (Hagree v Hv) as [Hl _].
+    rewrite Hl.
+    reflexivity.
+  Qed.
+
+  Lemma lookup_succ_agree (v : nat) : v < n -> EX.lookup_succ b v = EX.lookup_succ b' v.
+  Proof.
+    intro Hv.
+    unfold EX.lookup_succ.
+    destruct (Hagree v Hv) as [_ [Hs _]].
+    rewrite Hs.
+    reflexivity.
+  Qed.
+
+  Lemma fix_ty_agree (v : nat) : v < n -> RO.b_fix_ty b !! v = RO.b_fix_ty b' !! v.
+  Proof.
+    intro Hv.
+    destruct (Hagree v Hv) as [_ [_ Hf]].
+    exact (eq_sym Hf).
+  Qed.
+
+  Lemma extract_ext (fuel : nat) :
+    (forall ρ v, v < n -> EX.extract_v fuel b ρ v = EX.extract_v fuel b' ρ v)
+    /\ (forall ρ v, v < n -> EX.extract_node fuel b ρ v = EX.extract_node fuel b' ρ v)
+    /\ (forall ρ sv, sv < n -> EX.subst_args fuel b ρ sv = EX.subst_args fuel b' ρ sv).
+  Proof.
+    induction fuel as [|fuel IH]; simpl.
+    - repeat split; intros; reflexivity.
+    - destruct IH as [IHv [IHn IHs]].
+      assert (Hmap : forall ρ vs,
+                Forall (fun w => w < n) vs ->
+                map (EX.extract_v fuel b ρ) vs = map (EX.extract_v fuel b' ρ) vs).
+      { induction vs as [|w ws IHws]; intro ρ0; intro Hcl; simpl; [reflexivity|].
+        inversion Hcl; subst.
+        rewrite (IHv ρ0 w H2).
+        rewrite IHws; auto.
+      }
+      repeat split.
+      + (* extract_v *)
+        intros ρ0 v Hv.
+        simpl.
+        destruct (ρ0 !! v) as [k|] eqn:Hρ; [reflexivity|].
+        rewrite <- (fix_ty_agree v Hv).
+        destruct (RO.b_fix_ty b !! v) as [vA|] eqn:Hfix.
+        * destruct Hclosed as [_ Hfixval].
+          assert (HvA : vA < n) by (eapply Hfixval; eauto).
+          rewrite (IHv ρ0 vA HvA).
+          rewrite (IHn (<[v := 0]> (EX.env_shift ρ0)) v Hv).
+          reflexivity.
+        * rewrite (IHn ρ0 v Hv). reflexivity.
+      + (* extract_node *)
+        intros ρ0 v Hv.
+        simpl.
+        rewrite <- (lookup_node_agree v Hv).
+        destruct (EX.lookup_node b v) eqn:Hlbl; simpl; try reflexivity.
+        * (* nPi *)
+          rewrite <- (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|vA [|vB xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [vA; vB] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHv ρ0 vA H2).
+          inversion H4; subst.
+          rewrite (IHv (EX.env_shift ρ0) vB H5).
+          reflexivity.
+        * (* nLam *)
+          rewrite <- (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|vA [|vt xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [vA; vt] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHv ρ0 vA H2).
+          inversion H4; subst.
+          rewrite (IHv (EX.env_shift ρ0) vt H5).
+          reflexivity.
+        * (* nApp *)
+          rewrite <- (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|vf [|va xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [vf; va] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHv ρ0 vf H2).
+          inversion H4; subst.
+          rewrite (IHv ρ0 va H5).
+          reflexivity.
+        * (* nRoll *)
+          rewrite <- (lookup_succ_agree v Hv).
+          unfold EX.lookup_succ.
+          destruct (RO.b_succ b !! v) as [xs|] eqn:Hsv; simpl; [|reflexivity].
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v xs Hsv Hv).
+          rewrite !map_take, !map_drop.
+          rewrite (Hmap ρ0 xs Hsucc).
+          reflexivity.
+        * (* nCase *)
+          rewrite <- (lookup_succ_agree v Hv).
+          unfold EX.lookup_succ.
+          destruct (RO.b_succ b !! v) as [xs|] eqn:Hsv; simpl; [|reflexivity].
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v xs Hsv Hv).
+          rewrite (Hmap ρ0 xs Hsucc).
+          reflexivity.
+        * (* nBack *)
+          rewrite <- (lookup_succ_agree v Hv).
+          destruct (EX.lookup_succ b v) as [|tgt [|sv xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          destruct (ρ0 !! tgt); try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl in *; try discriminate.
+          inversion Hsv; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc v [tgt; sv] eq_refl Hv).
+          inversion Hsucc; subst.
+          rewrite (IHs ρ0 sv).
+          { reflexivity. }
+          inversion H4; subst; assumption.
+      + (* subst_args *)
+        intros ρ0 sv Hsv.
+        simpl.
+        rewrite <- (lookup_node_agree sv Hsv).
+        destruct (EX.lookup_node b sv); try reflexivity.
+        * (* nSubstCons *)
+          rewrite <- (lookup_succ_agree sv Hsv).
+          destruct (EX.lookup_succ b sv) as [|u [|sv_tail xs]]; try reflexivity.
+          destruct xs; try reflexivity.
+          unfold EX.lookup_succ in *.
+          destruct (RO.b_succ b !! sv) as [succ|] eqn:Hsvs; simpl in *; try discriminate.
+          inversion Hsvs; subst succ.
+          destruct Hclosed as [Hsucc _].
+          specialize (Hsucc sv [u; sv_tail] eq_refl Hsv).
+          inversion Hsucc; subst.
+          rewrite (IHv ρ0 u H2).
+          inversion H4; subst.
+          rewrite (IHs ρ0 sv_tail H5).
+          reflexivity.
+  Qed.
+End ExtractExt.
+
 Lemma subst_args_build_subst_chain
     (fuel : nat) (ρ : EX.fix_env) (us : list nat) (sv_nil : nat) (b : RO.builder) :
   dom_lt b ->
@@ -1227,12 +1391,68 @@ Lemma subst_args_build_subst_chain
   let '(sv, b') := RO.build_subst_chain us sv_nil b in
   EX.subst_args fuel b' ρ sv = extract_vs fuel b' ρ us.
 Proof.
-  (* ADMITTED: Forward reference to extract_ext (defined at line 1297 in Section ExtractExt).
-     This lemma uses extract_ext to show that extraction is stable under builder extension.
-     The proof structure is sound but requires extract_ext to be available in scope.
-     This lemma is only used later in the file (e.g., line 1884+) after extract_ext is defined,
-     so admitting it here doesn't create logical inconsistencies. *)
-Admitted.
+  revert b.
+  induction us as [|u us IH]; intro b; intros Hdom Hcl Hsv Hlbl Hsucc Hfor; simpl.
+  - destruct fuel; simpl; auto.
+    unfold EX.lookup_node, EX.lookup_succ.
+    rewrite Hlbl, Hsucc.
+    reflexivity.
+  - inversion Hfor as [|? ? Hu Hfor']; subst.
+    destruct (RO.build_subst_chain us sv_nil b) as [sv_tail b1] eqn:Hch.
+    pose proof (build_subst_chain_dom_lt us sv_nil b Hdom) as Hdom1.
+    rewrite Hch in Hdom1.
+    pose proof (build_subst_chain_closed_lt us sv_nil b Hdom Hcl Hsv Hfor') as Hcl1.
+    rewrite Hch in Hcl1.
+    specialize (IH b Hdom Hcl Hsv Hlbl Hsucc Hfor').
+    rewrite Hch in IH.
+    unfold RO.fresh.
+    simpl.
+    set (sv_head := RO.b_next b1).
+    set (b2 := {| RO.b_next := S sv_head; RO.b_label := RO.b_label b1; RO.b_succ := RO.b_succ b1; RO.b_fix_ty := RO.b_fix_ty b1 |}).
+    set (b3 := RO.put sv_head (RO.nSubstCons 0) [u; sv_tail] b2).
+    destruct fuel as [|fuel']; simpl; auto.
+    unfold EX.lookup_node, EX.lookup_succ.
+    unfold b3. simpl.
+    rewrite lookup_insert.
+    rewrite lookup_insert.
+
+    assert (Hagree : forall k,
+              k < sv_head ->
+              b3.(RO.b_label) !! k = b1.(RO.b_label) !! k
+              /\ b3.(RO.b_succ) !! k = b1.(RO.b_succ) !! k
+              /\ b3.(RO.b_fix_ty) !! k = b1.(RO.b_fix_ty) !! k).
+    { intros k Hk.
+      unfold b3, RO.put.
+      simpl.
+      assert (k <> sv_head) by lia.
+      repeat split; try reflexivity; rewrite lookup_insert_ne; auto.
+    }
+
+    pose proof (extract_ext (b := b1) (b' := b3) (ρ := ρ) (n := sv_head) Hagree Hcl1 fuel') as [Hexv [Hexn Hexs]].
+
+    assert (Htail_lt : sv_tail < sv_head).
+    { pose proof (build_subst_chain_root_lt us sv_nil b Hsv) as Htail.
+      rewrite Hch in Htail. simpl in Htail.
+      unfold sv_head. lia. }
+
+    rewrite (Hexs sv_tail Htail_lt).
+
+    assert (Hvs_lt : Forall (fun x => x < sv_head) us).
+    { eapply Forall_impl; [|exact Hfor'].
+      intros x Hx.
+      pose proof (build_subst_chain_bnext_mono us sv_nil b) as Hbmn.
+      rewrite Hch in Hbmn.
+      unfold sv_head.
+      lia. }
+
+    revert Hvs_lt.
+    induction us as [|w ws IHws]; intro Hvs_lt; simpl.
+    + rewrite IH. reflexivity.
+    + inversion Hvs_lt; subst.
+      rewrite (Hexv w H2).
+      f_equal.
+      apply IHws. exact H4.
+Qed.
 
 Lemma compile_tm_dom_lt
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
