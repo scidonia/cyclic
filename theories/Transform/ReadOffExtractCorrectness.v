@@ -1254,21 +1254,24 @@ Section ExtractExt.
   Lemma extract_ext (fuel : nat) :
     (forall ρ v, v < n -> EX.extract_v fuel b ρ v = EX.extract_v fuel b' ρ v)
     /\ (forall ρ v, v < n -> EX.extract_node fuel b ρ v = EX.extract_node fuel b' ρ v)
-    /\ (forall ρ sv, sv < n -> EX.subst_args fuel b ρ sv = EX.subst_args fuel b' ρ sv).
+    /\ (forall ρ sv, sv < n -> EX.subst_args fuel b ρ sv = EX.subst_args fuel b' ρ sv)
+    /\ (forall ρ vs, Forall (fun w => w < n) vs ->
+          EX.extract_list EX.extract_v fuel b ρ vs =
+          EX.extract_list EX.extract_v fuel b' ρ vs).
   Proof using Hagree Hclosed.
     induction fuel as [|fuel IH]; simpl.
     - repeat split; intros; reflexivity.
-    - destruct IH as [IHv [IHn IHs]].
-      (* Local helper for map reasoning over lists *)
-      assert (Hmap : forall ρ vs,
+    - destruct IH as [IHv [IHn [IHs IHl]]].
+      assert (HlistS : forall ρ vs,
                 Forall (fun w => w < n) vs ->
-                map (EX.extract_v fuel b ρ) vs = map (EX.extract_v fuel b' ρ) vs).
+                EX.extract_list EX.extract_v (S fuel) b ρ vs =
+                EX.extract_list EX.extract_v (S fuel) b' ρ vs).
       { intros ρ0 vs Hvs.
-        induction vs as [|w ws IHws]; simpl; [reflexivity|].
+        destruct vs as [|w ws]; simpl; [reflexivity|].
         inversion Hvs as [|? ? Hw Hws]; subst.
         rewrite (IHv ρ0 w Hw).
         f_equal.
-        apply IHws. assumption.
+        exact (IHl ρ0 ws Hws).
       }
       assert (Htake : forall k xs,
                 Forall (fun w => w < n) xs -> Forall (fun w => w < n) (take k xs)).
@@ -1349,17 +1352,28 @@ Section ExtractExt.
         * (* nRoll *)
           rewrite <- (lookup_succ_agree v Hv).
           unfold EX.lookup_succ.
-          cbn.
-          assert (Hxs : Forall (fun w => w < n) (default [] (RO.b_succ b !! v))).
-          { destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv.
-            - destruct Hclosed as [Hsucc _].
-              exact (Hsucc v succ Hsv Hv).
-            - constructor. }
-          rewrite (Hmap ρ0 (take nparams (default [] (RO.b_succ b !! v)))
-                    (Htake nparams (default [] (RO.b_succ b !! v)) Hxs)).
-          rewrite (Hmap ρ0 (drop nparams (default [] (RO.b_succ b !! v)))
-                    (Hdrop nparams (default [] (RO.b_succ b !! v)) Hxs)).
-          reflexivity.
+          destruct (RO.b_succ b !! v) as [succ|] eqn:Hsv; simpl.
+          { destruct Hclosed as [Hsucc _].
+            pose proof (Hsucc v succ Hsv Hv) as Hxs.
+            set (ps := take nparams succ).
+            set (rs := drop nparams succ).
+            assert (Hps : Forall (fun w => w < n) ps).
+            { subst ps. exact (Htake nparams succ Hxs). }
+            assert (Hrs : Forall (fun w => w < n) rs).
+            { subst rs. exact (Hdrop nparams succ Hxs). }
+            simpl.
+            f_equal.
+            - destruct ps as [|p ps']; simpl; [reflexivity|].
+              inversion Hps as [|? ? Hp Hps']; subst.
+              rewrite (IHv ρ0 p Hp).
+              f_equal.
+              exact (IHl ρ0 ps' Hps').
+            - destruct rs as [|r rs']; simpl; [reflexivity|].
+              inversion Hrs as [|? ? Hr Hrs']; subst.
+              rewrite (IHv ρ0 r Hr).
+              f_equal.
+              exact (IHl ρ0 rs' Hrs'). }
+          { simpl. rewrite take_nil, drop_nil. reflexivity. }
         * (* nCase *)
           rewrite <- (lookup_succ_agree v Hv).
           unfold EX.lookup_succ.
@@ -1372,8 +1386,16 @@ Section ExtractExt.
           inversion Hsucc' as [|? ? HC Hbrs]; subst.
           rewrite (IHv ρ0 vscrut Hscrut).
           rewrite (IHv ρ0 vC HC).
-          rewrite (Hmap ρ0 (take nbrs brs) (Htake nbrs brs Hbrs)).
-          reflexivity.
+          set (brs' := take nbrs brs).
+          assert (Hbrs' : Forall (fun w => w < n) brs').
+          { subst brs'. exact (Htake nbrs brs Hbrs). }
+          simpl.
+          f_equal.
+          destruct brs' as [|p ps]; simpl; [reflexivity|].
+          inversion Hbrs' as [|? ? Hp Hps]; subst.
+          rewrite (IHv ρ0 p Hp).
+          f_equal.
+          exact (IHl ρ0 ps Hps).
         * (* nBack *)
           rewrite <- (lookup_succ_agree v Hv).
           unfold EX.lookup_succ.
@@ -1407,6 +1429,8 @@ Section ExtractExt.
           rewrite (IHv ρ0 u Hu_lt).
           rewrite (IHs ρ0 sv_tail Htail_lt).
           reflexivity.
+       + (* extract_list *)
+         exact HlistS.
   Qed.
 End ExtractExt.
 
@@ -1423,7 +1447,7 @@ Lemma extract_ext_inst
   /\ (forall v, v < n -> EX.extract_node fuel b ρ v = EX.extract_node fuel b' ρ v)
   /\ (forall sv, sv < n -> EX.subst_args fuel b ρ sv = EX.subst_args fuel b' ρ sv).
 Proof.
-  pose proof (@extract_ext b b' n Hagree Hclosed fuel) as [Hexv [Hexn Hexs]].
+  pose proof (@extract_ext b b' n Hagree Hclosed fuel) as [Hexv [Hexn [Hexs _]]].
   repeat split.
   - intros v Hv. exact (Hexv ρ v Hv).
   - intros v Hv. exact (Hexn ρ v Hv).
@@ -1482,7 +1506,7 @@ Proof.
       repeat split; try reflexivity; rewrite lookup_insert_ne; auto.
     }
 
-    pose proof (@extract_ext b1 b3 sv_head Hagree Hcl1 fuel') as [Hexv [Hexn Hexs]].
+    pose proof (@extract_ext b1 b3 sv_head Hagree Hcl1 fuel') as [Hexv [Hexn [Hexs _]]].
 
     assert (Htail_lt : sv_tail < sv_head).
     { pose proof (build_subst_chain_root_lt us sv_nil b Hsv) as Htail.
@@ -1509,7 +1533,7 @@ Proof.
     induction fuel' as [|fuel'' IHfuel]; intros us0 Hvs_lt0; simpl; [reflexivity|].
     destruct us0 as [|w ws]; [reflexivity|].
     inversion Hvs_lt0 as [|? ? Hw Hws]; subst.
-    pose proof (@extract_ext b1 b3 sv_head Hagree Hcl1 fuel'') as [Hexv' [Hexn' Hexs']].
+    pose proof (@extract_ext b1 b3 sv_head Hagree Hcl1 fuel'') as [Hexv' [Hexn' [Hexs' _]]].
     rewrite (Hexv' ρ w Hw).
     f_equal.
     apply IHfuel.
@@ -2298,7 +2322,8 @@ Proof.
         pose proof (compile_tm_bnext_mono fuel ρ t b0) as Hmn1.
         rewrite Ht in Hmn1.
         assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]).
-        pose proof (IHts b1 vs_tail b' Hsz_tail Hdom1 Hcl1 Hnd0 Htlt1 Hts) as Htail.
+        pose proof (IHts b1 vs_tail b' Hsz_tail Hdom1 Hcl1 Hnd0 Htlt1 eq_refl) as Htail.
+        rewrite Hts in Htail.
         pose proof (compile_list_preserves_lt fuel ρ ts b1) as Hpres.
         rewrite Hts in Hpres.
         assert (Hagree : forall k,

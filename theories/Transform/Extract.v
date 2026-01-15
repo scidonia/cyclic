@@ -46,6 +46,20 @@ Section Extract.
   Definition lookup_succ (b : RO.builder) (v : nat) : list nat :=
     default [] (RO.b_succ b !! v).
 
+  (* Extract a list of vertices, consuming fuel across the list.
+     This mirrors `ReadOff.compile_list`, which also decrements fuel per element. *)
+  Fixpoint extract_list
+      (ev : nat -> RO.builder -> fix_env -> nat -> T.tm)
+      (fuel : nat) (b : RO.builder) (ρ : fix_env) (vs : list nat) : list T.tm :=
+    match fuel with
+    | 0 => []
+    | S fuel' =>
+        match vs with
+        | [] => []
+        | v :: vs => ev fuel' b ρ v :: extract_list ev fuel' b ρ vs
+        end
+    end.
+
   Fixpoint extract_v (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) {struct fuel} : T.tm :=
     match fuel with
     | 0 => T.tVar 0
@@ -105,13 +119,13 @@ Section Extract.
             let ps := take nparams xs in
             let rs := drop nparams xs in
             T.tRoll ind ctor
-              (map (extract_v fuel' b ρ) ps)
-              (map (extract_v fuel' b ρ) rs)
+              (extract_list extract_v (S fuel') b ρ ps)
+              (extract_list extract_v (S fuel') b ρ rs)
         | RO.nCase ind nbrs =>
             match lookup_succ b v with
             | vscrut :: vC :: brs =>
                 T.tCase ind (extract_v fuel' b ρ vscrut) (extract_v fuel' b ρ vC)
-                  (map (extract_v fuel' b ρ) (take nbrs brs))
+                  (extract_list extract_v (S fuel') b ρ (take nbrs brs))
             | _ => T.tVar 0
             end
         | RO.nSubstNil _ =>
