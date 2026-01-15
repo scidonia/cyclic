@@ -161,5 +161,5 @@ Section Extract.
   Definition extract_read_off (t : T.tm) : T.tm :=
     let '(root, b) := RO.read_off_raw t in
     (* `T.size t` is always >= 1, so fuel is nonzero. *)
-    extract_v (T.size t) b (∅ : fix_env) root.
+    extract_v (S (T.size t)) b (∅ : fix_env) root.
 End Extract.

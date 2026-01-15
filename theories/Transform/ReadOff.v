@@ -228,5 +228,6 @@ Section ReadOff.
     end.
 
   Definition read_off_raw (t : T.tm) : nat * builder :=
-    compile_tm (T.size t) [] t empty_builder.
+    (* Use a slightly larger fuel to account for list compilation consuming fuel. *)
+    compile_tm (S (T.size t)) [] t empty_builder.
 End ReadOff.
