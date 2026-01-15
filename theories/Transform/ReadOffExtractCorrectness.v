@@ -2243,6 +2243,9 @@ Qed.
 
     This is the key lemma needed for the read-off / extract round-trip.
 *)
+Definition list_size (ts : list T.tm) : nat :=
+  fold_right (fun u n => T.size u + n) 0 ts.
+
 Lemma extract_compile_tm
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
   fuel >= T.size t ->
@@ -2262,6 +2265,7 @@ Proof.
     (* Helper for list compilation under the current fuel/ρ: extracting the
        compiled vertices yields the original term list. *)
     assert (Hcompile_list : forall (ts : list T.tm) (b0 : RO.builder) (vs : list nat) (b' : RO.builder),
+              fuel >= list_size ts ->
               dom_lt b0 ->
               closed_lt b0 (RO.b_next b0) ->
               nodup_targets ρ ->
@@ -2269,18 +2273,18 @@ Proof.
               RO.compile_list fuel ρ ts b0 = (vs, b') ->
               map (EX.extract_v fuel b' (fix_env_of ρ)) vs = ts).
     {
-      induction ts as [|t ts IHts]; intros b0 vs b' Hdom0 Hcl0 Hnd0 Htlt0 Hc; simpl in *.
+      induction ts as [|t ts IHts];
+        intros b0 vs b' Hsz Hdom0 Hcl0 Hnd0 Htlt0 Hc; simpl in *.
       - destruct fuel; simpl in Hc; inversion Hc; subst; reflexivity.
-      - simpl in Hc.
+      - cbn [list_size] in Hsz.
+        simpl in Hc.
         destruct (RO.compile_tm fuel ρ t b0) as [v1 b1] eqn:Ht.
         destruct (RO.compile_list fuel ρ ts b1) as [vs_tail b2] eqn:Hts.
         inversion Hc; subst.
-        (* head correctness in b1 *)
-        assert (Hfuelt : fuel >= T.size t).
-        { simpl in Hfuel. lia. }
+        assert (Hfuelt : fuel >= T.size t) by lia.
+        assert (Hsz_tail : fuel >= list_size ts) by lia.
         pose proof (IH ρ t b0 Hfuelt Hdom0 Hcl0 Hnd0 Htlt0) as Hhead.
         rewrite Ht in Hhead.
-        (* tail correctness in b2 *)
         pose proof (compile_tm_dom_lt fuel ρ t b0 Hdom0) as Hdom1.
         rewrite Ht in Hdom1.
         pose proof (compile_tm_closed fuel ρ t b0 (conj Hdom0 Hcl0) Htlt0) as Hcl1.
@@ -2288,9 +2292,7 @@ Proof.
         pose proof (compile_tm_bnext_mono fuel ρ t b0) as Hmn1.
         rewrite Ht in Hmn1.
         assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]).
-        pose proof (IHts b1 vs_tail b2 Hdom1 Hcl1 Hnd0 Htlt1 eq_refl) as Htail.
-        rewrite Hts in Htail.
-        (* lift head extraction from b1 to b2 (tail compilation extends builder) *)
+        pose proof (IHts b1 vs_tail b2 Hsz_tail Hdom1 Hcl1 Hnd0 Htlt1 Hts) as Htail.
         pose proof (compile_list_preserves_lt fuel ρ ts b1) as Hpres.
         rewrite Hts in Hpres.
         assert (Hagree : forall k,
@@ -2299,8 +2301,7 @@ Proof.
                   /\ b2.(RO.b_succ) !! k = b1.(RO.b_succ) !! k
                   /\ b2.(RO.b_fix_ty) !! k = b1.(RO.b_fix_ty) !! k)
           by (intros k Hk; apply Hpres; exact Hk).
-        pose proof (extract_ext_inst (b := b1) (b' := b2) (ρ := fix_env_of ρ)
-                      (n := RO.b_next b1) (fuel := fuel) Hagree Hcl1) as [Hexv _].
+        pose proof (extract_ext_inst b1 b2 (fix_env_of ρ) (RO.b_next b1) fuel Hagree Hcl1) as [Hexv _].
         pose proof (compile_tm_root_lt fuel ρ t b0) as Hvlt.
         rewrite Ht in Hvlt.
         simpl.
@@ -2360,10 +2361,8 @@ Proof.
       }
       pose proof (compile_tm_closed fuel (None :: ρ) t2 b1 (conj Hdom1 Hcl1) HtltB) as Hcl2.
       rewrite HB in Hcl2.
-      pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := fix_env_of ρ)
-                    (n := v) (fuel := fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
-      pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := EX.env_shift (fix_env_of ρ))
-                    (n := v) (fuel := fuel + 1) Hagree24 Hcl2) as [Hexv24s _].
+      pose proof (extract_ext_inst b2 b4 (fix_env_of ρ) v (fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
+      pose proof (extract_ext_inst b2 b4 (EX.env_shift (fix_env_of ρ)) v (fuel + 1) Hagree24 Hcl2) as [Hexv24s _].
       pose proof (compile_tm_root_lt fuel ρ t1 b) as HvA.
       rewrite HA in HvA.
       pose proof (compile_tm_root_lt fuel (None :: ρ) t2 b1) as HvB.
@@ -2421,10 +2420,8 @@ Proof.
       }
       pose proof (compile_tm_closed fuel (None :: ρ) t2 b1 (conj Hdom1 Hcl1) HtltB) as Hcl2.
       rewrite HB in Hcl2.
-      pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := fix_env_of ρ)
-                    (n := v) (fuel := fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
-      pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := EX.env_shift (fix_env_of ρ))
-                    (n := v) (fuel := fuel + 1) Hagree24 Hcl2) as [Hexv24s _].
+      pose proof (extract_ext_inst b2 b4 (fix_env_of ρ) v (fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
+      pose proof (extract_ext_inst b2 b4 (EX.env_shift (fix_env_of ρ)) v (fuel + 1) Hagree24 Hcl2) as [Hexv24s _].
       pose proof (compile_tm_root_lt fuel ρ t1 b) as HvA.
       rewrite HA in HvA.
       pose proof (compile_tm_root_lt fuel (None :: ρ) t2 b1) as Hvt.
@@ -2477,8 +2474,7 @@ Proof.
                     /\ b4.(RO.b_succ) !! k = b2.(RO.b_succ) !! k
                     /\ b4.(RO.b_fix_ty) !! k = b2.(RO.b_fix_ty) !! k)
             by (intros k Hk; unfold b4, RO.put; simpl; assert (k <> v) by lia; repeat split; rewrite lookup_insert_ne; auto);
-          pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := fix_env_of ρ)
-                        (n := v) (fuel := fuel) Hagree24 Hcl2) as [Hexv24 _];
+          pose proof (extract_ext_inst b2 b4 (fix_env_of ρ) v fuel Hagree24 Hcl2) as [Hexv24 _];
           pose proof (compile_tm_root_lt fuel ρ t1 b) as Hv1; rewrite H1 in Hv1;
           pose proof (compile_tm_root_lt fuel ρ t2 b1) as Hv2; rewrite H2 in Hv2;
           assert (Hv1lt : v1 < v) by (unfold v; lia);
@@ -2521,8 +2517,7 @@ Proof.
                     /\ b4.(RO.b_succ) !! k = b2.(RO.b_succ) !! k
                     /\ b4.(RO.b_fix_ty) !! k = b2.(RO.b_fix_ty) !! k)
             by (intros k Hk; unfold b4, RO.put; simpl; assert (k <> v) by lia; repeat split; rewrite lookup_insert_ne; auto);
-          pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := fix_env_of ρ)
-                        (n := v) (fuel := fuel) Hagree24 Hcl2) as [Hexv24 _];
+          pose proof (extract_ext_inst b2 b4 (fix_env_of ρ) v fuel Hagree24 Hcl2) as [Hexv24 _];
           pose proof (compile_tm_root_lt fuel ρ t1 b) as Hv1; rewrite H1 in Hv1;
           pose proof (compile_tm_root_lt fuel ρ t2 b1) as Hv2; rewrite H2 in Hv2;
           assert (Hv1lt : v1 < v) by (unfold v; lia);
@@ -2642,8 +2637,7 @@ Proof.
                 /\ b2.(RO.b_succ) !! k = b1.(RO.b_succ) !! k
                 /\ b2.(RO.b_fix_ty) !! k = b1.(RO.b_fix_ty) !! k)
         by (intros k Hk; apply Hpres12; exact Hk).
-      pose proof (extract_ext_inst (b := b1) (b' := b2) (ρ := fix_env_of ρ)
-                    (n := RO.b_next b1) (fuel := fuel) Hagree12 Hcl1) as [Hexv12 _].
+      pose proof (extract_ext_inst b1 b2 (fix_env_of ρ) (RO.b_next b1) fuel Hagree12 Hcl1) as [Hexv12 _].
       pose proof (compile_list_roots_lt fuel ρ l b) as Hvps_lt.
       rewrite Hps in Hvps_lt.
       assert (Hps_ex_b2 : map (EX.extract_v fuel b2 (fix_env_of ρ)) vps = l).
@@ -2668,8 +2662,7 @@ Proof.
         unfold b4, RO.put. simpl.
         assert (k <> v) by lia.
         repeat split; rewrite lookup_insert_ne; auto. }
-      pose proof (extract_ext_inst (b := b2) (b' := b4) (ρ := fix_env_of ρ)
-                    (n := v) (fuel := fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
+      pose proof (extract_ext_inst b2 b4 (fix_env_of ρ) v (fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
       pose proof (compile_list_roots_lt fuel ρ l b) as Hltps.
       rewrite Hps in Hltps.
       pose proof (compile_list_roots_lt fuel ρ l0 b1) as Hltrs.
@@ -2745,8 +2738,7 @@ Proof.
         unfold b5, RO.put. simpl.
         assert (k <> v) by lia.
         repeat split; rewrite lookup_insert_ne; auto. }
-      pose proof (extract_ext_inst (b := b3) (b' := b5) (ρ := fix_env_of ρ)
-                    (n := v) (fuel := fuel) Hagree35 Hcl3) as [Hexv35 _].
+      pose proof (extract_ext_inst b3 b5 (fix_env_of ρ) v fuel Hagree35 Hcl3) as [Hexv35 _].
       pose proof (compile_tm_root_lt fuel ρ t1 b) as Hvs.
       rewrite Hs in Hvs.
       pose proof (compile_tm_root_lt fuel ρ t2 b1) as HvC.
