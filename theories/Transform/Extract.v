@@ -46,7 +46,7 @@ Section Extract.
   Definition lookup_succ (b : RO.builder) (v : nat) : list nat :=
     default [] (RO.b_succ b !! v).
 
-  Fixpoint extract_v (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) : T.tm :=
+  Fixpoint extract_v (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) {struct fuel} : T.tm :=
     match fuel with
     | 0 => T.tVar 0
     | S fuel' =>
@@ -71,7 +71,7 @@ Section Extract.
         end
     end
 
-  with extract_node (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) : T.tm :=
+  with extract_node (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) {struct fuel} : T.tm :=
     match fuel with
     | 0 => T.tVar 0
     | S fuel' =>
@@ -104,7 +104,9 @@ Section Extract.
             let xs := lookup_succ b v in
             let ps := take nparams xs in
             let rs := drop nparams xs in
-            T.tRoll ind ctor (map (extract_v fuel' b ρ) ps) (map (extract_v fuel' b ρ) rs)
+            T.tRoll ind ctor
+              (map (extract_v fuel' b ρ) ps)
+              (map (extract_v fuel' b ρ) rs)
         | RO.nCase ind nbrs =>
             match lookup_succ b v with
             | vscrut :: vC :: brs =>
@@ -134,7 +136,7 @@ Section Extract.
         end
     end
 
-  with subst_args (fuel : nat) (b : RO.builder) (ρ : fix_env) (sv : nat) : list T.tm :=
+  with subst_args (fuel : nat) (b : RO.builder) (ρ : fix_env) (sv : nat) {struct fuel} : list T.tm :=
     match fuel with
     | 0 => []
     | S fuel' =>
