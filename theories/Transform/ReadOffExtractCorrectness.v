@@ -145,6 +145,35 @@ Proof.
     + apply IH. exact Hin.
 Qed.
 
+Lemma fix_env_of_lookup_None_of_targets_lt (ρ : RO.back_env) (n : nat) :
+  targets_lt ρ n -> fix_env_of ρ !! n = None.
+Proof.
+  revert n.
+  induction ρ as [|o ρ IH]; intros n Hlt.
+  - rewrite fix_env_of_nil. apply lookup_empty.
+  - destruct o as [target|].
+    + simpl in Hlt.
+      inversion Hlt as [|x xs Hx Hxs]; subst.
+      rewrite fix_env_of_cons_some.
+      destruct (decide (target = n)) as [->|Hne].
+      * exfalso. lia.
+      * rewrite (lookup_insert_ne (H6:=_) (EX.env_shift (fix_env_of ρ)) target n 0 Hne).
+        unfold EX.env_shift.
+        pose proof (IH n Hxs) as Hnone.
+        rewrite (lookup_fmap (FinMap:=_) S (fix_env_of ρ) n).
+        change (S <$> fix_env_of ρ !! n) with (S <$> (fix_env_of ρ !! n)).
+        rewrite Hnone.
+        simpl. reflexivity.
+    + rewrite fix_env_of_cons_none.
+      simpl in Hlt.
+      unfold EX.env_shift.
+      pose proof (IH n Hlt) as Hnone.
+      rewrite (lookup_fmap (FinMap:=_) S (fix_env_of ρ) n).
+      change (S <$> fix_env_of ρ !! n) with (S <$> (fix_env_of ρ !! n)).
+      rewrite Hnone.
+      simpl. reflexivity.
+Qed.
+
 Lemma nth_error_targets_of
     (ρ : RO.back_env) (x target : nat) :
   nth_error ρ x = Some (Some target) -> In target (targets_of ρ).
@@ -1216,6 +1245,30 @@ Proof.
       exact (Hfix2 k vA Hk Hklt).
 Qed.
 
+Section PutLemmas.
+  Lemma lookup_node_put_eq (b : RO.builder) (v : nat) (lbl : RO.node) (succs : list nat) :
+    EX.lookup_node (RO.put v lbl succs b) v = lbl.
+  Proof.
+    unfold EX.lookup_node, RO.put.
+    simpl.
+    try rewrite lookup_insert.
+    try (rewrite decide_True by reflexivity).
+    simpl.
+    reflexivity.
+  Qed.
+
+  Lemma lookup_succ_put_eq (b : RO.builder) (v : nat) (lbl : RO.node) (succs : list nat) :
+    EX.lookup_succ (RO.put v lbl succs b) v = succs.
+  Proof.
+    unfold EX.lookup_succ, RO.put.
+    simpl.
+    try rewrite lookup_insert.
+    try (rewrite decide_True by reflexivity).
+    simpl.
+    reflexivity.
+  Qed.
+End PutLemmas.
+
 Section ExtractExt.
   Context (b b' : RO.builder) (n : nat).
   Hypothesis Hagree :
@@ -2271,109 +2324,111 @@ Qed.
     This is the key lemma needed for the read-off / extract round-trip.
 *)
 Definition list_size (ts : list T.tm) : nat :=
-  fold_right (fun u n => T.size u + n) 0 ts.
+  (* `ReadOff.compile_list` consumes one unit of fuel per list cell in addition
+     to the fuel required to compile each element. This definition matches that
+     fuel accounting. *)
+  (* Each list element needs an extra fuel unit because extraction spends one
+     step in `extract_v` before delegating to `extract_node`. *)
+  fold_right (fun u n => S (T.size u) + S n) 0 ts.
 
 Lemma extract_compile_tm
     (fuel : nat) (ρ : RO.back_env) (t : T.tm) (b : RO.builder) :
-  fuel >= T.size t ->
+  fuel >= S (T.size t) ->
   dom_lt b ->
   closed_lt b (RO.b_next b) ->
   nodup_targets ρ ->
   targets_lt ρ (RO.b_next b) ->
   let '(v, b') := RO.compile_tm fuel ρ t b in
-  EX.extract_v fuel b' (fix_env_of ρ) v = t.
+  EX.extract_v fuel b' (fix_env_of ρ) v = t
+with extract_compile_list
+    (fuel : nat) (ρ : RO.back_env) (ts : list T.tm) (b : RO.builder) :
+  fuel >= list_size ts ->
+  dom_lt b ->
+  closed_lt b (RO.b_next b) ->
+  nodup_targets ρ ->
+  targets_lt ρ (RO.b_next b) ->
+  let '(vs, b') := RO.compile_list fuel ρ ts b in
+  EX.extract_list EX.extract_v fuel b' (fix_env_of ρ) vs = ts.
 Proof.
-  revert ρ t b.
-  induction fuel as [|fuel IH];
-    intros ρ t b Hfuel Hdom Hcl Hnodup Htlt.
-  - exfalso. destruct t; simpl in Hfuel; lia.
-  - destruct t; simpl in *.
-    all: unfold RO.compile_tm; simpl.
-    (* Helper for list compilation under S fuel: compile_list (S fuel) calls
-       compile_tm fuel and compile_list fuel internally. 
-       We require fuel >= list_size ts so that both recursive calls have enough fuel. *)
-    assert (Hcompile_list : forall (ts : list T.tm) (b0 : RO.builder) (vs : list nat) (b' : RO.builder),
-              fuel >= list_size ts ->
-              dom_lt b0 ->
-              closed_lt b0 (RO.b_next b0) ->
-              nodup_targets ρ ->
-              targets_lt ρ (RO.b_next b0) ->
-              RO.compile_list (S fuel) ρ ts b0 = (vs, b') ->
-              map (EX.extract_v (S fuel) b' (fix_env_of ρ)) vs = ts).
-    {
-      induction ts as [|t ts IHts];
-        intros b0 vs b' Hsz Hdom0 Hcl0 Hnd0 Htlt0 Hc; simpl in *.
-      - simpl in Hc; inversion Hc; subst; reflexivity.
-      - cbn [list_size] in Hsz.
-        (* compile_list (S fuel) calls compile_tm fuel and compile_list fuel *)
-        simpl in Hc.
-        destruct (RO.compile_tm fuel ρ t b0) as [v1 b1] eqn:Ht.
-        destruct (RO.compile_list fuel ρ ts b1) as [vs_tail b2] eqn:Hts.
-        inversion Hc; subst.
-        (* From fuel >= T.size t + list_size ts, derive bounds for head and tail *)
-        assert (Hfuelt : fuel >= T.size t) by lia.
-        assert (Hsz_tail : fuel >= list_size ts) by lia.
-        pose proof (IH ρ t b0 Hfuelt Hdom0 Hcl0 Hnd0 Htlt0) as Hhead.
-        rewrite Ht in Hhead.
-        pose proof (compile_tm_dom_lt fuel ρ t b0 Hdom0) as Hdom1.
-        rewrite Ht in Hdom1.
-        pose proof (compile_tm_closed fuel ρ t b0 (conj Hdom0 Hcl0) Htlt0) as Hcl1.
-        rewrite Ht in Hcl1.
-        pose proof (compile_tm_bnext_mono fuel ρ t b0) as Hmn1.
-        rewrite Ht in Hmn1.
-        assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt0|exact Hmn1]).
-        pose proof (IHts b1 vs_tail b' Hsz_tail Hdom1 Hcl1 Hnd0 Htlt1 eq_refl) as Htail.
-        rewrite Hts in Htail.
-        pose proof (compile_list_preserves_lt fuel ρ ts b1) as Hpres.
-        rewrite Hts in Hpres.
-        assert (Hagree : forall k,
-                  k < RO.b_next b1 ->
-                  b'.(RO.b_label) !! k = b1.(RO.b_label) !! k
-                  /\ b'.(RO.b_succ) !! k = b1.(RO.b_succ) !! k
-                  /\ b'.(RO.b_fix_ty) !! k = b1.(RO.b_fix_ty) !! k)
-          by (intros k Hk; apply Hpres; exact Hk).
-        pose proof (extract_ext_inst b1 b' (fix_env_of ρ) (RO.b_next b1) (S fuel) Hagree Hcl1) as [Hexv _].
-        pose proof (compile_tm_root_lt fuel ρ t b0) as Hvlt.
-        rewrite Ht in Hvlt.
-        simpl.
-        f_equal.
-        + rewrite <- (Hexv v1 Hvlt). exact Hhead.
-        + exact Htail.
-    }
-    + (* tVar *)
+  - (* extract_compile_tm *)
+    revert ρ t b.
+    induction fuel as [|fuel IH];
+      intros ρ t b Hfuel Hdom Hcl Hnodup Htlt.
+    + exfalso. destruct t; simpl in Hfuel; lia.
+    + destruct t; simpl in *.
+      all: unfold RO.compile_tm; simpl.
+    * (* tVar *)
       unfold RO.fresh; simpl.
-      set (v := RO.b_next b).
-      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
-      simpl.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
-      rewrite lookup_insert.
+      set (env := fix_env_of ρ).
+      set (key := RO.b_next b).
+      cbn [EX.extract_v].
+      destruct (env !! key) as [k|] eqn:Hρ.
+      { exfalso.
+        subst key.
+        pose proof (fix_env_of_lookup_None_of_targets_lt ρ (RO.b_next b) Htlt) as Hnone.
+        subst env.
+        assert (Some k = None) as Hcontra.
+        { transitivity (fix_env_of ρ !! RO.b_next b); [symmetry; exact Hρ | exact Hnone]. }
+        discriminate Hcontra.
+      }
+      assert (Hfx : RO.b_fix_ty b !! key = None).
+      { destruct (RO.b_fix_ty b !! key) as [vA|] eqn:Hlk; [|reflexivity].
+        destruct Hdom as [_ [_ Hf]].
+        specialize (Hf key vA Hlk).
+        assert (Hkey : key = RO.b_next b) by reflexivity.
+        rewrite Hkey in Hf. lia.
+      }
+      cbn [RO.put].
+      rewrite Hfx.
+      destruct fuel as [|fuel']; [simpl in Hfuel; lia|].
+      cbn [EX.extract_node].
+      rewrite lookup_node_put_eq.
       reflexivity.
-    + (* tSort *)
+    * (* tSort *)
       unfold RO.fresh; simpl.
-      set (v := RO.b_next b).
-      set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
-      simpl.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
-      rewrite lookup_insert.
+      set (env := fix_env_of ρ).
+      set (key := RO.b_next b).
+      cbn [EX.extract_v].
+      destruct (env !! key) as [k|] eqn:Hρ.
+      { exfalso.
+        subst key.
+        pose proof (fix_env_of_lookup_None_of_targets_lt ρ (RO.b_next b) Htlt) as Hnone.
+        subst env.
+        assert (Some k = None) as Hcontra.
+        { transitivity (fix_env_of ρ !! RO.b_next b); [symmetry; exact Hρ | exact Hnone]. }
+        discriminate Hcontra.
+      }
+      assert (Hfx : RO.b_fix_ty b !! key = None).
+      { destruct (RO.b_fix_ty b !! key) as [vA|] eqn:Hlk; [|reflexivity].
+        destruct Hdom as [_ [_ Hf]].
+        specialize (Hf key vA Hlk).
+        assert (Hkey : key = RO.b_next b) by reflexivity.
+        rewrite Hkey in Hf. lia.
+      }
+      cbn [RO.put].
+      rewrite Hfx.
+      destruct fuel as [|fuel']; [simpl in Hfuel; lia|].
+      cbn [EX.extract_node].
+      rewrite lookup_node_put_eq.
       reflexivity.
-    + (* tPi *)
-      destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
-      assert (HfuelA : fuel >= T.size t1) by (simpl in Hfuel; lia).
-      pose proof (IH ρ t1 b HfuelA Hdom Hcl Hnodup Htlt) as IHA.
+    * (* tPi *)
+      destruct (RO.compile_tm fuel ρ t b) as [vA b1] eqn:HA.
+      assert (HfuelA : fuel >= S (T.size t)) by (simpl in Hfuel; lia).
+      pose proof (IH ρ t b HfuelA Hdom Hcl Hnodup Htlt) as IHA.
       rewrite HA in IHA.
       simpl in IHA.
-      pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom) as Hdom1.
+      pose proof (compile_tm_dom_lt fuel ρ t b Hdom) as Hdom1.
       rewrite HA in Hdom1.
-      pose proof (compile_tm_closed fuel ρ t1 b (conj Hdom Hcl) Htlt) as Hcl1.
+      pose proof (compile_tm_closed fuel ρ t b (conj Hdom Hcl) Htlt) as Hcl1.
       rewrite HA in Hcl1.
-      pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1.
+      pose proof (compile_tm_bnext_mono fuel ρ t b) as Hmn1.
       rewrite HA in Hmn1.
       assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn1]).
-      destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vB b2] eqn:HB.
-      assert (HfuelB : fuel >= T.size t2) by (simpl in Hfuel; lia).
+      destruct (RO.compile_tm fuel (None :: ρ) B b1) as [vB b2] eqn:HB.
+      assert (HfuelB : fuel >= S (T.size B)) by (simpl in Hfuel; lia).
       assert (HnodupB : nodup_targets (None :: ρ)) by (simpl; exact Hnodup).
       assert (HtltB : targets_lt (None :: ρ) (RO.b_next b1)) by (simpl; exact Htlt1).
-      pose proof (IH (None :: ρ) t2 b1 HfuelB Hdom1 Hcl1 HnodupB HtltB) as IHB.
+      pose proof (IH (None :: ρ) B b1 HfuelB Hdom1 Hcl1 HnodupB HtltB) as IHB.
       rewrite HB in IHB.
       simpl in IHB.
       unfold RO.fresh; simpl.
@@ -2390,36 +2445,60 @@ Proof.
         assert (k <> v) by lia.
         repeat split; rewrite lookup_insert_ne; auto.
       }
-      pose proof (compile_tm_closed fuel (None :: ρ) t2 b1 (conj Hdom1 Hcl1) HtltB) as Hcl2.
+      pose proof (compile_tm_closed fuel (None :: ρ) B b1 (conj Hdom1 Hcl1) HtltB) as Hcl2.
       rewrite HB in Hcl2.
       pose proof (extract_ext_inst b2 b4 (fix_env_of ρ) v (fuel + 1) Hagree24 Hcl2) as [Hexv24 _].
       pose proof (extract_ext_inst b2 b4 (EX.env_shift (fix_env_of ρ)) v (fuel + 1) Hagree24 Hcl2) as [Hexv24s _].
-      pose proof (compile_tm_root_lt fuel ρ t1 b) as HvA.
+      pose proof (compile_tm_root_lt fuel ρ t b) as HvA.
       rewrite HA in HvA.
-      pose proof (compile_tm_root_lt fuel (None :: ρ) t2 b1) as HvB.
+      pose proof (compile_tm_root_lt fuel (None :: ρ) B b1) as HvB.
       rewrite HB in HvB.
-      assert (HvA_lt : vA < v) by (unfold v; lia).
-      assert (HvB_lt : vB < v) by (unfold v; lia).
+      pose proof (compile_tm_bnext_mono fuel (None :: ρ) B b1) as Hmn2.
+      rewrite HB in Hmn2.
+      assert (HvA_lt : vA < v).
+      { unfold v.
+        eapply Nat.lt_le_trans; [exact HvA|exact Hmn2]. }
+      assert (HvB_lt : vB < v) by (unfold v; exact HvB).
       subst b4.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
-      rewrite lookup_insert.
-      assert (RO.b_fix_ty b2 !! v = None).
-      { destruct (RO.b_fix_ty b2 !! v) eqn:Hfx; [|reflexivity].
-        destruct Hdom1 as [_ [_ Hf]].
-        specialize (Hf v n0 Hfx).
-        unfold v in Hf. lia.
+      pose proof (compile_tm_dom_lt fuel (None :: ρ) B b1 Hdom1) as Hdom2.
+      rewrite HB in Hdom2.
+      assert (Htlt2 : targets_lt ρ v).
+      { unfold v.
+        eapply targets_lt_mono; [exact Htlt|].
+        eapply Nat.le_trans; [exact Hmn1|exact Hmn2]. }
+      destruct fuel as [|fuel']; [simpl in Hfuel; lia|].
+      cbn [EX.extract_v].
+      destruct (fix_env_of ρ !! v) as [k|] eqn:Hρv.
+      { exfalso.
+        pose proof (fix_env_of_lookup_None_of_targets_lt ρ v Htlt2) as Hnone.
+        rewrite Hρv in Hnone.
+        discriminate Hnone.
       }
-      rewrite H.
-      cbn.
+      destruct (RO.b_fix_ty (RO.put v RO.nPi [vA; vB] b3) !! v) as [vA'|] eqn:Hfx.
+      { exfalso.
+        destruct Hdom2 as [_ [_ Hf]].
+        pose proof Hfx as Hfx2.
+        unfold RO.put in Hfx2.
+        simpl in Hfx2.
+        cbn [b3] in Hfx2.
+        pose proof (Hf v vA' Hfx2) as Hvlt.
+        unfold v in Hvlt.
+        exact (Nat.lt_irrefl _ Hvlt). }
+      cbn [EX.extract_node].
+      unfold EX.lookup_node, EX.lookup_succ.
+      unfold RO.put.
+      simpl.
       rewrite lookup_insert.
+      rewrite lookup_insert.
+      simpl.
       rewrite (Hexv24 vA HvA_lt).
       rewrite (Hexv24s vB HvB_lt).
       rewrite IHA.
       rewrite IHB.
       reflexivity.
-    + (* tLam *)
+    * (* tLam *)
       destruct (RO.compile_tm fuel ρ t1 b) as [vA b1] eqn:HA.
-      assert (HfuelA : fuel >= T.size t1) by (simpl in Hfuel; lia).
+      assert (HfuelA : fuel >= S (T.size t1)) by (simpl in Hfuel; lia).
       pose proof (IH ρ t1 b HfuelA Hdom Hcl Hnodup Htlt) as IHA.
       rewrite HA in IHA. simpl in IHA.
       pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom) as Hdom1.
@@ -2430,7 +2509,7 @@ Proof.
       rewrite HA in Hmn1.
       assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn1]).
       destruct (RO.compile_tm fuel (None :: ρ) t2 b1) as [vt b2] eqn:HB.
-      assert (HfuelB : fuel >= T.size t2) by (simpl in Hfuel; lia).
+      assert (HfuelB : fuel >= S (T.size t2)) by (simpl in Hfuel; lia).
       assert (HnodupB : nodup_targets (None :: ρ)) by (simpl; exact Hnodup).
       assert (HtltB : targets_lt (None :: ρ) (RO.b_next b1)) by (simpl; exact Htlt1).
       pose proof (IH (None :: ρ) t2 b1 HfuelB Hdom1 Hcl1 HnodupB HtltB) as IHB.
@@ -2460,7 +2539,7 @@ Proof.
       assert (HvA_lt : vA < v) by (unfold v; lia).
       assert (Hvt_lt : vt < v) by (unfold v; lia).
       subst b4.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      cbn [EX.extract_v EX.extract_node EX.lookup_node EX.lookup_succ RO.put].
       rewrite lookup_insert.
       assert (RO.b_fix_ty b2 !! v = None).
       { destruct (RO.b_fix_ty b2 !! v) eqn:Hfx; [|reflexivity].
@@ -2476,14 +2555,14 @@ Proof.
       rewrite IHA.
       rewrite IHB.
       reflexivity.
-    + (* tApp *)
+    * (* tApp *)
       destruct (RO.app_view (T.tApp t1 t2)) as [h args] eqn:Hv.
       pose proof (app_view_correct (T.tApp t1 t2)) as Happv.
       rewrite Hv in Happv.
       destruct h;
         try (
           destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
-          assert (Hfuel1 : fuel >= T.size t1) by (simpl in Hfuel; lia);
+          assert (Hfuel1 : fuel >= S (T.size t1)) by (simpl in Hfuel; lia);
           pose proof (IH ρ t1 b Hfuel1 Hdom Hcl Hnodup Htlt) as IH1;
           rewrite H1 in IH1; simpl in IH1;
           pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom) as Hdom1; rewrite H1 in Hdom1;
@@ -2491,7 +2570,7 @@ Proof.
           pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1; rewrite H1 in Hmn1;
           assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn1]);
           destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
-          assert (Hfuel2 : fuel >= T.size t2) by (simpl in Hfuel; lia);
+          assert (Hfuel2 : fuel >= S (T.size t2)) by (simpl in Hfuel; lia);
           pose proof (IH ρ t2 b1 Hfuel2 Hdom1 Hcl1 Hnodup Htlt1) as IH2;
           rewrite H2 in IH2; simpl in IH2;
           pose proof (compile_tm_closed fuel ρ t2 b1 (conj Hdom1 Hcl1) Htlt1) as Hcl2; rewrite H2 in Hcl2;
@@ -2526,7 +2605,7 @@ Proof.
       destruct (nth_error ρ n) as [[target|]|] eqn:Hnth;
         try (
           destruct (RO.compile_tm fuel ρ t1 b) as [v1 b1] eqn:H1;
-          assert (Hfuel1 : fuel >= T.size t1) by (simpl in Hfuel; lia);
+          assert (Hfuel1 : fuel >= S (T.size t1)) by (simpl in Hfuel; lia);
           pose proof (IH ρ t1 b Hfuel1 Hdom Hcl Hnodup Htlt) as IH1;
           rewrite H1 in IH1; simpl in IH1;
           pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom) as Hdom1; rewrite H1 in Hdom1;
@@ -2534,7 +2613,7 @@ Proof.
           pose proof (compile_tm_bnext_mono fuel ρ t1 b) as Hmn1; rewrite H1 in Hmn1;
           assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn1]);
           destruct (RO.compile_tm fuel ρ t2 b1) as [v2 b2] eqn:H2;
-          assert (Hfuel2 : fuel >= T.size t2) by (simpl in Hfuel; lia);
+          assert (Hfuel2 : fuel >= S (T.size t2)) by (simpl in Hfuel; lia);
           pose proof (IH ρ t2 b1 Hfuel2 Hdom1 Hcl1 Hnodup Htlt1) as IH2;
           rewrite H2 in IH2; simpl in IH2;
           pose proof (compile_tm_closed fuel ρ t2 b1 (conj Hdom1 Hcl1) Htlt1) as Hcl2; rewrite H2 in Hcl2;
@@ -2578,7 +2657,7 @@ Proof.
       set (b5 := {| RO.b_next := S v; RO.b_label := RO.b_label b4; RO.b_succ := RO.b_succ b4; RO.b_fix_ty := RO.b_fix_ty b4 |}).
       set (b6 := RO.put v RO.nBack [target; sv] b5).
       subst b6.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      cbn [EX.extract_v EX.extract_node EX.lookup_node EX.lookup_succ RO.put].
       rewrite lookup_insert.
       assert (RO.b_fix_ty b4 !! v = None).
       { destruct (RO.b_fix_ty b4 !! v) eqn:Hfx.
@@ -2631,17 +2710,17 @@ Proof.
       rewrite Hsub.
       (* remaining: relate extracted args to the original application spine *)
       admit.
-    + (* tFix *)
+    * (* tFix *)
       admit.
-    + (* tInd *)
+    * (* tInd *)
       unfold RO.fresh; simpl.
       set (v := RO.b_next b).
       set (b1 := {| RO.b_next := S v; RO.b_label := RO.b_label b; RO.b_succ := RO.b_succ b; RO.b_fix_ty := RO.b_fix_ty b |}).
       simpl.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      cbn [EX.extract_v EX.extract_node EX.lookup_node EX.lookup_succ RO.put].
       rewrite lookup_insert.
       reflexivity.
-    + (* tRoll *)
+    * (* tRoll *)
       destruct (RO.compile_list fuel ρ l b) as [vps b1] eqn:Hps.
       assert (Hdom1 : dom_lt b1).
       { pose proof (compile_list_dom_lt fuel ρ l b Hdom) as Hdl. rewrite Hps in Hdl. exact Hdl. }
@@ -2699,7 +2778,7 @@ Proof.
       pose proof (compile_list_roots_lt fuel ρ l0 b1) as Hltrs.
       rewrite Hrs in Hltrs.
       subst b4.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      cbn [EX.extract_v EX.extract_node EX.lookup_node EX.lookup_succ RO.put].
       rewrite lookup_insert.
       assert (RO.b_fix_ty b2 !! v = None).
       { destruct (RO.b_fix_ty b2 !! v) eqn:Hfx; [|reflexivity].
@@ -2727,9 +2806,9 @@ Proof.
       rewrite Hps_ex_b2.
       rewrite Hrs_ex_b2.
       reflexivity.
-    + (* tCase *)
+    * (* tCase *)
       destruct (RO.compile_tm fuel ρ t1 b) as [vscrut b1] eqn:Hs.
-      assert (Hfuels : fuel >= T.size t1) by (simpl in Hfuel; lia).
+      assert (Hfuels : fuel >= S (T.size t1)) by (simpl in Hfuel; lia).
       pose proof (IH ρ t1 b Hfuels Hdom Hcl Hnodup Htlt) as Hscrut.
       rewrite Hs in Hscrut. simpl in Hscrut.
       pose proof (compile_tm_dom_lt fuel ρ t1 b Hdom) as Hdom1.
@@ -2740,7 +2819,7 @@ Proof.
       rewrite Hs in Hmn1.
       assert (Htlt1 : targets_lt ρ (RO.b_next b1)) by (eapply targets_lt_mono; [exact Htlt|exact Hmn1]).
       destruct (RO.compile_tm fuel ρ t2 b1) as [vC b2] eqn:Hc.
-      assert (HfuelC : fuel >= T.size t2) by (simpl in Hfuel; lia).
+      assert (HfuelC : fuel >= S (T.size t2)) by (simpl in Hfuel; lia).
       pose proof (IH ρ t2 b1 HfuelC Hdom1 Hcl1 Hnodup Htlt1) as HC.
       rewrite Hc in HC. simpl in HC.
       pose proof (compile_tm_dom_lt fuel ρ t2 b1 Hdom1) as Hdom2.
@@ -2779,7 +2858,7 @@ Proof.
       assert (Hvs_lt : vscrut < v) by (unfold v; lia).
       assert (HvC_lt : vC < v) by (unfold v; lia).
       subst b5.
-      cbn [EX.extract_v EX.lookup_node EX.lookup_succ].
+      cbn [EX.extract_v EX.extract_node EX.lookup_node EX.lookup_succ RO.put].
       rewrite lookup_insert.
       assert (RO.b_fix_ty b3 !! v = None).
       { destruct (RO.b_fix_ty b3 !! v) eqn:Hfx; [|reflexivity].
@@ -2803,6 +2882,48 @@ Proof.
       rewrite HC.
       rewrite Hbrs_ex_b3.
       reflexivity.
+  - (* extract_compile_list *)
+    revert ρ ts b.
+    induction fuel as [|fuel IHfuel];
+      intros ρ ts b Hfuel Hdom Hcl Hnodup Htlt.
+    + destruct ts as [|t ts].
+      * cbn [RO.compile_list EX.extract_list]. reflexivity.
+      * cbn [list_size] in Hfuel. lia.
+    + destruct ts as [|t ts].
+      * cbn [RO.compile_list EX.extract_list]. reflexivity.
+      * cbn [list_size] in Hfuel.
+        cbn [RO.compile_list].
+        destruct (RO.compile_tm fuel ρ t b) as [v1 b1] eqn:Ht.
+        destruct (RO.compile_list fuel ρ ts b1) as [vs_tail b2] eqn:Hts.
+        assert (Hfuelt : fuel >= S (T.size t)) by lia.
+        assert (Hfuel_tail : fuel >= list_size ts) by lia.
+        pose proof (extract_compile_tm fuel ρ t b Hfuelt Hdom Hcl Hnodup Htlt) as Hhead.
+        rewrite Ht in Hhead.
+        pose proof (compile_tm_dom_lt fuel ρ t b Hdom) as Hdom1.
+        rewrite Ht in Hdom1.
+        pose proof (compile_tm_closed fuel ρ t b (conj Hdom Hcl) Htlt) as Hcl1.
+        rewrite Ht in Hcl1.
+        pose proof (compile_tm_bnext_mono fuel ρ t b) as Hmn1.
+        rewrite Ht in Hmn1.
+        assert (Htlt1 : targets_lt ρ (RO.b_next b1))
+          by (eapply targets_lt_mono; [exact Htlt|exact Hmn1]).
+        pose proof (IHfuel ρ ts b1 Hfuel_tail Hdom1 Hcl1 Hnodup Htlt1) as Htail.
+        rewrite Hts in Htail.
+        pose proof (compile_list_preserves_lt fuel ρ ts b1) as Hpres.
+        rewrite Hts in Hpres.
+        assert (Hagree : forall k,
+                  k < RO.b_next b1 ->
+                  b2.(RO.b_label) !! k = b1.(RO.b_label) !! k
+                  /\ b2.(RO.b_succ) !! k = b1.(RO.b_succ) !! k
+                  /\ b2.(RO.b_fix_ty) !! k = b1.(RO.b_fix_ty) !! k)
+          by (intros k Hk; apply Hpres; exact Hk).
+        pose proof (extract_ext_inst b1 b2 (fix_env_of ρ) (RO.b_next b1) fuel Hagree Hcl1) as [Hexv _].
+        pose proof (compile_tm_root_lt fuel ρ t b) as Hvlt.
+        rewrite Ht in Hvlt.
+        cbn [EX.extract_list].
+        f_equal.
+        -- rewrite <- (Hexv v1 Hvlt). exact Hhead.
+        -- exact Htail.
 Qed.
 
 (*** Round-trip theorems. ***)
