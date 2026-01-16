@@ -176,6 +176,8 @@ Section Extract.
   *)
   Definition extract_read_off (t : T.tm) : T.tm :=
     let '(root, b) := RO.read_off_raw t in
-    (* `T.size t` is always >= 1, so fuel is nonzero. *)
-    extract_v (S (T.size t)) b (∅ : fix_env) root.
+    (* Extraction spends two fuel steps per syntactic node (one in `extract_v`, one in
+       `extract_node`). Using `2 * S (T.size t)` gives enough slack for the
+       round-trip proof without appealing to fuel-monotonicity lemmas. *)
+    extract_v (2 * S (T.size t)) b (∅ : fix_env) root.
 End Extract.
