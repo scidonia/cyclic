@@ -53,10 +53,13 @@ Section ReadOff.
     (* If a vertex is used as a cycle target for a source `tFix A _`, record the
        compiled type vertex for `A` here. This is metadata for extraction. *)
     b_fix_ty : gmap nat nat;
+    (* Additionally record the compiled body root vertex for a cycle target.
+       This is necessary to reconstruct nested `tFix` bodies correctly. *)
+    b_fix_body : gmap nat nat;
   }.
 
   Definition empty_builder : builder :=
-    {| b_next := 0; b_label := ∅; b_succ := ∅; b_fix_ty := ∅ |}.
+    {| b_next := 0; b_label := ∅; b_succ := ∅; b_fix_ty := ∅; b_fix_body := ∅ |}.
 
   (* Decompose an application spine into head and arguments (left-associated). *)
   Fixpoint app_view (t : T.tm) : T.tm * list T.tm :=
@@ -73,6 +76,35 @@ Section ReadOff.
       (h, args ++ [u]).
   Proof. reflexivity. Qed.
 
+  (** A compilation fuel measure.
+
+      `compile_list` consumes one unit of fuel per list cell, so a size-based
+      fuel is not sufficient for constructors that compile lists (`tRoll`,
+      `tCase`, and the backlink branch of `tApp`).
+
+      `fuel_list` is defined so that, when compiling `t :: ts` with total fuel
+      `S fuel'`, both the head `t` and the tail `ts` receive fuel `fuel'`.
+      This matches the shape of `compile_list`.
+  *)
+  Fixpoint fuel_list (fuel_elem : T.tm -> nat) (ts : list T.tm) : nat :=
+    match ts with
+    | [] => 0
+    | t :: ts => S (fuel_elem t + fuel_list fuel_elem ts)
+    end.
+
+  Fixpoint fuel_tm (t : T.tm) : nat :=
+    match t with
+    | T.tVar _ => 2
+    | T.tSort _ => 2
+    | T.tInd _ => 2
+    | T.tPi A B => S (fuel_tm A + fuel_tm B)
+    | T.tLam A t => S (fuel_tm A + fuel_tm t)
+    | T.tApp t u => S (fuel_tm t + fuel_tm u)
+    | T.tFix A t => S (fuel_tm A + fuel_tm t)
+    | T.tRoll _ _ params recs => S (fuel_list fuel_tm params + fuel_list fuel_tm recs)
+    | T.tCase _ scrut C brs => S (fuel_tm scrut + fuel_tm C + fuel_list fuel_tm brs)
+    end.
+
   (* Allocate a fresh vertex id. *)
   Definition fresh (b : builder) : nat * builder :=
     let v := b.(b_next) in
@@ -80,21 +112,31 @@ Section ReadOff.
       {| b_next := S v;
          b_label := b.(b_label);
          b_succ := b.(b_succ);
-         b_fix_ty := b.(b_fix_ty) |}).
+         b_fix_ty := b.(b_fix_ty);
+         b_fix_body := b.(b_fix_body) |}).
 
   (* Fill a vertex with a label and successor list. *)
   Definition put (v : nat) (lbl : node) (succs : list nat) (b : builder) : builder :=
     {| b_next := b.(b_next);
        b_label := <[v := lbl]> b.(b_label);
        b_succ := <[v := succs]> b.(b_succ);
-       b_fix_ty := b.(b_fix_ty) |}.
+       b_fix_ty := b.(b_fix_ty);
+       b_fix_body := b.(b_fix_body) |}.
 
   (* Record the type vertex for a cycle target. *)
   Definition put_fix_ty (v vA : nat) (b : builder) : builder :=
     {| b_next := b.(b_next);
        b_label := b.(b_label);
        b_succ := b.(b_succ);
-       b_fix_ty := <[v := vA]> b.(b_fix_ty) |}.
+       b_fix_ty := <[v := vA]> b.(b_fix_ty);
+       b_fix_body := b.(b_fix_body) |}.
+
+  Definition put_fix_body (v vbody : nat) (b : builder) : builder :=
+    {| b_next := b.(b_next);
+       b_label := b.(b_label);
+       b_succ := b.(b_succ);
+       b_fix_ty := b.(b_fix_ty);
+       b_fix_body := <[v := vbody]> b.(b_fix_body) |}.
 
   Fixpoint build_subst_chain (us : list nat) (sv_tail : nat) (b : builder)
     {struct us} : nat * builder :=
@@ -189,10 +231,10 @@ Section ReadOff.
             let '(vA, b1) := compile_tm fuel' ρ A b0 in
             let b1' := put_fix_ty v vA b1 in
             let '(vbody, b2) := compile_tm fuel' (Some v :: ρ) body b1' in
-            (* Copy the body root shape into v (shallow alias). *)
-            let lbl_body := default (nVar 0) (b2.(b_label) !! vbody) in
-            let succ_body := default [] (b2.(b_succ) !! vbody) in
-            (v, put v lbl_body succ_body b2)
+            let b2' := put_fix_body v vbody b2 in
+            (* No need to alias `v` to the body root: extraction reads the body
+               from `b_fix_body` (and back-links use `v` only as an identifier). *)
+            (v, b2')
 
         | T.tInd ind =>
             let '(v, b1) := fresh b in
@@ -228,6 +270,6 @@ Section ReadOff.
     end.
 
   Definition read_off_raw (t : T.tm) : nat * builder :=
-    (* Use a slightly larger fuel to account for list compilation consuming fuel. *)
-    compile_tm (S (T.size t)) [] t empty_builder.
+    (* Use a fuel measure that accounts for list compilation. *)
+    compile_tm (fuel_tm t) [] t empty_builder.
 End ReadOff.

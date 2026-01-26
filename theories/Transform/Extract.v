@@ -60,30 +60,37 @@ Section Extract.
         end
     end.
 
-  Fixpoint extract_v (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) {struct fuel} : T.tm :=
-    match fuel with
-    | 0 => T.tVar 0
-    | S fuel' =>
-        (* If `v` is a cycle target and not already bound in `ρ`, introduce a fix binder. *)
-        match ρ !! v with
-        | None =>
-            match RO.b_fix_ty b !! v with
-            | Some vA =>
-                let A := extract_v fuel' b ρ vA in
-                (* Inside the synthesized fix body, the cycle target `v` is bound
-                   as de Bruijn index 0. Back-links targeting `v` therefore
-                   become calls to `Var 0` (possibly applied to arguments). *)
-                let ρ' := <[v := 0]> (env_shift ρ) in
-                let body := extract_node fuel' b ρ' v in
-                T.tFix A body
-            | None =>
-                extract_node fuel' b ρ v
-            end
-        | Some k =>
-            (* The vertex is bound by an enclosing synthesized fix. Treat it as a variable. *)
-            T.tVar k
-        end
-    end
+   Fixpoint extract_v (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) {struct fuel} : T.tm :=
+     match fuel with
+     | 0 => T.tVar 0
+     | S fuel' =>
+         (* If `v` is a cycle target and not already bound in `ρ`, introduce a fix binder. *)
+         match ρ !! v with
+         | None =>
+             match RO.b_fix_ty b !! v with
+             | Some vA =>
+                 let A := extract_v fuel' b ρ vA in
+                 (* Inside the synthesized fix body, the cycle target `v` is bound
+                    as de Bruijn index 0. Back-links targeting `v` therefore
+                    become calls to `Var 0` (possibly applied to arguments). *)
+                 let ρ' := <[v := 0]> (env_shift ρ) in
+                 (* Extract the body from the recorded body-root vertex. This is
+                    essential for nested `tFix` to round-trip. *)
+                 let body :=
+                   match RO.b_fix_body b !! v with
+                   | Some vbody => extract_v fuel' b ρ' vbody
+                   | None => extract_node fuel' b ρ' v
+                   end
+                 in
+                 T.tFix A body
+             | None =>
+                 extract_node fuel' b ρ v
+             end
+         | Some k =>
+             (* The vertex is bound by an enclosing synthesized fix. Treat it as a variable. *)
+             T.tVar k
+         end
+     end
 
   with extract_node (fuel : nat) (b : RO.builder) (ρ : fix_env) (v : nat) {struct fuel} : T.tm :=
     match fuel with
