@@ -144,7 +144,7 @@ Section Packaging.
     intro H.
     unfold RO.read_off_raw in H.
     apply elem_of_dom.
-    apply (compile_tm_root_label (fuel := Term.Syntax.size t) (ρ := [])
+    apply (compile_tm_root_label (fuel := RO.fuel_tm t) (ρ := [])
              (t := t) (b := RO.empty_builder) (root := root) (b' := b)).
     exact H.
   Qed.

@@ -173,7 +173,10 @@ Section Extract.
     end.
 
   Definition extract (b : RO.builder) (root : nat) : T.tm :=
-    extract_v (RO.b_next b + 1) b (∅ : fix_env) root.
+    (* `extract_v` / `extract_node` each consume one fuel step, so traversing one
+       graph edge consumes two steps. Using `2 * (b_next + 1)` ensures enough fuel
+       to fully traverse any acyclic path within the finite builder. *)
+    extract_v (2 * (RO.b_next b + 1)) b (∅ : fix_env) root.
 
   (** Specialised extraction for round-trip proofs.
 

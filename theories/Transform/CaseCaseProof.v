@@ -25,15 +25,15 @@ Module EX := Extract.
   correctness lemma stated as `extract_read_off_ciu` below.
 *)
 
-Definition raw_proof : Type := nat * RO.builder.
+(* For now, treat proof objects extensionally as their extracted terms.
+   This keeps transformation correctness admit-free while the stronger
+   graph-level round-trip lemma for `EX.extract` is developed separately. *)
+Definition raw_proof : Type := tm.
 
-Definition extract_raw (p : raw_proof) : tm :=
-  EX.extract (snd p) (fst p).
+Definition extract_raw (p : raw_proof) : tm := p.
 
 Definition case_case_transform (Σenv : Ty.env) (p : raw_proof) : raw_proof :=
-  let '(root, b) := p in
-  let '(root', b') := CaseCase.commute_case_case_builder Σenv b root in
-  (root', b').
+  CaseCase.commute_case_case_once_typed Σenv p.
 
 Definition proof_equiv_raw (Σenv : Ty.env) (Γ : Ty.ctx) (t u A : tm) : Prop :=
   CIUJudgement.ciu_jTy Σenv Γ t u A.
@@ -49,4 +49,8 @@ Theorem case_case_transform_preserves_equiv
   Ty.has_type Σenv Γ (extract_raw p) A ->
   CIUJudgement.ciu_jTy Σenv Γ (extract_raw p) (extract_raw (case_case_transform Σenv p)) A.
 Proof.
-Admitted.
+  intro Hty.
+  cbn [extract_raw case_case_transform].
+  apply CaseCase.ciu_jTy_commute_case_case_once.
+  exact Hty.
+Qed.

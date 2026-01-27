@@ -142,3 +142,108 @@ Proof.
       assert (br0 = br) as -> by congruence.
       reflexivity. }
 Qed.
+
+(** Convenience lemmas for reasoning about `steps` (CBN evaluation). *)
+
+Lemma steps_step (t u : tm) : step t u -> steps t u.
+Proof.
+  intro H.
+  apply rt_step.
+  exact H.
+Qed.
+
+Lemma steps_trans (t u v : tm) : steps t u -> steps u v -> steps t v.
+Proof.
+  intros Htu Huv.
+  eapply rt_trans; eauto.
+Qed.
+
+Lemma steps_app1 (t t' u : tm) : steps t t' -> steps (tApp t u) (tApp t' u).
+Proof.
+  intro Hsteps.
+  revert u.
+  induction Hsteps; intro u.
+  - apply rt_refl.
+  - apply rt_step. exact (step_app1 y x u H).
+  - eapply rt_trans; eauto.
+Qed.
+
+Lemma steps_case_scrut_congr (I : nat) (scrut scrut' C : tm) (brs : list tm) :
+  steps scrut scrut' -> steps (tCase I scrut C brs) (tCase I scrut' C brs).
+Proof.
+  intro Hsteps.
+  revert C brs.
+  induction Hsteps; intros C0 brs0.
+  - apply rt_refl.
+  - apply rt_step. exact (step_case_scrut _ _ _ _ _ H).
+  - eapply rt_trans; eauto.
+Qed.
+
+Lemma steps_apps_congr (t t' : tm) (us : list tm) :
+  steps t t' -> steps (apps t us) (apps t' us).
+Proof.
+  revert t t'.
+  induction us as [|u us IH]; intros t t' H.
+  - cbn [apps]. exact H.
+  - cbn [apps].
+    apply IH.
+    apply steps_app1.
+    exact H.
+Qed.
+
+Lemma steps_case_to_apps
+    (I : nat) (scrut C : tm) (brs : list tm)
+    (c : nat) (params recs : list tm) (br : tm) :
+  steps scrut (tRoll I c params recs) ->
+  branch brs c = Some br ->
+  steps (tCase I scrut C brs) (apps br (params ++ recs)).
+Proof.
+  intros Hscrut Hbr.
+  eapply steps_trans.
+  - apply steps_case_scrut_congr. exact Hscrut.
+  - apply steps_step.
+    apply step_case_roll.
+    exact Hbr.
+Qed.
+
+Lemma steps_decomp (t u : tm) :
+  steps t u -> t = u \/ exists t1, step t t1 /\ steps t1 u.
+Proof.
+  intro H.
+  induction H.
+  - left. reflexivity.
+  - right. exists y. split; [exact H|apply rt_refl].
+  - destruct IHclos_refl_trans1 as [->|[t1 [Hst Ht1u]]].
+    + (* t = y *)
+      destruct IHclos_refl_trans2 as [->|[t1 [Hst Ht1u]]].
+      * left. reflexivity.
+      * right. exists t1. split; [exact Hst|exact Ht1u].
+    + right. exists t1. split; [exact Hst|].
+      eapply rt_trans; eauto.
+Qed.
+
+Lemma steps_to_value_unique (t u v : tm) :
+  steps t v -> value v -> steps t u -> steps u v.
+Proof.
+  intros Htv Hv Htu.
+  revert v Htv Hv.
+  induction Htu.
+  - intros v Htv _. exact Htv.
+  - intros v Htv Hv.
+    destruct (steps_decomp t v Htv) as [->|[t1 [Hst Ht1v]]].
+    + exfalso. eapply value_no_step; eauto.
+    + assert (y = t1) as -> by (eapply step_deterministic; eauto).
+      exact Ht1v.
+  - intros v Htv Hv.
+    pose proof (IHHtu1 v Htv Hv) as Hmv.
+    apply IHHtu2; [exact Hmv|exact Hv].
+Qed.
+
+Lemma terminates_to_steps_prefix (t u v : tm) :
+  steps t u -> terminates_to t v -> terminates_to u v.
+Proof.
+  intros Htu [Htv Hv].
+  split.
+  - eapply steps_to_value_unique; eauto.
+  - exact Hv.
+Qed.

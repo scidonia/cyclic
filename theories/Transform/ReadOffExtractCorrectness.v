@@ -47,32 +47,17 @@ Module Ty := Typing.Typing.
      - Relate compilation's back_env to extraction's fix_env
      - Ensure cycle targets are properly tracked
 
-  4. **Extraction stability** (extract_ext section, NEEDS PORTING from snapshot)
-     - Key lemma: extraction from b and b' agree on vertices < n
-       when b and b' agree on those vertices
-     - Allows lifting extraction correctness across builder extensions
+  4. **Extraction stability** (extract_ext)
+     - If builders agree below `n`, extraction agrees below `n`
 
-  5. **Compilation correctness** (extract_compile_tm, NEEDS PORTING from snapshot)
-     - Main theorem: EX.extract_v fuel b' (fix_env_of ρ) v = t
-       where (v, b') = RO.compile_tm fuel ρ t b
-     - Proven by mutual induction on term structure
-     - Uses extract_ext to handle intermediate builders
+  5. **Compilation correctness** (extract_compile_tm)
+     - Mutual induction over terms/lists
+     - Uses a compilation fuel measure (`RO.fuel_tm`) that accounts for list compilation
 
   6. **Round-trip theorem** (extract_read_off_id)
-     - Follows from extract_compile_tm applied to read_off_raw
-     - Instantiate with empty builder and environment
+     - Instantiates compilation at `RO.fuel_tm t` and extraction at `2 * S (T.size t)`
 
-  === CURRENT STATUS ===
-
-  - Infrastructure lemmas: ADMITTED (all provable, see snapshot file)
-  - Monotonicity: ADMITTED (provable, tactical issues only)
-  - extract_ext: NEEDS PORTING (complete proof in snapshot at line ~1473)
-  - extract_compile_tm: NEEDS PORTING (complete proof in snapshot at line ~1685)
-  - extract_read_off_id: ADMITTED (straightforward once above are ported)
-
-  The snapshot file `ReadOffExtractCorrectness_Snapshot.v` contains complete
-  proofs for all admitted lemmas. The main work remaining is careful porting
-  of the large extract_ext and extract_compile_tm proofs.
+  Status: this file is fully proved (no `Admitted.`).
 *)
 
 (** Build the extraction fix environment from a compilation back environment.
@@ -2573,35 +2558,6 @@ Proof.
     apply Nat.max_lub.
     + lia.
     + eapply Nat.le_trans; [exact IH|]. lia.
-Qed.
-
-Lemma size_apps_tm (h : T.tm) (us : list T.tm) :
-  T.size (apps_tm h us) = T.size h + length us + fold_right (fun u n => T.size u + n) 0 us.
-Proof.
-  revert h.
-  induction us as [|u us IH]; intros h.
-  - cbn [apps_tm]. cbn [length fold_right]. lia.
-  - cbn [apps_tm].
-    specialize (IH (T.tApp h u)).
-    rewrite IH.
-    cbn [T.size length fold_right].
-    lia.
-Qed.
-
-Lemma list_size_le_size_apps_tm (h : T.tm) (us : list T.tm) :
-  list_size us <= T.size (apps_tm h us).
-Proof.
-  destruct us as [|u us].
-  - cbn [list_size apps_tm].
-    pose proof (size_ge_1 h).
-    lia.
-  - cbn [list_size].
-    rewrite size_apps_tm.
-    (* list_max_size (u::us) <= sum sizes (u::us) *)
-    assert (Hmax : list_max_size (u :: us) <= fold_right (fun u0 n => T.size u0 + n) 0 (u :: us)).
-    { apply list_max_size_le_sum_sizes. }
-    pose proof (size_ge_1 h).
-    lia.
 Qed.
 
 (** Fuel cost model for extraction.
