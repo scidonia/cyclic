@@ -160,10 +160,7 @@ Proof.
   {
     intros t0 t Hsteps0.
     induction Hsteps0; intros scrut0 ->.
-    - left.
-      exists scrut0.
-      split; [apply rt_refl|reflexivity].
-    - (* single step *)
+    - (* rt_step *)
       inversion H; subst.
       + left.
         eexists.
@@ -176,7 +173,11 @@ Proof.
         * apply rt_refl.
         * split; [exact H0|].
           apply rt_refl.
-    - (* trans *)
+    - (* rt_refl *)
+      left.
+      exists scrut0.
+      split; [apply rt_refl|reflexivity].
+    - (* rt_trans *)
       specialize (IHHsteps0_1 scrut0 eq_refl).
       destruct IHHsteps0_1 as [Hl|Hr].
       + destruct Hl as [scrut1 [Hscrut01 ->]].

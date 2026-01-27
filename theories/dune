@@ -23,6 +23,7 @@
     Transform.ReadOffPreproof
     Transform.Extract
     Transform.CyclicRules
+    Transform.BetaReduce
     Transform.CaseCase
     Transform.CaseCaseProof
     Transform.ReadOffExtractCorrectness

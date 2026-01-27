@@ -163,9 +163,15 @@ Proof.
   intro Hsteps.
   revert u.
   induction Hsteps; intro u.
-  - apply rt_refl.
-  - apply rt_step. exact (step_app1 y x u H).
-  - eapply rt_trans; eauto.
+  - (* rt_step *)
+    apply rt_step.
+    eapply step_app1; eauto.
+  - (* rt_refl *)
+    apply rt_refl.
+  - (* rt_trans *)
+    eapply rt_trans.
+    + apply IHHsteps1.
+    + apply IHHsteps2.
 Qed.
 
 Lemma steps_case_scrut_congr (I : nat) (scrut scrut' C : tm) (brs : list tm) :
@@ -174,9 +180,15 @@ Proof.
   intro Hsteps.
   revert C brs.
   induction Hsteps; intros C0 brs0.
-  - apply rt_refl.
-  - apply rt_step. exact (step_case_scrut _ _ _ _ _ H).
-  - eapply rt_trans; eauto.
+  - (* rt_step *)
+    apply rt_step.
+    eapply step_case_scrut; eauto.
+  - (* rt_refl *)
+    apply rt_refl.
+  - (* rt_trans *)
+    eapply rt_trans.
+    + apply IHHsteps1.
+    + apply IHHsteps2.
 Qed.
 
 Lemma steps_apps_congr (t t' : tm) (us : list tm) :
@@ -211,9 +223,12 @@ Lemma steps_decomp (t u : tm) :
 Proof.
   intro H.
   induction H.
-  - left. reflexivity.
-  - right. exists y. split; [exact H|apply rt_refl].
-  - destruct IHclos_refl_trans1 as [->|[t1 [Hst Ht1u]]].
+  - (* rt_step *)
+    right. exists y. split; [exact H|apply rt_refl].
+  - (* rt_refl *)
+    left. reflexivity.
+  - (* rt_trans *)
+    destruct IHclos_refl_trans1 as [->|[t1 [Hst Ht1u]]].
     + (* t = y *)
       destruct IHclos_refl_trans2 as [->|[t1 [Hst Ht1u]]].
       * left. reflexivity.
@@ -228,13 +243,16 @@ Proof.
   intros Htv Hv Htu.
   revert v Htv Hv.
   induction Htu.
-  - intros v Htv _. exact Htv.
-  - intros v Htv Hv.
-    destruct (steps_decomp t v Htv) as [->|[t1 [Hst Ht1v]]].
+  - (* rt_step *)
+    intros v Htv Hv.
+    destruct (steps_decomp _ _ Htv) as [->|[t1 [Hst Ht1v]]].
     + exfalso. eapply value_no_step; eauto.
     + assert (y = t1) as -> by (eapply step_deterministic; eauto).
       exact Ht1v.
-  - intros v Htv Hv.
+  - (* rt_refl *)
+    intros v Htv _. exact Htv.
+  - (* rt_trans *)
+    intros v Htv Hv.
     pose proof (IHHtu1 v Htv Hv) as Hmv.
     apply IHHtu2; [exact Hmv|exact Hv].
 Qed.

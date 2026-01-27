@@ -20,7 +20,9 @@ theories/Transform/CyclicVertexSpec.v
 theories/Transform/ReadOffPreproof.v
 theories/Transform/Extract.v
 theories/Transform/CyclicRules.v
+theories/Transform/BetaReduce.v
 theories/Transform/CaseCase.v
 
 theories/Equiv/Bisimulation.v
 theories/Equiv/CIU.v
+theories/Equiv/CIUJudgement.v
