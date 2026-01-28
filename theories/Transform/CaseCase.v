@@ -165,13 +165,13 @@ Proof.
       + left.
         eexists.
         split.
-        * apply steps_step. exact H0.
+        * eapply steps_step; eauto.
         * reflexivity.
       + right.
         do 4 eexists.
         split.
         * apply rt_refl.
-        * split; [exact H0|].
+        * split; [eauto|].
           apply rt_refl.
     - (* rt_refl *)
       left.
@@ -214,13 +214,13 @@ Qed.
 Lemma terminates_to_steps_prefix (t u v : tm) :
   steps t u -> terminates_to t v -> terminates_to u v.
 Proof.
-  exact Cbn.terminates_to_steps_prefix.
+  exact (Cbn.terminates_to_steps_prefix t u v).
 Qed.
 
 Lemma steps_apps_congr (t t' : tm) (us : list tm) :
   steps t t' -> steps (Cbn.apps t us) (Cbn.apps t' us).
 Proof.
-  exact Cbn.steps_apps_congr.
+  exact (Cbn.steps_apps_congr t t' us).
 Qed.
 
 Lemma steps_beta_apps (A : tm) (t u : tm) (us : list tm) :
@@ -234,15 +234,21 @@ Qed.
 
 Lemma shift0_id (t : tm) : shift 0 0 t = t.
 Proof.
-  unfold shift.
-  assert (H : shift_sub 0 0 = fun x => x).
+  unfold shift, rename.
+  rewrite rename_subst.
+  assert (Hxi : shift_sub 0 0 = fun x => x).
   { apply functional_extensionality; intro x.
     unfold shift_sub.
     destruct (x <? 0) eqn:Hx.
     - apply Nat.ltb_lt in Hx. lia.
     - lia. }
-  rewrite H.
-  asimpl.
+  rewrite Hxi.
+  assert (Hren : ren (fun x => x) = ids).
+  { apply functional_extensionality; intro x.
+    reflexivity. }
+  rewrite Hren.
+  unfold ids.
+  exact (subst_id t).
 Qed.
 
 Lemma map_shift0_id (ts : list tm) : map (shift 0 0) ts = ts.
@@ -250,6 +256,137 @@ Proof.
   induction ts as [|t ts IH]; cbn.
   - reflexivity.
   - rewrite shift0_id. now rewrite IH.
+Qed.
+
+Fixpoint plug_sub (k : nat) (u : tm) : var -> tm :=
+  match k with
+  | 0 => u .: ids
+  | S k => up (plug_sub k u)
+  end.
+
+Lemma shift_sub_0 (d x : nat) : shift_sub d 0 x = x + d.
+Proof.
+  unfold shift_sub.
+  destruct (x <? 0) eqn:Hx.
+  - apply Nat.ltb_lt in Hx. lia.
+  - lia.
+Qed.
+
+Lemma plug_sub_on_shift (k : nat) (u : tm) :
+  forall x, plug_sub k u (x + S k) = tVar (x + k).
+Proof.
+  induction k as [|k IH]; intros x; cbn [plug_sub].
+  - replace (x + 1) with (S x) by lia.
+    cbn.
+    unfold ids, Autosubst_Classes.ids.
+    unfold Term.Syntax.Ids_tm.
+    now rewrite Nat.add_0_r.
+  - replace (x + S (S k)) with (S (x + S k)) by lia.
+    unfold up, Autosubst_Classes.up.
+    cbn.
+    rewrite IH.
+    asimpl.
+    replace (S (x + k)) with (x + S k) by lia.
+    reflexivity.
+Qed.
+
+Lemma shift_plug_sub (k : nat) (u t : tm) :
+  (shift (S k) 0 t).[plug_sub k u] = shift k 0 t.
+Proof.
+  unfold shift, rename.
+  repeat rewrite rename_subst.
+  rewrite subst_comp.
+  assert (Hσ : ren (shift_sub (S k) 0) >> plug_sub k u = ren (shift_sub k 0)).
+  { apply functional_extensionality; intro x.
+    unfold funcomp.
+    cbn [ren].
+    asimpl.
+    replace (S (x + k)) with (x + S k) by lia.
+    rewrite plug_sub_on_shift.
+    unfold ids, Autosubst_Classes.ids.
+    unfold Term.Syntax.Ids_tm.
+    reflexivity. }
+  rewrite Hσ.
+  reflexivity.
+Qed.
+
+Lemma map_shift_plug_sub (k : nat) (u : tm) (ts : list tm) :
+  (map (shift (S k) 0) ts)..[plug_sub k u] = map (shift k 0) ts.
+Proof.
+  induction ts as [|t ts IH]; cbn.
+  - reflexivity.
+  - asimpl.
+    rewrite shift_plug_sub.
+    f_equal.
+    exact IH.
+Qed.
+
+Lemma shift1_subst_up (t : tm) (σ : var -> tm) :
+  (shift1 t).[up σ] = shift1 (t.[σ]).
+Proof.
+  unfold shift1, shift, rename.
+  repeat rewrite rename_subst.
+  repeat rewrite subst_comp.
+  assert (Hσ : ren (shift_sub 1 0) >> up σ = σ >> ren (shift_sub 1 0)).
+  { apply functional_extensionality; intro x.
+    unfold funcomp.
+    cbn [ren].
+    asimpl.
+    (* up σ (S x) = (σ x).[ren (shift_sub 1 0)] *)
+    unfold up, Autosubst_Classes.up.
+    cbn.
+    rewrite rename_subst.
+    assert (Hxi : shift_sub 1 0 = (+1)).
+    { apply functional_extensionality; intro y.
+      unfold shift_sub.
+      destruct (y <? 0) eqn:Hy.
+      - apply Nat.ltb_lt in Hy. lia.
+      - rewrite Nat.add_1_r.
+        reflexivity. }
+    rewrite Hxi.
+    reflexivity. }
+  rewrite Hσ.
+  reflexivity.
+Qed.
+
+Lemma commute_branch_typed_rec_plug_sub
+    (k : nat) (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc u : tm) :
+  (commute_branch_typed_rec (S k) J D brsJ argsTys br_acc).[plug_sub k u]
+  = commute_branch_typed_rec k J D brsJ argsTys (br_acc.[plug_sub k u]).
+Proof.
+  revert k br_acc.
+  induction argsTys as [|A argsTys IH]; intros k br_acc; cbn [commute_branch_typed_rec].
+  - asimpl.
+    f_equal.
+    + reflexivity.
+    + apply shift_plug_sub.
+    + apply map_shift_plug_sub.
+  - asimpl.
+    f_equal.
+    + apply shift_plug_sub.
+    + cbn [plug_sub].
+      rewrite (IH (S k) (tApp (shift1 br_acc) (tVar 0))).
+      f_equal.
+      cbn.
+      rewrite shift1_subst_up.
+      reflexivity.
+Qed.
+
+Lemma subst0_commute_branch_typed_rec
+    (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc u : tm) :
+  subst0 u
+      (commute_branch_typed_rec 1 J D brsJ argsTys (tApp (shift1 br_acc) (tVar 0)))
+  = commute_branch_typed_rec 0 J D brsJ argsTys (tApp br_acc u).
+Proof.
+  unfold subst0.
+  pose proof
+    (commute_branch_typed_rec_plug_sub 0 J D brsJ argsTys (tApp (shift1 br_acc) (tVar 0)) u)
+    as H.
+  cbn [plug_sub] in H.
+  cbn in H.
+  rewrite shift_plug_sub in H.
+  rewrite shift0_id in H.
+  exact H.
 Qed.
 
 Lemma steps_commute_branch_typed
@@ -273,6 +410,7 @@ Proof.
     + apply steps_beta_apps.
     + cbn [shift1].
       asimpl.
+      rewrite (subst0_commute_branch_typed_rec J D brsJ argsTys br_acc u).
       change (Cbn.apps br_acc (u :: us)) with (Cbn.apps (tApp br_acc u) us).
       apply IH.
       exact Hlen'.
