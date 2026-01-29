@@ -1,0 +1,77 @@
+\section{Cyclic CIC objects (proof graphs and fix-free vertex language)}
+\label{sec:cyclic}
+
+There are two related layers in the development:
+\begin{enumerate}[label=(\arabic*)]
+\item a generic notion of \emph{preproof} / \emph{cyclic proof} as a finite digraph whose nodes are labelled by judgements;
+\item a concrete \emph{fix-free} vertex language (nodes like \texttt{nLam}, \texttt{nApp}, \texttt{nBack}) used by read-off/extraction.
+\end{enumerate}
+
+\subsection{Preproofs: locally-correct finite proof graphs}
+
+A preproof is a finite directed graph together with:
+\begin{itemize}
+\item a node-label function \(\labelof : V \to \mathsf{Judgement}\)
+\item a successor function \(\succof : V \to \mathrm{list}\;V\)
+\item a local correctness property stating that each node is justified by a rule instance:
+  \(\Rule(\labelof(v), \; \mathrm{map}\;\labelof\;(\succof(v)))\).
+\end{itemize}
+
+This corresponds to \texttt{theories/Preproof/Preproof.v}.
+A \emph{rooted} preproof additionally designates a root vertex.
+
+\subsection{Cyclic proofs: global condition + witness}
+
+A cyclic proof packages a preproof together with an additional witness \(W\) and a predicate \(\mathsf{progress\_ok}\) establishing the global soundness condition.
+See \texttt{theories/CyclicProof/CyclicProof.v}.
+
+\subsection{Fix-free vertex language (used by read-off)}
+
+The read-off compiler produces a fix-free cyclic term graph whose node labels are:
+\[
+\begin{array}{l}
+\texttt{nVar }x \mid \texttt{nSort }i \mid \texttt{nPi} \mid \texttt{nLam} \mid \texttt{nApp} \\
+\texttt{nInd }I \mid \texttt{nRoll }(I,c,n_p,n_r) \mid \texttt{nCase }(I,n_{br}) \\
+\texttt{nSubstNil }k \mid \texttt{nSubstCons }k \mid \texttt{nBack}
+\end{array}
+\]
+
+Key design points (see \texttt{theories/Transform/ReadOff.v}):
+\begin{itemize}
+\item There is \emph{no} \texttt{fix} node label.
+\item Recursion is represented by \texttt{nBack} nodes, which point to:
+  (i) a cycle-target vertex, and (ii) an explicit substitution-evidence vertex.
+\item Substitutions are represented as linked lists of evidence nodes:
+  \texttt{nSubstNil} and \texttt{nSubstCons}, mirroring list-backed substitutions.
+\end{itemize}
+
+\subsection{Judgements over vertices}
+
+A first-cut judgement language over vertices (see \texttt{theories/Transform/CyclicRules.v}) is:
+\[
+\jTy\;\ctx\;v\;A
+\quad\mid\quad
+\jEq\;\ctx\;v\;w\;A
+\quad\mid\quad
+\jSub\;\Delta\;sv\;\ctx
+\]
+
+Intuitively:
+\begin{itemize}
+\item \(\jTy\;\ctx\;v\;A\): vertex \(v\) has type-vertex \(A\) under context of vertices \(\ctx\).
+\item \(\jSub\;\Delta\;sv\;\ctx\): substitution vertex \(sv\) is well-typed as a substitution from \(\ctx\) into \(\Delta\).
+\item \(\jEq\) provides intensional equality structure (initially refl/symm/trans; computation rules are planned).
+\end{itemize}
+
+The rules reference abstract graph-level operations \(\mathsf{shiftV}\) and \(\mathsf{substV}\), intended to be implemented by fix-free rewriting (or by derived operations on the graph).
+
+\paragraph{Backlink rule (core idea).}
+A backlink node \texttt{nBack} represents a recursive call as an instantiation of an earlier obligation:
+\begin{mathpar}
+\inferrule*[right=TyBack]
+  {\jTy\;\ctx_0\;\mathit{target}\;A_0 \\
+   \jSub\;\ctx\;sv\;\ctx_0}
+  {\jTy\;\ctx\;\mathit{back}\;(\mathsf{substV}\;sv\;A_0)}
+\end{mathpar}
+
+This is where recursion lives in the cyclic object: the graph edge from \(\mathit{back}\) to \(\mathit{target}\) closes the cycle, while \(sv\) records how the recursive call is instantiated.

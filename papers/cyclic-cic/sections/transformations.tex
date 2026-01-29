@@ -1,0 +1,52 @@
+\section{Transformations: \textsc{CaseCase}, head \(\beta\), unfold/refold}
+\label{sec:transforms}
+
+This section outlines the main transformations currently being developed at the term level, with the intended lift to cyclic proof objects via extraction.
+
+\subsection{Head \(\beta\)-reduction (call-by-name)}
+
+The file \texttt{theories/Transform/BetaReduce.v} defines a single-step head reduction:
+\[
+\mathsf{beta\_reduce\_once}(t) \triangleq
+\begin{cases}
+  (\lambda(A).\,\mathit{body})\;u \mapsto \mathit{body}[u/0] &\text{if } t = (\lambda(A).\,\mathit{body})\;u \\
+  t &\text{otherwise.}
+\end{cases}
+\]
+
+It also proves a CIU-style correctness theorem for typed terms (see \texttt{CIUJudgement.ciu\_jTy}):
+\[
+\hastype{\env}{\ctx}{t}{A} \implies \mathsf{ciu\_jTy}\;\env\;\ctx\;t\;(\mathsf{beta\_reduce\_once}(t))\;A.
+\]
+
+This is a canonical example of a transformation that is locally justified by the operational semantics (one \(\step\) step).
+
+\subsection{\textsc{CaseCase}: commuting nested case}
+
+The file \texttt{theories/Transform/CaseCase.v} implements a commuting conversion for nested cases.
+Informally:
+\[
+\Case{J}{(\Case{I}{x}{C}{\overline{\mathit{br}_I}})}{D}{\overline{\mathit{br}_J}}
+\quad\leadsto\quad
+\Case{I}{x}{C}{\overline{\mathit{br}'_I}}
+\]
+
+where each inner branch is transformed to:
+\[
+\mathit{br}'_I \;\triangleq\; \text{(rebuild a lambda prefix for the constructor arity)}\;\ldots\;\text{then}\;\Case{J}{(\mathit{br}_I\;\overline{a})}{D}{\overline{\mathit{br}_J}}.
+\]
+
+In the development, the constructor arity/types are obtained from the inductive signature environment, and the branch transform is implemented by a function \texttt{commute\_branch\_typed\_rec}.
+
+The intended semantic statement is again CIU-style: commuting nested cases preserves observations (termination to the same value) under typed closing substitutions.
+
+\subsection{Unfolding and refolding of cycles}
+
+Beyond term-level rewrites, cyclic proof objects admit transformations that restructure graph sharing and cycles:
+\begin{itemize}
+\item \textbf{Unfold}: expand a back-link or a shared subgraph, temporarily increasing size but exposing computation.
+\item \textbf{Fold/refold}: identify repeated sub-derivations and introduce a back-link, or rearrange cycle boundaries (e.g. SCC-normal forms).
+\end{itemize}
+
+Such transformations are not justified merely by local rule correctness; they must preserve (or allow recomputation of) the global progress witness.
+This is the key reason global cycle conditions are central: they make cycle-introducing transformations semantically viable.

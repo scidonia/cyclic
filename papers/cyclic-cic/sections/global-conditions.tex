@@ -1,0 +1,40 @@
+\section{Global conditions on cycles}
+\label{sec:global}
+
+Local correctness is not enough: an arbitrary cyclic preproof may be unsound.
+Cyclic proof theory therefore adds a \emph{global} condition to rule out ``bad'' cycles.
+
+The repository currently develops a ranking-style template (see \texttt{theories/Progress/Ranking.v}).
+
+\subsection{Ranking condition (template)}
+
+Fix a finite digraph \(G\) with vertices \(V\).
+Assume:
+\begin{itemize}
+\item a predicate \(\mathsf{progress\_edge}(v,w)\) selecting edges that must make strict progress,
+\item a ranking domain \(M\) with well-founded strict order \(<_M\),
+\item a rank function \(\mathsf{rank} : V \to M\).
+\end{itemize}
+
+The ranking condition requires:
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Well-foundedness}: \(<_M\) is well-founded.
+\item \textbf{Monotonicity}: along every edge \(v\to w\), ranks do not increase.
+\item \textbf{Strictness on progress edges}: if \(v\to w\) is a progress edge, then \(\mathsf{rank}(w) <_M \mathsf{rank}(v)\).
+\item \textbf{Every directed cycle has progress}: every directed cycle in \(G\) contains at least one progress edge.
+\end{enumerate}
+
+\subsection{Why this matters for transformations}
+
+Transformations that introduce, remove, or restructure cycles (fold/refold, read-off compilation, or higher-level normalisation steps) are only meaningful if the resulting cyclic object still has a progress witness.
+
+Conceptually:
+\begin{quote}
+Finite graph + local rule correctness + global cycle progress \(\Rightarrow\) sound infinite unfolding/meaning.
+\end{quote}
+
+Thus, semantic preservation results for transformations typically factor into:
+\begin{enumerate}[label=(\arabic*)]
+\item a \emph{local} preservation argument (the transformation preserves the intended judgement/evaluation meaning), and
+\item a \emph{global} argument transporting the progress witness (or rebuilding one).
+\end{enumerate}

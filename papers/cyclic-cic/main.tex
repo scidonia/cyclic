@@ -1,0 +1,40 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{mathpartir}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{Cyclic CIC: Motivation, Calculus, and Transformations (Outline)}
+\author{(Scidonia/cyclic notes)}
+\date{\today}
+
+\input{macros}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note outlines a dependent type theory close to the Calculus of Inductive Constructions (CIC), together with a cyclic proof language whose proof objects are finite graphs.
+The motivating idea is to represent recursion and extensional reasoning using cycles (plus a global progress condition), rather than storing general recursion syntax (\texttt{fix}) inside proof objects.
+We also summarize term/program transformations (\textsc{CaseCase}, head \(\beta\)-reduction, and fold/refold of cycles) and explain why global cycle conditions are the key to their semantic viability.
+\end{abstract}
+
+\tableofcontents
+
+\input{sections/intro}
+\input{sections/source-calculus}
+\input{sections/cyclic-calculus}
+\input{sections/global-conditions}
+\input{sections/transformations}
+\input{sections/conclusion}
+
+\end{document}

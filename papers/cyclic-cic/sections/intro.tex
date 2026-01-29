@@ -1,0 +1,19 @@
+\section{Motivation}
+
+Cyclic proof systems replace tree-shaped derivations with \emph{finite graphs}.
+A cycle represents a potentially unbounded (or self-referential) reasoning pattern, and soundness is recovered by a \emph{global condition} ensuring that cycles make progress.
+
+In this project, the guiding slogan (see the repository notes) is:
+
+\begin{quote}
+Canonical cyclic proofs are intensional representatives whose equality soundly approximates extensional program equivalence.
+\end{quote}
+
+The intended workflow is:
+\begin{enumerate}[label=(\arabic*)]
+\item Start from a conventional CIC-like term language (with general recursion \Fix{A}{t}).
+\item Compile terms to a \emph{fix-free} cyclic proof/term graph representation: recursion is represented by back-links plus explicit substitution evidence, not by storing \texttt{fix} syntax inside the cyclic object.
+\item Justify proof/program transformations (e.g. commuting conversions, head \(\beta\)-steps, unfold/refold of cycles) by showing they preserve a semantic equivalence (CIU-style, values as observables), relying crucially on the global cycle condition.
+\end{enumerate}
+
+This note is intentionally an outline: it states the core calculi and the intended transformation story, aligning with the Coq development in \texttt{theories/}.

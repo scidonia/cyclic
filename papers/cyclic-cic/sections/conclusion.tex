@@ -1,0 +1,16 @@
+\section{Conclusion and next steps}
+
+This note collected the main ingredients of the project:
+\begin{itemize}
+\item a CIC-like source calculus with call-by-name semantics;
+\item a cyclic proof architecture: finite proof graphs + local rule correctness + global progress condition;
+\item a fix-free vertex calculus produced by read-off, with explicit substitution evidence and backlinks;
+\item representative transformations (\textsc{CaseCase}, head \(\beta\)-reduction, unfold/refold) whose correctness relies on semantic preservation and on transporting global progress witnesses.
+\end{itemize}
+
+Near-term extensions for a fuller paper version:
+\begin{itemize}
+\item complete the definitional equality / normalization rules in the vertex judgement system;
+\item state and prove a generic ``witness transport'' theorem for graph rewrites;
+\item relate ranking-style progress to fairness/B\"uchi-style conditions for productivity.
+\end{itemize}
