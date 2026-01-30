@@ -4,9 +4,11 @@
 This section outlines the main transformations currently being developed at the term level, with the intended lift to cyclic proof objects via extraction.
 The motivating theme is not merely that these rewrites preserve observational equivalence, but that they support a notion of \emph{canonical cyclic representatives}.
 
-\subsection{Head beta-reduction (call-by-name)}
+\subsection{Beta-reduction strategies}
 
-The file \texttt{theories/Transform/BetaReduce.v} defines a single-step head reduction:
+The file \texttt{theories/Transform/BetaReduce.v} defines several reduction strategies:
+
+\paragraph{Single-step head reduction.}
 \[
 \mathsf{beta\_reduce\_once}(t) \triangleq
 \begin{cases}
@@ -15,7 +17,19 @@ The file \texttt{theories/Transform/BetaReduce.v} defines a single-step head red
 \end{cases}
 \]
 
-It also proves a CIU-style correctness theorem for typed terms (see \texttt{CIUJudgement.ciu\_jTy}):
+\paragraph{Weak-head normal form (WHNF).}
+\(\mathsf{whnf\_reduce}(n, t)\) iterates head reductions until reaching WHNF or exhausting fuel \(n\).
+This reduces only at the head position, matching call-by-name semantics.
+
+\paragraph{Full normalization.}
+\(\mathsf{full\_normalize}(n, t)\) reduces everywhere, including under binders:
+\begin{itemize}
+\item First reduces to WHNF at the head
+\item Then recursively normalizes all subterms
+\item Descends under \(\lambda\), \(\Pi\), \texttt{fix}, and case motives
+\end{itemize}
+
+The development proves a CIU-style correctness theorem for head reduction:
 \[
 \hastype{\env}{\ctx}{t}{A} \implies \mathsf{ciu\_jTy}\;\env\;\ctx\;t\;(\mathsf{beta\_reduce\_once}(t))\;A.
 \]
@@ -36,6 +50,44 @@ where each inner branch is transformed to:
 \]
 
 In the development, the constructor arity/types are obtained from the inductive signature environment, and the branch transform is implemented by a function \texttt{commute\_branch\_typed\_rec}.
+
+\subsection{Motive propagation}
+
+With dependent case elimination, we can propagate information about the scrutinee into the motive when the scrutinee is known to be a constructor:
+\[
+\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}}
+\quad\leadsto\quad
+\Case{I}{(\Roll{I}{c}{\overline{a}})}{C[\Roll{I}{c}{\overline{a}}/x]}{\overline{\mathit{br}}}
+\]
+
+This is semantically a no-op (the substitution happens anyway during case reduction), but it makes the motive concrete and can enable further simplifications.
+The transformation is implemented as \texttt{propagate\_motive\_once} in \texttt{theories/Transform/CaseCase.v}.
+
+\subsection{Full normalization: driving under binders}
+
+For supercompilation-style transformations, we need to normalize terms fully, not just to weak-head normal form.
+This requires \emph{driving under binders}: reducing subterms even when they appear under \(\lambda\), \(\Pi\), or case motives.
+
+\paragraph{Driving strategy.}
+The supercompiler (see \texttt{theories/Transform/Supercompile.v}) uses a fuel-limited driving function that:
+\begin{enumerate}
+\item Applies head reductions (beta, fix unfolding, case-of-constructor)
+\item Commutes nested cases (\textsc{CaseCase})
+\item Propagates motives when scrutinees are known
+\item Descends into subterms (including under binders)
+\end{enumerate}
+
+\paragraph{Eta-expansion.}
+A key question for full normalization is whether we need eta-rules:
+\[
+\begin{array}{rcl}
+\text{(eta-lambda)} & & \lambda x.\; (t\; x) \equiv t \quad\text{if } x \notin \mathit{FV}(t) \\
+\text{(eta-case)} & & \Case{I}{t}{C}{\overline{\mathit{br}}} \equiv t \quad\text{if each } \mathit{br}_c = \Roll{I}{c}{\ldots}
+\end{array}
+\]
+
+\textbf{Current status}: The implementation does \emph{not} require eta-rules for correctness.
+Eta-expansion can be added as an optional normalization step if needed for canonical forms, but observational equivalence (CIU) is preserved without it.
 
 \subsection{Unfolding and refolding of cycles}
 

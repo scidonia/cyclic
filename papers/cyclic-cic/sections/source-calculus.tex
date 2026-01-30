@@ -21,11 +21,17 @@ We write terms \(t,u\) and types \(A,B\) using the following constructors (de Br
  \mid \App{t}{u}
  \mid \Fix{A}{t}
  \\
- &&\mid \Ind{I}
- \mid \Roll{I}{c}{\overline{p}}{\overline{r}}
+ &&\mid \Ind{I}{\overline{a}}
+ \mid \Roll{I}{c}{\overline{a}}
  \mid \Case{I}{t}{C}{\overline{\mathit{br}}}
 \end{array}
 \]
+
+\paragraph{Indexed inductive families.}
+The system supports CIC-style indexed inductive families.
+An inductive \(\Ind{I}{\overline{a}}\) is applied to arguments \(\overline{a}\) (parameters and indices).
+Constructors \(\Roll{I}{c}{\overline{a}}\) take all arguments (non-recursive and recursive) uniformly as \(\overline{a}\).
+The dependent case eliminator \(\Case{I}{t}{C}{\overline{\mathit{br}}}\) has a \emph{dependent motive} \(C\) binding the scrutinee: under the binder, \(C\) has access to \(x : \Ind{I}{\overline{\mathit{idx}}}\) where \(\overline{\mathit{idx}}\) are the scrutinee's indices.
 
 \subsection{Typing}
 
@@ -53,10 +59,36 @@ We omit the full inductive signature side-conditions and arity bookkeeping, but 
             {\hastype{\env}{\ctx}{\Fix{A}{t}}{A}}
 \end{Rules}
 
-\paragraph{Inductives, constructors, and case.}
-The development includes strictly-positive inductives \(\Ind{I}\), constructor values \(\Roll{I}{c}{\overline{p}}{\overline{r}}\), and elimination by \(\Case{I}{t}{C}{\overline{\mathit{br}}}\).
-Typing is guided by an inductive signature lookup (see \texttt{StrictPos.v} and \texttt{Typing.v}).
-Branches are typed by building an iterated Pi-type over the constructor arguments.
+\paragraph{Typing indexed inductives.}
+Let \(\Sigma(I) = (\overline{P}, \overline{X}, \ell, \overline{\mathit{ctor}})\) where:
+\begin{itemize}
+\item \(\overline{P}\) are uniform parameters
+\item \(\overline{X}\) are index types
+\item \(\ell\) is the universe level
+\item \(\overline{\mathit{ctor}}\) are constructor specifications
+\end{itemize}
+
+Each constructor \(c\) has:
+\begin{itemize}
+\item Non-recursive argument types \(\overline{\tau}_{\mathit{param}}\)
+\item Recursive argument specifications (indices at which recursion occurs)
+\item Result indices \(\overline{\mathit{idx}}_c\)
+\end{itemize}
+
+\textbf{Typing rules (informal)}:
+\begin{itemize}
+\item \(\Ind{I}{\overline{a}}\) has type \(\Sort{\ell}\) if \(\overline{a}\) matches \(\overline{P} \mathbin{++} \overline{X}\)
+\item \(\Roll{I}{c}{\overline{a}}\) has type \(\Ind{I}{(\overline{p} \mathbin{++} \overline{\mathit{idx}}_c[\overline{a}])}\) where \(\overline{p}\) are the parameter values
+\item \(\Case{I}{t}{C}{\overline{\mathit{br}}}\):
+  \begin{itemize}
+  \item Scrutinee: \(\hastype{\env}{\ctx}{t}{\Ind{I}{\overline{\mathit{scrutIdx}}}}\)
+  \item Motive: \(\hastype{\env}{\ctx, x:\Ind{I}{\overline{\mathit{scrutIdx}}}}{C}{\Sort{i}}\) (dependent on scrutinee)
+  \item Each branch: \(\hastype{\env}{\ctx}{\mathit{br}_c}{\Pi\overline{\tau}_c.\; C[\Roll{I}{c}{\overline{a}}/x]}\)
+  \item Result type: \(C[t/x]\)
+  \end{itemize}
+\end{itemize}
+
+See \texttt{theories/Syntax/StrictPos.v} for the signature representation and \texttt{theories/Judgement/Typing.v} for the full typing rules.
 
 \subsection{Call-by-name operational semantics}
 
@@ -69,8 +101,11 @@ Key rules include:
   \Infer{Step-Fix}{}{\Fix{A}{t} \step t[\Fix{A}{t}/0]}\\
   \Infer{Step-CaseScrut}{t \step t'}{\Case{I}{t}{C}{\overline{\mathit{br}}} \step \Case{I}{t'}{C}{\overline{\mathit{br}}}}\\
   \Infer{Step-CaseRoll}{\mathit{branch}(\overline{\mathit{br}},c)=\mathit{br}}
-                     {\Case{I}{(\Roll{I}{c}{\overline{p}}{\overline{r}})}{C}{\overline{\mathit{br}}} \step \mathit{br}\; (\overline{p} \mathbin{++} \overline{r})}
+                     {\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}} \step C[\Roll{I}{c}{\overline{a}}/x] \mathbin{\triangleright} (\mathit{br}\; \overline{a})}
 \end{Rules}
+
+In the \textsc{Step-CaseRoll} rule, the motive \(C\) is instantiated with the constructor term, then the branch is applied to the constructor arguments.
+This combines the dependent elimination (motive instantiation) with the standard case reduction.
 
 We write \(t \steps u\) for the reflexive-transitive closure of \(\step\).
 Values are \(\lambda\)-abstractions and constructor rolls.

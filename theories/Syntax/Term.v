@@ -16,9 +16,9 @@ Module Syntax.
   | tLam (A : tm) (t : {bind tm})
   | tApp (t u : tm)
   | tFix (A : tm) (t : {bind tm})
-  | tInd (I : nat)
-  | tRoll (I : nat) (c : nat) (params recs : list tm)
-  | tCase (I : nat) (scrut : tm) (C : tm) (brs : list tm).
+  | tInd (I : nat) (args : list tm)                    (* I params indices *)
+  | tRoll (I : nat) (c : nat) (args : list tm)         (* constructor with all args *)
+  | tCase (I : nat) (scrut : tm) (C : {bind tm}) (brs : list tm).  (* dependent motive *)
 
   Definition branch (brs : list tm) (c : nat) : option tm :=
     nth_error brs c.
@@ -31,11 +31,10 @@ Module Syntax.
     | tLam A t => 1 + size A + size t
     | tApp t u => 1 + size t + size u
     | tFix A t => 1 + size A + size t
-    | tInd _ => 1
-    | tRoll _ _ params recs =>
-        1
-        + fold_right (fun u n => size u + n) 0 params
-        + fold_right (fun u n => size u + n) 0 recs
+    | tInd _ args =>
+        1 + fold_right (fun u n => size u + n) 0 args
+    | tRoll _ _ args =>
+        1 + fold_right (fun u n => size u + n) 0 args
     | tCase _ scrut C brs =>
         1
         + size scrut

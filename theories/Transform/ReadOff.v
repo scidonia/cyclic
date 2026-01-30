@@ -96,12 +96,12 @@ Section ReadOff.
     match t with
     | T.tVar _ => 2
     | T.tSort _ => 2
-    | T.tInd _ => 2
+    | T.tInd _ args => 2 + fuel_list fuel_tm args
     | T.tPi A B => S (fuel_tm A + fuel_tm B)
     | T.tLam A t => S (fuel_tm A + fuel_tm t)
     | T.tApp t u => S (fuel_tm t + fuel_tm u)
     | T.tFix A t => S (fuel_tm A + fuel_tm t)
-    | T.tRoll _ _ params recs => S (fuel_list fuel_tm params + fuel_list fuel_tm recs)
+    | T.tRoll _ _ args => S (fuel_list fuel_tm args)
     | T.tCase _ scrut C brs => S (fuel_tm scrut + fuel_tm C + fuel_list fuel_tm brs)
     end.
 
@@ -236,15 +236,17 @@ Section ReadOff.
                from `b_fix_body` (and back-links use `v` only as an identifier). *)
             (v, b2')
 
-        | T.tInd ind =>
-            let '(v, b1) := fresh b in
-            (v, put v (nInd ind) [] b1)
+        | T.tInd ind args =>
+            let '(vargs, b1) := compile_list fuel' ρ args b in
+            let '(v, b2) := fresh b1 in
+            (v, put v (nInd ind) vargs b2)
 
-        | T.tRoll ind ctor params recs =>
-            let '(vps, b1) := compile_list fuel' ρ params b in
-            let '(vrs, b2) := compile_list fuel' ρ recs b1 in
-            let '(v, b3) := fresh b2 in
-            (v, put v (nRoll ind ctor (length vps) (length vrs)) (vps ++ vrs) b3)
+        | T.tRoll ind ctor args =>
+            let '(vargs, b1) := compile_list fuel' ρ args b in
+            let '(v, b2) := fresh b1 in
+            (* Until the source syntax distinguishes params vs recs again,
+               record all constructor arguments as "params". *)
+            (v, put v (nRoll ind ctor (length vargs) 0) vargs b2)
 
         | T.tCase ind scrut C brs =>
             let '(vscrut, b1) := compile_tm fuel' ρ scrut b in

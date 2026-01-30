@@ -5,6 +5,7 @@
    (modules
     Syntax.StrictPos
     Syntax.Term
+    Syntax.Examples
     Judgement.Typing
     Semantics.Cbn
  

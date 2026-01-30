@@ -5,12 +5,16 @@ From Cyclic.Syntax Require Import Term.
 From Cyclic.Semantics Require Import Cbn.
 From Cyclic.Equiv Require Import CIUJudgement.
 From Cyclic.Judgement Require Import Typing.
+From Cyclic.Progress Require Import PatternUnification.
 
 Import Term.Syntax.
 
 Set Default Proof Using "Type".
 
 Module Ty := Typing.Typing.
+Module PU := PatternUnification.
+
+Definition tm_eqb : tm -> tm -> bool := PU.tm_eqb.
 
 (** One-step call-by-name β-reduction at the head.
 
@@ -21,6 +25,68 @@ Definition beta_reduce_once (t : tm) : tm :=
   match t with
   | tApp (tLam A body) u => subst0 u body
   | _ => t
+  end.
+
+(** Reduce to weak-head normal form by iterating head reductions.
+    Uses fuel to ensure termination. *)
+Fixpoint whnf_reduce (fuel : nat) (t : tm) : tm :=
+  match fuel with
+  | 0 => t
+  | S fuel' =>
+      let t' := beta_reduce_once t in
+      if tm_eqb t t' then t  (* no reduction, already WHNF *)
+      else whnf_reduce fuel' t'
+  end.
+
+(** Reduce to weak-head normal form, also reducing in head position of applications.
+    This keeps reducing the function part of applications. *)
+Fixpoint whnf_reduce_deep (fuel : nat) (t : tm) : tm :=
+  match fuel with
+  | 0 => t
+  | S fuel' =>
+      match t with
+      | tApp f u =>
+          let f' := whnf_reduce_deep fuel' f in
+          let result := tApp f' u in
+          let result' := beta_reduce_once result in
+          if tm_eqb result result' then result
+          else whnf_reduce_deep fuel' result'
+      | _ =>
+          let t' := beta_reduce_once t in
+          if tm_eqb t t' then t
+          else whnf_reduce_deep fuel' t'
+      end
+  end.
+
+(** Full normalization: reduce everywhere including under binders.
+    This normalizes the entire term to normal form (not just WHNF). *)
+Fixpoint full_normalize (fuel : nat) (t : tm) : tm :=
+  match fuel with
+  | 0 => t
+  | S fuel' =>
+      (* First reduce to WHNF at the head *)
+      let t_whnf := whnf_reduce fuel' t in
+      (* Then normalize subterms *)
+      match t_whnf with
+      | tVar x => tVar x
+      | tSort i => tSort i
+      | tPi A B => tPi (full_normalize fuel' A) (full_normalize fuel' B)
+      | tLam A body => tLam (full_normalize fuel' A) (full_normalize fuel' body)
+      | tApp f u =>
+          let f_norm := full_normalize fuel' f in
+          let u_norm := full_normalize fuel' u in
+          (* Try one more beta reduction after normalizing subterms *)
+          let app := tApp f_norm u_norm in
+          beta_reduce_once app
+      | tFix A body => tFix (full_normalize fuel' A) (full_normalize fuel' body)
+      | tInd I args => tInd I (map (full_normalize fuel') args)
+      | tRoll I c args => tRoll I c (map (full_normalize fuel') args)
+      | tCase I scrut C brs =>
+          tCase I
+                (full_normalize fuel' scrut)
+                (full_normalize fuel' C)
+                (map (full_normalize fuel') brs)
+      end
   end.
 
 Lemma subst0_subst

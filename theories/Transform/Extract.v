@@ -120,14 +120,15 @@ Section Extract.
             | [vf; va] => T.tApp (extract_v fuel' b ρ vf) (extract_v fuel' b ρ va)
             | _ => T.tVar 0
             end
-        | RO.nInd ind => T.tInd ind
+        | RO.nInd ind =>
+            T.tInd ind (extract_list extract_v (S fuel') b ρ (lookup_succ b v))
         | RO.nRoll ind ctor nparams nrecs =>
             let xs := lookup_succ b v in
-            let ps := take nparams xs in
-            let rs := drop nparams xs in
-            T.tRoll ind ctor
-              (extract_list extract_v (S fuel') b ρ ps)
-              (extract_list extract_v (S fuel') b ρ rs)
+            (* The graph format still records (nparams,nrecs), but the source term
+               syntax now stores constructor arguments in a single list. *)
+            let _ps := take nparams xs in
+            let _rs := drop nparams xs in
+            T.tRoll ind ctor (extract_list extract_v (S fuel') b ρ xs)
         | RO.nCase ind nbrs =>
             match lookup_succ b v with
             | vscrut :: vC :: brs =>

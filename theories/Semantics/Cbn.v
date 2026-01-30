@@ -34,17 +34,17 @@ Inductive step : tm -> tm -> Prop :=
 | step_case_scrut I scrut scrut' C brs :
     step scrut scrut' ->
     step (tCase I scrut C brs) (tCase I scrut' C brs)
-| step_case_roll I c params recs C brs br :
+| step_case_roll I c args C brs br :
     branch brs c = Some br ->
-    step (tCase I (tRoll I c params recs) C brs)
-      (apps br (params ++ recs)).
+    step (tCase I (tRoll I c args) C brs)
+      (subst0 (tRoll I c args) (apps br args)).
 
 Definition steps : tm -> tm -> Prop :=
   clos_refl_trans tm step.
 
 Inductive value : tm -> Prop :=
 | v_lam A t : value (tLam A t)
-| v_roll I c params recs : value (tRoll I c params recs).
+| v_roll I c args : value (tRoll I c args).
 
 (* Neutrals are stuck at the head (no CBN reduction possible). *)
 Inductive neutral : tm -> Prop :=
@@ -108,37 +108,48 @@ Proof.
   intro H1.
   revert t2.
   induction H1 as
-    [A t u
+    [A body u
     | t t' u Htt' IH
-    | A t
+    | A body
     | I scrut scrut' C brs Hscrut IH
-    | I c params recs C brs br Hbr];
+    | I c args C brs br Hbr];
     intro t2; intro H2.
-  - inversion H2; subst; try reflexivity; try discriminate.
+  - (* beta *)
+    inversion H2; subst; try reflexivity; try discriminate.
+    (* cannot also step in function position: lambdas do not step *)
     exfalso.
     match goal with
     | H : step (tLam _ _) _ |- _ => eapply value_no_step; [apply v_lam|exact H]
     end.
-  - inversion H2; subst; try discriminate.
-    { exfalso.
+  - (* app1 *)
+    inversion H2; subst; try discriminate.
+    + (* beta: would require t = tLam, impossible since it steps *)
+      exfalso.
       match goal with
       | H : step (tLam _ _) _ |- _ => eapply value_no_step; [apply v_lam|exact H]
-      end. }
-    { f_equal. eapply IH; eauto. }
-  - inversion H2; subst; reflexivity.
-  - inversion H2; subst; try discriminate.
-    { f_equal. eapply IH; eauto. }
-    { exfalso.
-      (* scrutinee is a roll, but rolls do not step *)
+      end.
+    + (* app1 *)
+      f_equal. eapply IH; eauto.
+  - (* fix *)
+    inversion H2; subst; reflexivity.
+  - (* case scrut *)
+    inversion H2; subst; try discriminate.
+    + (* case scrut *)
+      f_equal. eapply IH; eauto.
+    + (* case roll: scrutinee is a roll, but rolls do not step *)
+      exfalso.
       eapply value_no_step.
-      - apply v_roll.
-      - exact Hscrut. }
-  - inversion H2; subst; try discriminate.
-    { exfalso.
+      * apply v_roll.
+      * exact Hscrut.
+  - (* case roll *)
+    inversion H2; subst; try discriminate.
+    { (* case scrut cannot apply: roll doesn't step *)
+      exfalso.
       match goal with
-      | H : step (tRoll _ _ _ _) _ |- _ => eapply value_no_step; [apply v_roll|exact H]
+      | Hstep : step (tRoll _ _ _) _ |- _ =>
+          eapply value_no_step; [apply v_roll|exact Hstep]
       end. }
-    { (* both case-roll *)
+    { (* both case roll *)
       assert (br0 = br) as -> by congruence.
       reflexivity. }
 Qed.
@@ -205,10 +216,10 @@ Qed.
 
 Lemma steps_case_to_apps
     (I : nat) (scrut C : tm) (brs : list tm)
-    (c : nat) (params recs : list tm) (br : tm) :
-  steps scrut (tRoll I c params recs) ->
+    (c : nat) (args : list tm) (br : tm) :
+  steps scrut (tRoll I c args) ->
   branch brs c = Some br ->
-  steps (tCase I scrut C brs) (apps br (params ++ recs)).
+  steps (tCase I scrut C brs) (subst0 (tRoll I c args) (apps br args)).
 Proof.
   intros Hscrut Hbr.
   eapply steps_trans.

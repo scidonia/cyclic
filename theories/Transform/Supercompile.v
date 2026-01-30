@@ -3,7 +3,7 @@ From stdpp Require Import gmap.
 
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Judgement Require Import Typing.
-From Cyclic.Transform Require Import BetaReduce.
+From Cyclic.Transform Require Import BetaReduce CaseCase.
 From Cyclic.Progress Require Import PatternUnification.
 
 Import ListNotations.
@@ -14,6 +14,7 @@ Set Default Proof Using "Type".
 Module Ty := Typing.Typing.
 Module C := Typing.Typing.Cyclic.
 Module PU := PatternUnification.
+Module CC := CaseCase.
 
 Definition config : Type := C.judgement.
 
@@ -56,12 +57,53 @@ Definition rewrite_step : Type := tm -> tm.
 Definition drive_terms (rewrites : list rewrite_step) (t : tm) : list tm :=
   nub_tm (filter (fun u => negb (tm_eqb t u)) (map (fun f => f t) rewrites)).
 
-Definition default_rewrites : list rewrite_step :=
-  [BetaReduce.beta_reduce_once].
+(** Full normalization: drive under binders.
+    This recursively applies transformations to subterms,
+    including those under lambda, pi, fix, and case motives. *)
+Fixpoint drive_under_binders (fuel : nat) (t : tm) : tm :=
+  match fuel with
+  | 0 => t
+  | S fuel' =>
+      let t' :=
+        match t with
+        | tLam A body =>
+            tLam (drive_under_binders fuel' A) (drive_under_binders fuel' body)
+        | tPi A B =>
+            tPi (drive_under_binders fuel' A) (drive_under_binders fuel' B)
+        | tApp t1 t2 =>
+            (* First try head reduction *)
+            let t_head := BetaReduce.beta_reduce_once t in
+            if negb (tm_eqb t t_head) then
+              drive_under_binders fuel' t_head
+            else
+              tApp (drive_under_binders fuel' t1) (drive_under_binders fuel' t2)
+        | tFix A body =>
+            tFix (drive_under_binders fuel' A) (drive_under_binders fuel' body)
+        | tCase I scrut C brs =>
+            (* Try case-of-constructor reduction first *)
+            let scrut' := drive_under_binders fuel' scrut in
+            tCase I scrut'
+                  (drive_under_binders fuel' C)
+                  (map (drive_under_binders fuel') brs)
+        | tRoll I c args =>
+            tRoll I c (map (drive_under_binders fuel') args)
+        | tInd I args =>
+            tInd I (map (drive_under_binders fuel') args)
+        | _ => t
+        end
+      in t'
+  end.
 
-Definition drive_step (_Σenv : Ty.env) (j : config) : list config :=
+Definition default_rewrites (Σenv : Ty.env) : list rewrite_step :=
+  [BetaReduce.whnf_reduce 100;         (* Reduce to WHNF at head *)
+   CC.commute_case_case_once_typed Σenv;
+   CC.propagate_motive_once;
+   BetaReduce.full_normalize 50        (* Full normalization under binders *)
+  ].
+
+Definition drive_step (Σenv : Ty.env) (j : config) : list config :=
   match j with
-  | C.jTy Γ t A => map (fun u => C.jTy Γ u A) (drive_terms default_rewrites t)
+  | C.jTy Γ t A => map (fun u => C.jTy Γ u A) (drive_terms (default_rewrites Σenv) t)
   | _ => []
   end.
 

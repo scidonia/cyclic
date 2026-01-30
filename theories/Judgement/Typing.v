@@ -67,6 +67,18 @@ Module Typing.
     | A :: As => T.tPi A (mk_pis As B)
     end.
 
+  (* Helper: apply a list of arguments to a term *)
+  Fixpoint apps (t : T.tm) (args : list T.tm) : T.tm :=
+    match args with
+    | [] => t
+    | a :: args => apps (T.tApp t a) args
+    end.
+
+  (* Helper: split args into params and indices given arity counts *)
+  Definition split_at {A : Type} (n : nat) (xs : list A) : list A * list A :=
+    (firstn n xs, skipn n xs).
+
+
   Inductive has_type (Σenv : env) : ctx -> T.tm -> T.tm -> Prop :=
   | ty_var Γ x A :
       ctx_lookup Γ x = Some A ->
@@ -97,27 +109,28 @@ Module Typing.
 
   | ty_ind Γ I ΣI :
       SP.lookup_ind Σenv I = Some ΣI ->
-      has_type Σenv Γ (T.tInd I) (T.tSort (S (@SP.ind_level _ ΣI)))
+      has_type Σenv Γ (T.tInd I []) (T.tSort (S (SP.ind_level ΣI)))
 
-  | ty_roll Γ I ΣI c ctor params recs :
+  | ty_roll Γ I ΣI c ctor args params recs :
       SP.lookup_ind Σenv I = Some ΣI ->
       SP.lookup_ctor ΣI c = Some ctor ->
-      Forall2 (has_type Σenv Γ) params (@SP.ctor_param_tys _ ctor) ->
-      Forall (fun r => has_type Σenv Γ r (T.tInd I)) recs ->
-      length recs = (@SP.ctor_rec_arity _ ctor) ->
-      has_type Σenv Γ (T.tRoll I c params recs) (T.tInd I)
+      split_at (SP.ctor_param_arity ctor) args = (params, recs) ->
+      Forall2 (has_type Σenv Γ) params (SP.ctor_param_tys ctor) ->
+      Forall (fun r => has_type Σenv Γ r (T.tInd I [])) recs ->
+      length recs = SP.ctor_rec_arity ctor ->
+      has_type Σenv Γ (T.tRoll I c args) (T.tInd I [])
 
   | ty_case Γ I ΣI scrut C brs i :
       SP.lookup_ind Σenv I = Some ΣI ->
-      length brs = length (@SP.ind_ctors _ ΣI) ->
-      has_type Σenv Γ scrut (T.tInd I) ->
+      length brs = length (SP.ind_ctors ΣI) ->
+      has_type Σenv Γ scrut (T.tInd I []) ->
       has_type Σenv Γ C (T.tSort i) ->
       (forall c ctor,
         SP.lookup_ctor ΣI c = Some ctor ->
         exists br,
           T.branch brs c = Some br
           /\ has_type Σenv Γ br
-              (mk_pis (@SP.ctor_param_tys _ ctor ++ repeat (T.tInd I) (@SP.ctor_rec_arity _ ctor)) C)) ->
+              (mk_pis (SP.ctor_param_tys ctor ++ repeat (T.tInd I []) (SP.ctor_rec_arity ctor)) C)) ->
       has_type Σenv Γ (T.tCase I scrut C brs) C.
 
   Lemma branch_exists {ΣI : SP.ind_sig T.tm} (brs : list T.tm) (c : nat) (ctor : SP.ctor_sig T.tm) :
@@ -190,8 +203,8 @@ Module Typing.
         end.
       + (* recs *)
         match goal with
-        | [ Hr : Forall (fun r : T.tm => has_type Σenv Γ r (T.tInd I)) ?rs
-          |- Forall (fun r : T.tm => has_type Σenv (Γ ++ [B]) r (T.tInd I)) ?rs ] =>
+        | [ Hr : Forall (fun r : T.tm => has_type Σenv Γ r (T.tInd I [])) ?rs
+          |- Forall (fun r : T.tm => has_type Σenv (Γ ++ [B]) r (T.tInd I [])) ?rs ] =>
             clear -IH B Hr;
             induction Hr; constructor; eauto using IH
         end.
@@ -344,10 +357,10 @@ Module Typing.
       map (fun '(p, A) => jTy Γ p A) (combine ps As).
 
     Definition jTy_recs (Γ : ctx) (I : nat) (recs : list T.tm) : list judgement :=
-      map (fun r => jTy Γ r (T.tInd I)) recs.
+      map (fun r => jTy Γ r (T.tInd I [])) recs.
 
     Definition branch_ty (I : nat) (ctor : SP.ctor_sig T.tm) (C : T.tm) : T.tm :=
-      mk_pis (@SP.ctor_param_tys _ ctor ++ repeat (T.tInd I) (@SP.ctor_rec_arity _ ctor)) C.
+      mk_pis (SP.ctor_param_tys ctor ++ repeat (T.tInd I []) (SP.ctor_rec_arity ctor)) C.
 
     Definition jTy_branches (Γ : ctx) (I : nat) (ΣI : SP.ind_sig T.tm) (C : T.tm) (brs : list T.tm) : list judgement :=
       map (fun '(ctor, br) => jTy Γ br (branch_ty I ctor C)) (combine (@SP.ind_ctors _ ΣI) brs).
@@ -382,27 +395,29 @@ Module Typing.
             Ty = A ∧
             premises = [jTy Γ A (T.tSort i); jTy (ctx_extend Γ A) t (T.shift 1 0 A)]
 
-      | jTy Γ (T.tInd ind) (T.tSort k) =>
+      | jTy Γ (T.tInd ind args) (T.tSort k) =>
           exists ΣI,
             premises = []
             /\ SP.lookup_ind Σenv ind = Some ΣI
-            /\ k = S (@SP.ind_level _ ΣI)
+            /\ args = []
+            /\ k = S (SP.ind_level ΣI)
 
-      | jTy Γ (T.tRoll ind c params recs) (T.tInd ind') =>
-          exists ΣI ctor,
+      | jTy Γ (T.tRoll ind c args) (T.tInd ind' args') =>
+          exists ΣI ctor params recs,
             ind' = ind
+            /\ args' = []
             /\ SP.lookup_ind Σenv ind = Some ΣI
             /\ SP.lookup_ctor ΣI c = Some ctor
-            /\ length params = length (@SP.ctor_param_tys _ ctor)
-            /\ length recs = (@SP.ctor_rec_arity _ ctor)
-            /\ premises = jTy_params Γ params (@SP.ctor_param_tys _ ctor) ++ jTy_recs Γ ind recs
+            /\ split_at (SP.ctor_param_arity ctor) args = (params, recs)
+            /\ length recs = SP.ctor_rec_arity ctor
+            /\ premises = jTy_params Γ params (SP.ctor_param_tys ctor) ++ jTy_recs Γ ind recs
 
       | jTy Γ (T.tCase ind scrut C brs) Ty =>
           exists i ΣI,
             Ty = C
             /\ SP.lookup_ind Σenv ind = Some ΣI
-            /\ length brs = length (@SP.ind_ctors _ ΣI)
-            /\ premises = [jTy Γ scrut (T.tInd ind); jTy Γ C (T.tSort i)] ++ jTy_branches Γ ind ΣI C brs
+            /\ length brs = length (SP.ind_ctors ΣI)
+            /\ premises = [jTy Γ scrut (T.tInd ind []); jTy Γ C (T.tSort i)] ++ jTy_branches Γ ind ΣI C brs
 
       | jTy _ _ _ => False
 
@@ -462,8 +477,8 @@ Module Typing.
       | cLam A t => T.tLam (erase A) (erase t)
       | cApp t u => T.tApp (erase t) (erase u)
       | cFix A t => T.tFix (erase A) (erase t)
-      | cInd ind => T.tInd ind
-      | cRoll ind ctor ps rs => T.tRoll ind ctor (map erase ps) (map erase rs)
+      | cInd ind => T.tInd ind []
+      | cRoll ind ctor ps rs => T.tRoll ind ctor (map erase ps ++ map erase rs)
       | cCase ind scrut C brs => T.tCase ind (erase scrut) (erase C) (map erase brs)
       | cBack args => apps (T.tVar 0) (map erase args)
       end.
