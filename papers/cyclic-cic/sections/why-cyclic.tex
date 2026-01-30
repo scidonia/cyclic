@@ -1,0 +1,42 @@
+\section{Why go cyclic? Proof identity and non-fixed induction principles}
+\label{sec:why-cyclic}
+
+A standard way to represent recursive reasoning in type theory is to bake recursion into the term language:
+\begin{itemize}
+\item either directly, via a fixed-point constructor (\texttt{fix}), or
+\item indirectly, via a pre-chosen set of induction/recursion schemata tied to the type formers.
+\end{itemize}
+
+This choice has a subtle but important consequence: it commits the system to a \emph{particular syntactic presentation} of recursive reasoning.
+Two proofs may establish the same semantic property, but remain permanently different pieces of syntax because they encode recursion using different unfoldings, different induction schemata, or different administrative structure.
+
+\subsection{The core motivation: induction principles need not be fixed}
+
+Cyclic proof theory takes a different stance:
+\begin{quote}
+The recursive structure of a proof is not a primitive binder or a fixed schema; it is a \emph{cycle} in a finite proof graph.
+\end{quote}
+
+A cycle does not, by itself, guarantee soundness.
+Instead we equip the finite graph with a \emph{global progress condition} (Section~\ref{sec:global}) that rules out ``bad'' cycles and validates the intended infinite unfolding.
+
+The key conceptual gain is \emph{modularity of recursion}:
+we can change the cyclic structure (by folding, refolding, or commuting constructors through eliminators) without changing the local steps of the proof.
+In a fixed-point calculus, the recursion principle is pinned to the syntax of \texttt{fix}; in a schema-based setting it is pinned to the chosen eliminators.
+In a cyclic calculus, the recursion principle is an emergent property of the graph plus the global condition.
+
+\subsection{Post-transformation proof identity}
+
+This flexibility is not merely aesthetic.
+It enables a strong normalisation/canonicalisation story for proofs:
+\begin{itemize}
+\item Start from two proofs that are syntactically different (for example: one uses an unfolding step early, another delays it; one distributes a case earlier; one uses a different cycle boundary).
+\item Apply a sequence of semantics-preserving transformations (Section~\ref{sec:transforms}).
+\item After normalization/refolding, the resulting cyclic proof graphs may become \emph{isomorphic} or even \emph{literally identical} as finite objects.
+\end{itemize}
+
+In other words, transformations can expose that two proofs are ``the same proof'' once recursion is treated as \emph{structure} (cycles) rather than as a fixed syntactic operator or schema.
+This is precisely the kind of identification that is difficult in traditional settings: the syntactic boundary of a \texttt{fix} binder (or the syntactic choice of induction schema) tends to be rigid, so normalization can preserve semantics while still leaving behind irreducible syntactic differences.
+
+Cyclic proofs aim to make such equivalences more intensional:
+if two proofs normalize to the same cyclic representative (up to a chosen notion of graph equivalence such as bisimulation), we can treat them as equal in a strong, structurally meaningful sense.

@@ -1,0 +1,40 @@
+\section{Canonical forms via supercompilation-style control}
+\label{sec:canonical}
+
+The long-term goal is a theory of \emph{canonical cyclic proofs}: intensional representatives stable under semantics-preserving transformations.
+In this project, the intended normalization procedure is explicitly inspired by supercompilation \cite{turchin-1986-supercompiler,sorensen-gluck-1995-supercompilation}.
+
+\subsection{Control relation (homeomorphic embedding)}
+
+Supercompilation requires a termination control (a ``whistle'') preventing infinite unfolding.
+The repository implements a homeomorphic embedding relation on terms and extends it to typed judgements (\texttt{theories/Progress/Embedding.v}).
+We write \(j_1 \preceq j_2\) for judgement embedding.
+
+The classical meta-theorem (by Kruskal-style arguments \cite{kruskal-1960-wqo}) is that homeomorphic embedding is a well-quasi-order on finite terms, which implies that an infinite sequence must contain an embedding pair.
+Operationally, this justifies the control rule:
+
+\begin{quote}
+If a newly produced configuration embeds a previous one, stop unfolding and refold (generalize/backlink) instead.
+\end{quote}
+
+\subsection{Reductions ``modulo unfolding''}
+
+Let \(\to\) be the operational step relation on terms (Section~\ref{sec:source}).
+Let \(\rightsquigarrow\) denote a single \emph{unfolding} step at a cyclic back-link (or, in the source calculus, unfolding a \texttt{fix}).
+We treat \(\rightsquigarrow\) as admissible but controlled: it is only permitted when it does not violate the control relation.
+
+\subsection{Canonical form (intended)}
+
+We say a cyclic object is in \emph{canonical form} if:
+\begin{enumerate}[label=(\arabic*)]
+\item (No further reductions) There is no reduction step \(p \to p'\) available in the cyclic object.
+\item (Unfolding is controlled) Any unfolding step \(p \rightsquigarrow p_1\) that would enable further reductions \(p_1 \to^{+} p_2\) is forbidden by the control relation: along the would-be unfolding/reduction trace, some configuration embeds a previous one (a ``whistle'' blows), so the procedure must refold rather than continue unfolding.
+\end{enumerate}
+
+This definition mirrors supercompilation practice: normal forms are not merely ``stuck''; they are \emph{maximally reduced subject to a termination control}.
+The presence of cycles (back-links) turns this into a canonicalization problem for graphs rather than trees: refolding chooses cycle targets and substitutions, and the global progress condition validates that the chosen cycles are productive/sound.
+
+\subsection{Connection to transformations}
+
+Under this view, transformations like head beta and \textsc{CaseCase} are the ``driving'' steps, while read-off/extract and fold/refold manipulate the sharing and cycles.
+The control relation (embedding on typed judgements) is the mechanism that prevents infinite unfolding and makes the canonical form finite.

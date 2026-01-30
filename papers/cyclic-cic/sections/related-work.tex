@@ -1,0 +1,35 @@
+\section{Prior work and relation to Cyclic CIC}
+\label{sec:prior}
+
+This section positions the present development relative to (i) cyclic proof theory,
+(ii) proof-theoretic treatments of induction via global discharge conditions,
+and (iii) CIC kernel engineering.
+
+\paragraph{Cyclic proof theory: from concrete systems to abstract frameworks.}
+Cyclic proof systems represent potentially infinite derivations using finite graphs with back-edges, validated by a global soundness condition.
+This approach originates in cyclic proofs for inductive definitions and infinite descent \cite{brotherston-2006-cyclic,brotherston-simpson-2011-sequent}.
+Afshari and Wehr develop a modern, highly abstract account of cyclic proof checking based on trace conditions, activation algebras, and categorical structure \cite{afshari-wehr-2024-abstract-cyclic}.
+Our work is complementary in two ways:
+(1) we instantiate cyclic proofs inside a typed setting (a CIC-like calculus with evaluation and CIU (\emph{closed instantiations of uses}) observational equivalence);
+(2) we focus on using cyclic proofs as 
+\emph{normal forms stable under program/proof transformations} (commuting conversions, unfold/refold, etc.).
+In particular, many of our proofs of interest are about preservation of observational equivalence under transformations rather than about the abstract complexity of proof checking.
+
+\paragraph{Local induction vs global discharge.}
+Sprenger and Dam compare a proof system with a local well-founded induction rule to a cyclic system validated by a global induction discharge condition, and give effective translations between the two (in the setting of the first-order $\mu$-calculus) \cite{sprenger-dam-2003-circular-tree}.
+We use this as direct prior evidence for the core design thesis of this project:
+\emph{the induction principle need not be fixed syntactically}.
+Where Sprenger--Dam study the relationship between local and global presentations of induction in a fixed-point logic,
+we pursue the same decomposition in a dependent type-theoretic setting, and then exploit it operationally:
+cycles become the unit of fold/refold during normalization and compilation of proof objects.
+
+\paragraph{Engineering CIC kernels.}
+Asperti et al. give a detailed kernel-level account of CIC checking in the Matita prover, emphasizing compactness and clear engineering boundaries \cite{asperti-ricciotti-sacerdoti-coen-tassi-2009-kernel}.
+Our contribution is not a new kernel design; instead, we propose a proof-object language where recursive structure is externalized as graph structure plus a global condition.
+Nevertheless, the kernel perspective is relevant: if cyclic proofs are to support a strong notion of post-transformation proof identity, then proof checking and definitional equality need representations that survive aggressive normalization and refolding.
+
+\paragraph{Supercompilation and termination control.}
+Supercompilation is a semantics-driven program transformation methodology centered on symbolic evaluation (``driving''), generalization, and fold/refold steps \cite{turchin-1986-supercompiler,sorensen-gluck-1995-supercompilation}.
+A key practical ingredient is a \emph{control} (or ``whistle'') mechanism preventing infinite unfolding, often based on homeomorphic embedding and Kruskal-style well-quasi-ordering arguments \cite{kruskal-1960-wqo,leuschel-2002-homeomorphic}.
+Our stance is that cyclic proof normalization is \emph{precisely supercompilation}---but performed at the level of typed judgements/proof objects rather than untyped programs.
+The global cycle condition and the control relation play the same role they do in supercompilation: they justify refolding and prevent uncontrolled infinite unfolding.

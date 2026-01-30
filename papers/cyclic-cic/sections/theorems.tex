@@ -1,0 +1,86 @@
+\section{Key theorems (mechanized)}
+\label{sec:theorems}
+
+This section states the main semantic preservation theorems mechanized in the Coq development.
+Our semantic equivalence is CIU-style observational equivalence at a typing judgement (values as observables).
+
+\subsection{Typed CIU equivalence}
+
+Write \(\mathsf{ciu\_jTy}(\env,\ctx,t,u,A)\) for typed CIU equivalence (see \texttt{theories/Equiv/CIUJudgement.v}).
+Intuitively, \(t\) and \(u\) are equivalent at type \(A\) if, for every well-typed closing substitution by values, they terminate to the same values.
+
+\subsection{Head beta reduction}
+
+Let \(\beta_1\) be head call-by-name beta reduction (\texttt{theories/Transform/BetaReduce.v}).
+
+\begin{theorem}[Head beta preserves typed CIU]
+\label{thm:beta-ciu}
+For all \(\env,\ctx,t,A\),
+\[
+  \hastype{\env}{\ctx}{t}{A} \;\Longrightarrow\; \mathsf{ciu\_jTy}(\env,\ctx,t,\beta_1(t),A).
+\]
+\end{theorem}
+
+This corresponds to the proved Coq theorem \texttt{ciu\_jTy\_beta\_reduce\_once}.
+
+\subsection{Read-off and extraction round-trip}
+
+Let \(\mathsf{read\_off\_raw}\) compile a source term to a fix-free cyclic graph, and let \(\mathsf{extract\_read\_off}\) be the specialized extraction back to terms.
+The Coq development proves a strong round-trip equation (\texttt{theories/Transform/ReadOffExtractCorrectness.v}).
+
+\begin{theorem}[Round-trip identity]
+\label{thm:extract-read-off-id}
+For every term \(t\),
+\[
+  \mathsf{extract\_read\_off}(t) = t.
+\]
+\end{theorem}
+
+An immediate corollary is CIU preservation:
+
+\begin{theorem}[Round-trip preserves typed CIU]
+\label{thm:extract-read-off-ciu}
+For all \(\env,\ctx,t,A\),
+\[
+  \mathsf{ciu\_jTy}(\env,\ctx,t,\mathsf{extract\_read\_off}(t),A).
+\]
+\end{theorem}
+
+These correspond to the proved Coq theorems \texttt{extract\_read\_off\_id} and \texttt{extract\_read\_off\_ciu}.
+
+\subsection{Case--case commuting conversion}
+
+Let \(\mathsf{CaseCase}(\env,t)\) be the one-step commuting conversion for nested case (\texttt{theories/Transform/CaseCase.v}).
+
+\begin{theorem}[\textsc{CaseCase} preserves typed CIU]
+\label{thm:casecase-ciu}
+For all \(\env,\ctx,t,A\),
+\[
+  \hastype{\env}{\ctx}{t}{A} \;\Longrightarrow\; \mathsf{ciu\_jTy}(\env,\ctx,t,\mathsf{CaseCase}(\env,t),A).
+\]
+\end{theorem}
+
+This corresponds to the proved Coq theorem \texttt{ciu\_jTy\_commute\_case\_case\_once}.
+
+\subsection{Lifting transformations}
+
+As a first ``lifting'' result, the repository contains a term-level wrapper that uses the above CIU theorem to justify the CaseCase transform on extracted cyclic objects (\texttt{theories/Transform/CaseCaseProof.v}).
+
+\begin{theorem}[CaseCase transform preserves typed CIU (by reduction to term theorem)]
+\label{thm:casecase-lifted}
+For all \(\env,\ctx,p,A\), if \(p\) is well-typed at \(A\), then applying \textsc{CaseCase} to \(p\) preserves typed CIU.
+\end{theorem}
+
+This corresponds to the proved Coq theorem \texttt{case\_case\_transform\_preserves\_equiv}.
+
+\subsection{Ranking-based global progress (proved)}
+
+The cyclic proof layer uses a global condition to validate cycles.
+One convenient instantiation uses a natural-number ranking that is monotone on all edges and strictly decreasing on designated progress edges.
+
+\begin{proposition}[Natural-number ranking implies progress condition]
+\label{prop:ranking-nat}
+If a finite proof graph admits a rank \(\rho : V \to \mathbb{N}\) such that ranks never increase along edges and strictly decrease along progress edges, and every directed cycle contains a progress edge, then the global progress condition holds.
+\end{proposition}
+
+This corresponds to \texttt{progress\_ok\_nat} in \texttt{theories/Progress/Measures.v}.
