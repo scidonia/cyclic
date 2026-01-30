@@ -1,4 +1,5 @@
 From Stdlib Require Import List Bool Arith Utf8.
+From stdpp Require Import gmap.
 
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Judgement Require Import Typing.
@@ -118,24 +119,24 @@ Fixpoint emb_tm_b (fuel : nat) (t u : tm) : bool :=
                | tFix A' t0' => emb_tm_b fuel' A A' && emb_tm_b fuel' t0 t0'
                | _ => false
                end
-        | tRoll I c params recs =>
+        | tRoll ind ctor params recs =>
             (existsb (fun p => emb_tm_b fuel' p u) params)
             || (existsb (fun r => emb_tm_b fuel' r u) recs)
             || match u with
-               | tRoll I' c' params' recs' =>
-                   Nat.eqb I I'
-                   && Nat.eqb c c'
+               | tRoll ind' ctor' params' recs' =>
+                   Nat.eqb ind ind'
+                   && Nat.eqb ctor ctor'
                    && emb_list_b fuel' (emb_tm_b fuel') params params'
                    && emb_list_b fuel' (emb_tm_b fuel') recs recs'
                | _ => false
                end
-        | tCase I scrut C0 brs =>
+        | tCase ind scrut C0 brs =>
             emb_tm_b fuel' scrut u
             || emb_tm_b fuel' C0 u
             || existsb (fun br => emb_tm_b fuel' br u) brs
             || match u with
-               | tCase I' scrut' C0' brs' =>
-                   Nat.eqb I I'
+               | tCase ind' scrut' C0' brs' =>
+                   Nat.eqb ind ind'
                    && emb_tm_b fuel' scrut scrut'
                    && emb_tm_b fuel' C0 C0'
                    && emb_list_b fuel' (emb_tm_b fuel') brs brs'
@@ -196,74 +197,103 @@ Definition generalize (j1 j2 : config) : option gen_result :=
 
 (* A first fuelled supercompiler skeleton.
 
-   This does not yet build a residual term graph; instead it assigns stable node
-   ids to configurations by exploring rewrites, folding by memoization, and
-   using generalisation when the whistle triggers.
+   This constructs a cyclic graph of configurations:
+   - vertices are fresh natural numbers
+   - labels are judgement configurations
+   - successors are the driven/generalized continuations
 
-   The intention is that the later "graph-building" phase will replace the
-   id allocation with actual `ReadOff.builder` construction. *)
+   It does not yet construct the final *term* residual graph (ReadOff builder).
+   The intent is to connect this config-graph to the cyclic proof layer (or to a
+   residual term graph) once folding/backlink substitution evidence is pinned
+   down.
+*)
+
+Record cfg_builder : Type := {
+  cb_next : nat;
+  cb_label : gmap nat config;
+  cb_succ : gmap nat (list nat);
+}.
+
+Definition cb_empty : cfg_builder :=
+  {| cb_next := 0; cb_label := ∅; cb_succ := ∅ |}.
+
+Definition cb_fresh (b : cfg_builder) : nat * cfg_builder :=
+  let v := b.(cb_next) in
+  (v, {| cb_next := S v; cb_label := b.(cb_label); cb_succ := b.(cb_succ) |}).
+
+Definition cb_put_label (v : nat) (j : config) (b : cfg_builder) : cfg_builder :=
+  {| cb_next := b.(cb_next);
+     cb_label := <[v := j]> b.(cb_label);
+     cb_succ := b.(cb_succ) |}.
+
+Definition cb_put_succ (v : nat) (succs : list nat) (b : cfg_builder) : cfg_builder :=
+  {| cb_next := b.(cb_next);
+     cb_label := b.(cb_label);
+     cb_succ := <[v := succs]> b.(cb_succ) |}.
 
 Record sc_state : Type := {
-  sc_next_id : nat;
+  sc_builder : cfg_builder;
   sc_memo : list (config * nat);
 }.
 
 Definition sc_init : sc_state :=
-  {| sc_next_id := 0; sc_memo := [] |}.
+  {| sc_builder := cb_empty; sc_memo := [] |}.
 
 Definition memo_add (j : config) (v : nat) (st : sc_state) : sc_state :=
-  {| sc_next_id := st.(sc_next_id);
+  {| sc_builder := st.(sc_builder);
      sc_memo := (j, v) :: st.(sc_memo) |}.
 
-Definition fresh_id (st : sc_state) : nat * sc_state :=
-  let v := st.(sc_next_id) in
-  (v, {| sc_next_id := S v; sc_memo := st.(sc_memo) |}).
+Definition sc_alloc (j : config) (st : sc_state) : nat * sc_state :=
+  let '(v, b1) := cb_fresh st.(sc_builder) in
+  let b2 := cb_put_label v j b1 in
+  (v, {| sc_builder := b2; sc_memo := (j, v) :: st.(sc_memo) |}).
 
-Fixpoint supercompile_id (fuel : nat) (Σenv : Ty.env) (j : config) (st : sc_state)
+Definition choose_next (fuel : nat) (Σenv : Ty.env) (j : config) (memo : list (config * nat)) : list config :=
+  match whistle_find fuel j memo with
+  | Some j_prev =>
+      match generalize j_prev j with
+      | Some g => [g.(gen_j)]
+      | None => drive_step Σenv j
+      end
+  | None => drive_step Σenv j
+  end.
+
+Fixpoint supercompile_cfg (fuel : nat) (Σenv : Ty.env) (j : config) (st : sc_state)
   {struct fuel} : option (nat * sc_state) :=
   match memo_lookup j st.(sc_memo) with
   | Some v => Some (v, st)
   | None =>
+      let '(v, st1) := sc_alloc j st in
       match fuel with
-      | 0 =>
-          let '(v, st1) := fresh_id st in
-          Some (v, memo_add j v st1)
+      | 0 => Some (v, st1)
       | S fuel' =>
-          match whistle_find (S fuel') j st.(sc_memo) with
-          | Some j_prev =>
-              match generalize j_prev j with
-              | Some g =>
-                  match supercompile_id fuel' Σenv g.(gen_j) st with
+          let next := choose_next fuel' Σenv j st.(sc_memo) in
+          let fix compile_succs (js : list config) (st0 : sc_state)
+              {struct js} : option (list nat * sc_state) :=
+              match js with
+              | [] => Some ([], st0)
+              | j0 :: js0 =>
+                  match supercompile_cfg fuel' Σenv j0 st0 with
                   | None => None
-                  | Some (vg, stg) => Some (vg, memo_add j vg stg)
-                  end
-              | None =>
-                  (* Fall back to driving if we can't generalise. *)
-                  match drive_step Σenv j with
-                  | j1 :: _ =>
-                      match supercompile_id fuel' Σenv j1 st with
+                  | Some (w, stw) =>
+                      match compile_succs js0 stw with
                       | None => None
-                      | Some (v1, st1) => Some (v1, memo_add j v1 st1)
+                      | Some (ws, st2) => Some (w :: ws, st2)
                       end
-                  | [] =>
-                      let '(v, st1) := fresh_id st in
-                      Some (v, memo_add j v st1)
                   end
               end
-          | None =>
-              match drive_step Σenv j with
-              | j1 :: _ =>
-                  match supercompile_id fuel' Σenv j1 st with
-                  | None => None
-                  | Some (v1, st1) => Some (v1, memo_add j v1 st1)
-                  end
-              | [] =>
-                  let '(v, st1) := fresh_id st in
-                  Some (v, memo_add j v st1)
-              end
+          in
+          match compile_succs next st1 with
+          | None => Some (v, st1)
+          | Some (vs, st2) =>
+              let b' := cb_put_succ v vs st2.(sc_builder) in
+              Some (v, {| sc_builder := b'; sc_memo := st2.(sc_memo) |})
           end
       end
   end.
 
-Definition supercompile_jTy (fuel : nat) (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option nat :=
-  option_map fst (supercompile_id fuel Σenv (C.jTy Γ t A) sc_init).
+Definition supercompile_jTy (fuel : nat) (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option (nat * cfg_builder) :=
+  match supercompile_cfg fuel Σenv (C.jTy Γ t A) sc_init with
+  | None => None
+  | Some (v, st) => Some (v, st.(sc_builder))
+  end.
