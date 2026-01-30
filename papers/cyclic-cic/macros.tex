@@ -1,34 +1,44 @@
 % Notation and macros for Cyclic CIC paper.
 
-\newcommand{\tm}{\mathsf{tm}}
-\newcommand{\ctx}{\Gamma}
-\newcommand{\env}{\Sigma}
+\newcommand{\tm}{\ensuremath{\mathsf{tm}}}
+\newcommand{\ctx}{\ensuremath{\Gamma}}
+\newcommand{\env}{\ensuremath{\Sigma}}
 
 % Judgements
-\newcommand{\hastype}[4]{#1;\,#2 \vdash #3 : #4}
-\newcommand{\step}{\to}
-\newcommand{\steps}{\to^{*}}
+\newcommand{\hastype}[4]{\ensuremath{#1;\,#2 \vdash #3 : #4}}
+\newcommand{\step}{\ensuremath{\to}}
+\newcommand{\steps}{\ensuremath{\to^{*}}}
+
+% --- Lightweight inference rule support ---
+% This file avoids depending on `mathpartir.sty`.
+% Use: \Infer{RuleName}{premises}{conclusion}
+\newcommand{\RuleName}[1]{\textsc{#1}}
+% Use \dfrac so numerator/denominator have matching font size even inside arrays.
+\newcommand{\Infer}[3]{%
+  \dfrac{\begin{array}{c}#2\end{array}}{#3}\;{\scriptstyle(\RuleName{#1})}%
+}
+\newenvironment{Rules}{\[\renewcommand{\arraystretch}{1.3}\begin{array}{c}}{\end{array}\]}
 
 % Term constructors (surface syntax for readability)
-\newcommand{\Var}[1]{\mathsf{Var}\,#1}
-\newcommand{\Sort}[1]{\mathsf{Sort}\,#1}
-\newcommand{\PiTy}[2]{\Pi(#1).\,#2}
-\newcommand{\Lam}[2]{\lambda(#1).\,#2}
-\newcommand{\App}[2]{#1\,#2}
-\newcommand{\Fix}[2]{\mathsf{fix}(#1).\,#2}
-\newcommand{\Ind}[1]{\mathsf{Ind}\,#1}
-\newcommand{\Roll}[4]{\mathsf{roll}^{#1}_{#2}(#3;#4)}
-\newcommand{\Case}[4]{\mathsf{case}^{#1}(#2;#3;#4)}
+\newcommand{\Var}[1]{\ensuremath{\mathsf{Var}\,#1}}
+\newcommand{\Sort}[1]{\ensuremath{\mathsf{Sort}\,#1}}
+\newcommand{\PiTy}[2]{\ensuremath{\Pi(#1).\,#2}}
+\newcommand{\Lam}[2]{\ensuremath{\lambda(#1).\,#2}}
+\newcommand{\App}[2]{\ensuremath{#1\,#2}}
+\newcommand{\Fix}[2]{\ensuremath{\mathsf{fix}(#1).\,#2}}
+\newcommand{\Ind}[1]{\ensuremath{\mathsf{Ind}\,#1}}
+\newcommand{\Roll}[4]{\ensuremath{\mathsf{roll}^{#1}_{#2}(#3;#4)}}
+\newcommand{\Case}[4]{\ensuremath{\mathsf{case}^{#1}(#2;#3;#4)}}
 
 % Cyclic proof objects
-\newcommand{\Rule}{\mathsf{Rule}}
-\newcommand{\labelof}{\mathsf{label}}
-\newcommand{\succof}{\mathsf{succ}}
+\newcommand{\Rule}{\ensuremath{\mathsf{Rule}}}
+\newcommand{\labelof}{\ensuremath{\mathsf{label}}}
+\newcommand{\succof}{\ensuremath{\mathsf{succ}}}
 
-\newcommand{\jTy}{\mathsf{jTy}}
-\newcommand{\jEq}{\mathsf{jEq}}
-\newcommand{\jSub}{\mathsf{jSub}}
+\newcommand{\jTy}{\ensuremath{\mathsf{jTy}}}
+\newcommand{\jEq}{\ensuremath{\mathsf{jEq}}}
+\newcommand{\jSub}{\ensuremath{\mathsf{jSub}}}
 
 % Lists
-\newcommand{\nil}{[\,]}
-\newcommand{\cons}{::}
+\newcommand{\nil}{\ensuremath{[\,]}}
+\newcommand{\cons}{\ensuremath{::}}

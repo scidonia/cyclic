@@ -67,11 +67,11 @@ The rules reference abstract graph-level operations \(\mathsf{shiftV}\) and \(\m
 
 \paragraph{Backlink rule (core idea).}
 A backlink node \texttt{nBack} represents a recursive call as an instantiation of an earlier obligation:
-\begin{mathpar}
-\inferrule*[right=TyBack]
-  {\jTy\;\ctx_0\;\mathit{target}\;A_0 \\
-   \jSub\;\ctx\;sv\;\ctx_0}
-  {\jTy\;\ctx\;\mathit{back}\;(\mathsf{substV}\;sv\;A_0)}
-\end{mathpar}
+
+\begin{Rules}
+  \Infer{TyBack}{\jTy\;\ctx_0\;\mathit{target}\;A_0 \\
+                \jSub\;\ctx\;sv\;\ctx_0}
+              {\jTy\;\ctx\;\mathit{back}\;(\mathsf{substV}\;sv\;A_0)}
+\end{Rules}
 
 This is where recursion lives in the cyclic object: the graph edge from \(\mathit{back}\) to \(\mathit{target}\) closes the cycle, while \(sv\) records how the recursive call is instantiated.

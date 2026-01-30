@@ -36,35 +36,22 @@ The main judgement is \(\hastype{\env}{\ctx}{t}{A}\).
 Below is the core typing system (informally mirroring \texttt{Typing.has\_type}).
 We omit the full inductive signature side-conditions and arity bookkeeping, but include the essential shape.
 
-\begin{mathpar}
-\inferrule*[right=TyVar]
-  {\ctx(x)=A}
-  {\hastype{\env}{\ctx}{\Var{x}}{A}}
-
-\inferrule*[right=TySort]
-  {}
-  {\hastype{\env}{\ctx}{\Sort{i}}{\Sort{i+1}}}
-
-\inferrule*[right=TyPi]
-  {\hastype{\env}{\ctx}{A}{\Sort{i}}\\
-   \hastype{\env}{A::\ctx}{B}{\Sort{j}}}
-  {\hastype{\env}{\ctx}{\PiTy{A}{B}}{\Sort{\max(i,j)}}}
-
-\inferrule*[right=TyLam]
-  {\hastype{\env}{\ctx}{A}{\Sort{i}}\\
-   \hastype{\env}{A::\ctx}{t}{B}}
-  {\hastype{\env}{\ctx}{\Lam{A}{t}}{\PiTy{A}{B}}}
-
-\inferrule*[right=TyApp]
-  {\hastype{\env}{\ctx}{t}{\PiTy{A}{B}}\\
-   \hastype{\env}{\ctx}{u}{A}}
-  {\hastype{\env}{\ctx}{\App{t}{u}}{B[u/0]}}
-
-\inferrule*[right=TyFix]
-  {\hastype{\env}{\ctx}{A}{\Sort{i}}\\
-   \hastype{\env}{A::\ctx}{t}{A\uparrow}}
-  {\hastype{\env}{\ctx}{\Fix{A}{t}}{A}}
-\end{mathpar}
+\begin{Rules}
+  \Infer{TyVar}{\ctx(x)=A}{\hastype{\env}{\ctx}{\Var{x}}{A}}\\
+  \Infer{TySort}{}{\hastype{\env}{\ctx}{\Sort{i}}{\Sort{i+1}}}\\
+  \Infer{TyPi}{\hastype{\env}{\ctx}{A}{\Sort{i}}\\
+              \hastype{\env}{A::\ctx}{B}{\Sort{j}}}
+            {\hastype{\env}{\ctx}{\PiTy{A}{B}}{\Sort{\max(i,j)}}}\\
+  \Infer{TyLam}{\hastype{\env}{\ctx}{A}{\Sort{i}}\\
+               \hastype{\env}{A::\ctx}{t}{B}}
+            {\hastype{\env}{\ctx}{\Lam{A}{t}}{\PiTy{A}{B}}}\\
+  \Infer{TyApp}{\hastype{\env}{\ctx}{t}{\PiTy{A}{B}}\\
+               \hastype{\env}{\ctx}{u}{A}}
+            {\hastype{\env}{\ctx}{\App{t}{u}}{B[u/0]}}\\
+  \Infer{TyFix}{\hastype{\env}{\ctx}{A}{\Sort{i}}\\
+               \hastype{\env}{A::\ctx}{t}{A\uparrow}}
+            {\hastype{\env}{\ctx}{\Fix{A}{t}}{A}}
+\end{Rules}
 
 \paragraph{Inductives, constructors, and case.}
 The development includes strictly-positive inductives \(\Ind{I}\), constructor values \(\Roll{I}{c}{\overline{p}}{\overline{r}}\), and elimination by \(\Case{I}{t}{C}{\overline{\mathit{br}}}\).
@@ -75,27 +62,15 @@ Branches are typed by building an iterated Pi-type over the constructor argument
 
 We use a weak-head, call-by-name reduction relation \(t \step u\) (see \texttt{Semantics/Cbn.v}).
 Key rules include:
-\begin{mathpar}
-\inferrule*[right=Step\_Beta]
-  {}
-  {\App{(\Lam{A}{t})}{u} \step t[u/0]}
 
-\inferrule*[right=Step\_App1]
-  {t \step t'}
-  {\App{t}{u} \step \App{t'}{u}}
-
-\inferrule*[right=Step\_Fix]
-  {}
-  {\Fix{A}{t} \step t[\Fix{A}{t}/0]}
-
-\inferrule*[right=Step\_CaseScrut]
-  {t \step t'}
-  {\Case{I}{t}{C}{\overline{\mathit{br}}} \step \Case{I}{t'}{C}{\overline{\mathit{br}}}}
-
-\inferrule*[right=Step\_CaseRoll]
-  {\mathit{branch}(\overline{\mathit{br}},c)=\mathit{br}}
-  {\Case{I}{(\Roll{I}{c}{\overline{p}}{\overline{r}})}{C}{\overline{\mathit{br}}} \step \mathit{br}\; (\overline{p} \mathbin{++} \overline{r})}
-\end{mathpar}
+\begin{Rules}
+  \Infer{Step-Beta}{}{\App{(\Lam{A}{t})}{u} \step t[u/0]}\\
+  \Infer{Step-App1}{t \step t'}{\App{t}{u} \step \App{t'}{u}}\\
+  \Infer{Step-Fix}{}{\Fix{A}{t} \step t[\Fix{A}{t}/0]}\\
+  \Infer{Step-CaseScrut}{t \step t'}{\Case{I}{t}{C}{\overline{\mathit{br}}} \step \Case{I}{t'}{C}{\overline{\mathit{br}}}}\\
+  \Infer{Step-CaseRoll}{\mathit{branch}(\overline{\mathit{br}},c)=\mathit{br}}
+                     {\Case{I}{(\Roll{I}{c}{\overline{p}}{\overline{r}})}{C}{\overline{\mathit{br}}} \step \mathit{br}\; (\overline{p} \mathbin{++} \overline{r})}
+\end{Rules}
 
 We write \(t \steps u\) for the reflexive-transitive closure of \(\step\).
 Values are \(\lambda\)-abstractions and constructor rolls.

@@ -1,19 +1,25 @@
-\section{Motivation}
+\section{Introduction}
 
-Cyclic proof systems replace tree-shaped derivations with \emph{finite graphs}.
-A cycle represents a potentially unbounded (or self-referential) reasoning pattern, and soundness is recovered by a \emph{global condition} ensuring that cycles make progress.
+The design goal of this project is not simply to add ``cycles'' for convenience.
+The goal is to change what we treat as \emph{primitive} in a proof calculus.
 
-In this project, the guiding slogan (see the repository notes) is:
+In conventional systems, recursive reasoning is packaged as a fixed-point operator or as a family of induction/recursion schemata.
+Those choices are powerful, but they also hard-code a particular presentation of recursion into the syntax of proofs.
+As a result, proofs that are semantically equivalent can remain syntactically far apart, even after many semantics-preserving transformations.
 
+Cyclic proof theory suggests a different decomposition:
 \begin{quote}
-Canonical cyclic proofs are intensional representatives whose equality soundly approximates extensional program equivalence.
+A proof is a finite graph of locally-correct steps; recursion is represented by cycles; and soundness is ensured by a global progress condition.
 \end{quote}
 
-The intended workflow is:
-\begin{enumerate}[label=(\arabic*)]
-\item Start from a conventional CIC-like term language (with general recursion \Fix{A}{t}).
-\item Compile terms to a \emph{fix-free} cyclic proof/term graph representation: recursion is represented by back-links plus explicit substitution evidence, not by storing \texttt{fix} syntax inside the cyclic object.
-\item Justify proof/program transformations (e.g. commuting conversions, head \(\beta\)-steps, unfold/refold of cycles) by showing they preserve a semantic equivalence (CIU-style, values as observables), relying crucially on the global cycle condition.
-\end{enumerate}
+This decomposition has an attractive consequence for proof engineering and normalization:
+we can refactor recursive structure (fold/refold), commute conversions, and perform administrative normalization without being forced to preserve the exact boundaries of \texttt{fix} binders or induction schemata.
+In the best case, normalization can reveal that two proofs are not just equivalent, but \emph{the same cyclic object} after refolding.
 
-This note is intentionally an outline: it states the core calculi and the intended transformation story, aligning with the Coq development in \texttt{theories/}.
+The rest of the paper outlines:
+\begin{itemize}
+\item the source CIC-like term calculus (Section~\ref{sec:source});
+\item the cyclic proof/term graph architecture (Section~\ref{sec:cyclic});
+\item the global condition on cycles (Section~\ref{sec:global});
+\item and representative transformations like \textsc{CaseCase} and head beta-reduction (Section~\ref{sec:transforms}).
+\end{itemize}

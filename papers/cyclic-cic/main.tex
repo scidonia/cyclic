@@ -8,33 +8,50 @@
 \geometry{margin=1in}
 
 \usepackage{amsmath,amssymb,mathtools}
-\usepackage{mathpartir}
+\usepackage{amsthm}
+% \usepackage{mathpartir} % not available in minimal TeX installs
 \usepackage{enumitem}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
 
-\title{Cyclic CIC: Motivation, Calculus, and Transformations (Outline)}
+\title{Why Cyclic CIC? (Motivation, Calculi, Transformations)}
 \author{(Scidonia/cyclic notes)}
 \date{\today}
 
 \input{macros}
 
+% Theorem environments (paper presentation)
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{definition}[theorem]{Definition}
+
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This note outlines a dependent type theory close to the Calculus of Inductive Constructions (CIC), together with a cyclic proof language whose proof objects are finite graphs.
-The motivating idea is to represent recursion and extensional reasoning using cycles (plus a global progress condition), rather than storing general recursion syntax (\texttt{fix}) inside proof objects.
-We also summarize term/program transformations (\textsc{CaseCase}, head \(\beta\)-reduction, and fold/refold of cycles) and explain why global cycle conditions are the key to their semantic viability.
+This paper-style note motivates a cyclic variant of a Calculus of Inductive Constructions (CIC)-like calculus.
+The central claim is that \emph{the induction/recursion principle need not be fixed syntactically}: instead, proofs can be finite graphs with cycles, validated by a global progress condition.
+This extra freedom makes it possible for program/proof transformations (commuting conversions, unfolding/refolding, etc.) to \emph{identify} proofs that were previously distinct---in the strongest sense, they may become literally the same cyclic object after normalization.
+Such ``post-hoc proof identity'' is hard to express in systems where recursion is baked in as a fixed-point operator or as a rigid family of induction schemata.
+We then outline (i) the source term calculus, (ii) a fix-free cyclic proof/term language with explicit substitution evidence, (iii) the global condition on cycles, and (iv) representative transformations like \textsc{CaseCase} and head beta-reduction.
 \end{abstract}
 
 \tableofcontents
 
 \input{sections/intro}
+\input{sections/related-work}
+\input{sections/why-cyclic}
+
 \input{sections/source-calculus}
 \input{sections/cyclic-calculus}
 \input{sections/global-conditions}
 \input{sections/transformations}
+\input{sections/theorems}
+\input{sections/canonical-forms}
 \input{sections/conclusion}
+
+\bibliographystyle{plain}
+\bibliography{refs}
 
 \end{document}

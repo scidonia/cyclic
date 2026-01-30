@@ -1,9 +1,10 @@
-\section{Transformations: \textsc{CaseCase}, head \(\beta\), unfold/refold}
+\section{Transformations: \textsc{CaseCase}, head beta, unfold/refold}
 \label{sec:transforms}
 
 This section outlines the main transformations currently being developed at the term level, with the intended lift to cyclic proof objects via extraction.
+The motivating theme is not merely that these rewrites preserve observational equivalence, but that they support a notion of \emph{canonical cyclic representatives}.
 
-\subsection{Head \(\beta\)-reduction (call-by-name)}
+\subsection{Head beta-reduction (call-by-name)}
 
 The file \texttt{theories/Transform/BetaReduce.v} defines a single-step head reduction:
 \[
@@ -18,8 +19,6 @@ It also proves a CIU-style correctness theorem for typed terms (see \texttt{CIUJ
 \[
 \hastype{\env}{\ctx}{t}{A} \implies \mathsf{ciu\_jTy}\;\env\;\ctx\;t\;(\mathsf{beta\_reduce\_once}(t))\;A.
 \]
-
-This is a canonical example of a transformation that is locally justified by the operational semantics (one \(\step\) step).
 
 \subsection{\textsc{CaseCase}: commuting nested case}
 
@@ -38,8 +37,6 @@ where each inner branch is transformed to:
 
 In the development, the constructor arity/types are obtained from the inductive signature environment, and the branch transform is implemented by a function \texttt{commute\_branch\_typed\_rec}.
 
-The intended semantic statement is again CIU-style: commuting nested cases preserves observations (termination to the same value) under typed closing substitutions.
-
 \subsection{Unfolding and refolding of cycles}
 
 Beyond term-level rewrites, cyclic proof objects admit transformations that restructure graph sharing and cycles:
@@ -48,5 +45,6 @@ Beyond term-level rewrites, cyclic proof objects admit transformations that rest
 \item \textbf{Fold/refold}: identify repeated sub-derivations and introduce a back-link, or rearrange cycle boundaries (e.g. SCC-normal forms).
 \end{itemize}
 
-Such transformations are not justified merely by local rule correctness; they must preserve (or allow recomputation of) the global progress witness.
-This is the key reason global cycle conditions are central: they make cycle-introducing transformations semantically viable.
+These transformations are the point where cyclicity pays off.
+Because recursion is represented structurally (by cycles) rather than by a fixed syntactic operator, refolding can change \emph{which} cyclic structure represents a proof without changing what it proves.
+The global progress condition is what makes this sound: it is the invariant that must be preserved or transported when cycles are restructured.

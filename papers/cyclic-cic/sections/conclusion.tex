@@ -1,16 +1,23 @@
-\section{Conclusion and next steps}
+\section{Conclusion}
 
-This note collected the main ingredients of the project:
+This paper proposes and mechanizes a cyclic variant of a CIC-like calculus.
+The main contributions are:
 \begin{itemize}
-\item a CIC-like source calculus with call-by-name semantics;
-\item a cyclic proof architecture: finite proof graphs + local rule correctness + global progress condition;
-\item a fix-free vertex calculus produced by read-off, with explicit substitution evidence and backlinks;
-\item representative transformations (\textsc{CaseCase}, head \(\beta\)-reduction, unfold/refold) whose correctness relies on semantic preservation and on transporting global progress witnesses.
+\item \textbf{A cyclic CIC calculus.}
+  We give (to our knowledge) the first development of a CIC-style setting where proof objects are finite graphs with cycles, rather than trees with a fixed recursion/induction discipline.
+\item \textbf{Cyclic normalization as supercompilation.}
+  We make a direct connection between cyclic proof normalization and supercompilation: driving steps correspond to local computation/commuting conversions, while fold/refold and back-links correspond to supercompiler-style memoization and generalization, governed by a termination control (homeomorphic embedding).
+\item \textbf{Verified meta-theory and transformation correctness.}
+  Substantial parts of the pipeline and its supporting theorems are verified in Coq, including key semantic preservation results and the read-off/extraction round-trip theorem.
 \end{itemize}
 
-Near-term extensions for a fuller paper version:
+\paragraph{Verified results and current status.}
+The mechanized development currently includes:
 \begin{itemize}
-\item complete the definitional equality / normalization rules in the vertex judgement system;
-\item state and prove a generic ``witness transport'' theorem for graph rewrites;
-\item relate ranking-style progress to fairness/B\"uchi-style conditions for productivity.
+\item a proved CIU preservation theorem for head beta reduction (Theorem~\ref{thm:beta-ciu});
+\item a proved round-trip identity theorem for read-off and extraction (Theorem~\ref{thm:extract-read-off-id}) and its CIU corollary (Theorem~\ref{thm:extract-read-off-ciu});
+\item a proved ranking-based sufficient condition for the global progress predicate (Proposition~\ref{prop:ranking-nat});
+\item a proved CIU preservation theorem for the \textsc{CaseCase} commuting conversion (Theorem~\ref{thm:casecase-ciu}).
 \end{itemize}
+
+Future work is to complete the remaining transformation theorems, strengthen the canonical-form theory, and refine the notion of canonical cyclic representatives (graph equivalence and refolding invariants).

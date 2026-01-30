@@ -24,6 +24,7 @@
     Transform.Extract
     Transform.CyclicRules
     Transform.BetaReduce
+    Transform.Supercompile
     Transform.CaseCase
     Transform.CaseCaseProof
     Transform.ReadOffExtractCorrectness
