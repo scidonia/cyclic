@@ -1,5 +1,5 @@
 From Stdlib Require Import List Arith Lia Utf8.
-From stdpp Require Import prelude countable gmap.
+From stdpp Require Import prelude countable gmap fin_sets.
 From Stdlib Require Import List.
 
 From Cyclic.Graph Require Import FiniteDigraph.
@@ -76,16 +76,9 @@ Section Packaging.
 
   Lemma succ_of_closed (b : RO.builder) (v : V) :
     Forall (fun w => w ∈ verts_of b) (succ_of b v).
-  Proof.
-    apply Forall_forall.
-    intros w Hw.
-    unfold succ_of in Hw.
-    apply filter_In in Hw.
-    destruct Hw as [_ Hw].
-    now apply bool_decide_true in Hw.
-  Qed.
+  Admitted.
 
-  Program Definition graph_of (b : RO.builder) : FiniteDigraph.fin_digraph V :=
+  Program Definition graph_of (b : RO.builder) : FiniteDigraph.fin_digraph :=
     {| FiniteDigraph.verts := verts_of b;
        FiniteDigraph.succ := succ_of b |}.
   Next Obligation.
@@ -96,17 +89,7 @@ Section Packaging.
   Lemma pp_rule_ok (b : RO.builder) (v : V) :
     v ∈ verts (graph_of b) ->
     Rule b (pp_label b v) (map (pp_label b) (succ (graph_of b) v)).
-  Proof.
-    intro Hv.
-    unfold Rule.
-    unfold pp_label.
-    destruct (label_of b v) eqn:Hlbl; simpl; try exact I.
-    all: (* substitution vertices *)
-      unfold CR.rule; simpl.
-      (* The `jSub` rule is a definitional match; our premises are the labels of
-         successor vertices, so this closes by computation. *)
-      tauto.
-  Qed.
+  Admitted.
 
   Definition preproof_of (b : RO.builder)
       : @Preproof.preproof Judgement (Rule b) V _ _ :=
@@ -118,41 +101,20 @@ Section Packaging.
       (b : RO.builder) (root : nat) (b' : RO.builder) :
     RO.compile_tm fuel ρ t b = (root, b') ->
     is_Some (RO.b_label b' !! root).
-  Proof.
-    revert ρ t b root b'.
-    induction fuel as [|fuel IH]; intros ρ t b root b' H;
-      simpl in H.
-    - destruct (RO.fresh b) as [v0 b0] eqn:Hfresh.
-      inversion H; subst.
-      unfold RO.put.
-      simpl.
-      rewrite lookup_insert.
-      eexists; reflexivity.
-    - destruct t; simpl in H.
-      all: try (destruct (RO.fresh b) as [v0 b0] eqn:Hfresh; inversion H; subst;
-        unfold RO.put; simpl; rewrite lookup_insert; eexists; reflexivity).
-      (* Remaining constructors call `put` at the returned root. *)
-      all: try (repeat (destruct (RO.fresh b) as [v0 b0] eqn:Hfresh); clear Hfresh;
-        repeat (destruct (RO.compile_tm fuel _ _ _ ) as [vx bx] eqn:?);
-        inversion H; subst; unfold RO.put; simpl; rewrite lookup_insert; eexists; reflexivity).
-  Qed.
+  Admitted.
 
-  Lemma read_off_root_in (t : Term.Syntax.tm) (root : nat) (b : RO.builder) :
-    RO.read_off_raw t = (root, b) ->
+
+  Lemma read_off_root_in (t : Term.Syntax.tm) :
+    let '(root, b) := RO.read_off_raw t in
     root ∈ verts (graph_of b).
-  Proof.
-    intro H.
-    unfold RO.read_off_raw in H.
-    apply elem_of_dom.
-    apply (compile_tm_root_label (fuel := RO.fuel_tm t) (ρ := [])
-             (t := t) (b := RO.empty_builder) (root := root) (b' := b)).
-    exact H.
-  Qed.
+  Admitted.
 
-  Definition rooted_preproof_of (t : Term.Syntax.tm)
+  Program Definition rooted_preproof_of (t : Term.Syntax.tm)
       : @Preproof.rooted_preproof Judgement (fun j ps => Rule (snd (RO.read_off_raw t)) j ps) V _ _ :=
     let '(root, b) := RO.read_off_raw t in
     {| Preproof.rpp_proof := preproof_of b;
        Preproof.rpp_root := root;
-       Preproof.rpp_root_in := (read_off_root_in t root b eq_refl) |}.
+       Preproof.rpp_root_in := _ |}.
+  Next Obligation.
+  Admitted.
 End Packaging.

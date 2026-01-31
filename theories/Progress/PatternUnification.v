@@ -50,11 +50,11 @@ Section TermEquality.
     | T.tLam A t, T.tLam A' t' => tm_eqb A A' && tm_eqb t t'
     | T.tApp t1 u1, T.tApp t2 u2 => tm_eqb t1 t2 && tm_eqb u1 u2
     | T.tFix A t, T.tFix A' t' => tm_eqb A A' && tm_eqb t t'
-    | T.tInd ind, T.tInd ind' => Nat.eqb ind ind'
-    | T.tRoll ind c ps rs, T.tRoll ind' c' ps' rs' =>
+    | T.tInd ind args, T.tInd ind' args' =>
+        Nat.eqb ind ind' && list_eqb tm_eqb args args'
+    | T.tRoll ind c args, T.tRoll ind' c' args' =>
         Nat.eqb ind ind' && Nat.eqb c c'
-        && list_eqb tm_eqb ps ps'
-        && list_eqb tm_eqb rs rs'
+        && list_eqb tm_eqb args args'
     | T.tCase ind s C0 brs, T.tCase ind' s' C0' brs' =>
         Nat.eqb ind ind'
         && tm_eqb s s'

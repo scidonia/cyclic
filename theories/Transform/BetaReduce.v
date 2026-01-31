@@ -79,10 +79,10 @@ Fixpoint full_normalize (fuel : nat) (t : tm) : tm :=
           let app := tApp f_norm u_norm in
           beta_reduce_once app
       | tFix A body => tFix (full_normalize fuel' A) (full_normalize fuel' body)
-      | tInd I args => tInd I (map (full_normalize fuel') args)
-      | tRoll I c args => tRoll I c (map (full_normalize fuel') args)
-      | tCase I scrut C brs =>
-          tCase I
+      | tInd ind args => tInd ind (map (full_normalize fuel') args)
+      | tRoll ind c args => tRoll ind c (map (full_normalize fuel') args)
+      | tCase ind scrut C brs =>
+          tCase ind
                 (full_normalize fuel' scrut)
                 (full_normalize fuel' C)
                 (map (full_normalize fuel') brs)

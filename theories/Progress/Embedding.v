@@ -48,10 +48,8 @@ Section HomeomorphicEmbedding.
   | emb_dive_app2 t u v : emb_tm u v -> emb_tm (T.tApp t u) v
   | emb_dive_fixA A t u : emb_tm A u -> emb_tm (T.tFix A t) u
   | emb_dive_fixt A t u : emb_tm t u -> emb_tm (T.tFix A t) u
-  | emb_dive_roll_param I c params recs u :
-      In u params -> emb_tm (T.tRoll I c params recs) u
-  | emb_dive_roll_rec I c params recs u :
-      In u recs -> emb_tm (T.tRoll I c params recs) u
+  | emb_dive_roll_arg I c args u :
+      In u args -> emb_tm (T.tRoll I c args) u
   | emb_dive_case_scrut I scrut C brs u : emb_tm scrut u -> emb_tm (T.tCase I scrut C brs) u
   | emb_dive_case_C I scrut C brs u : emb_tm C u -> emb_tm (T.tCase I scrut C brs) u
   | emb_dive_case_branch I scrut C brs u :
@@ -60,7 +58,9 @@ Section HomeomorphicEmbedding.
   (* Coupling: same head constructor, recursively embed arguments. *)
   | emb_sort i : emb_tm (T.tSort i) (T.tSort i)
   | emb_var x : emb_tm (T.tVar x) (T.tVar x)
-  | emb_ind I : emb_tm (T.tInd I) (T.tInd I)
+  | emb_ind I args args' :
+      emb_list emb_tm args args' ->
+      emb_tm (T.tInd I args) (T.tInd I args')
 
   | emb_pi A A' B B' :
       emb_tm A A' ->
@@ -82,10 +82,9 @@ Section HomeomorphicEmbedding.
       emb_tm t t' ->
       emb_tm (T.tFix A t) (T.tFix A' t')
 
-  | emb_roll I c params params' recs recs' :
-      emb_list emb_tm params params' ->
-      emb_list emb_tm recs recs' ->
-      emb_tm (T.tRoll I c params recs) (T.tRoll I c params' recs')
+  | emb_roll I c args args' :
+      emb_list emb_tm args args' ->
+      emb_tm (T.tRoll I c args) (T.tRoll I c args')
 
   | emb_case I scrut scrut' C0 C0' brs brs' :
       emb_tm scrut scrut' ->

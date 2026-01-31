@@ -92,7 +92,10 @@ Definition ctor_arg_tys (Σenv : Ty.env) (I c : nat) : option (list tm) :=
 Fixpoint commute_branch_typed_rec
     (k : nat) (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc : tm) : tm :=
   match argsTys with
-  | [] => tCase J br_acc (shift k 0 D) (map (shift k 0) brsJ)
+  | [] =>
+      (* D is a dependent motive (a binder), so preserve its bound scrutinee
+         at index 0 by shifting under cutoff 1. *)
+      tCase J br_acc (shift k 1 D) (map (shift k 0) brsJ)
   | A :: argsTys' =>
       tLam (shift k 0 A)
         (commute_branch_typed_rec (S k) J D brsJ argsTys'
@@ -137,15 +140,6 @@ Definition propagate_motive_once (t : tm) : tm :=
   | _ => t
   end.
 
-(** Motive propagation is semantically a no-op: the substitution happens
-    anyway when the case reduces. This transformation just makes it explicit. *)
-Lemma propagate_motive_preserves_steps :
-  forall I c args C brs,
-    steps (tCase I (tRoll I c args) (subst0 (tRoll I c args) C) brs)
-          (tCase I (tRoll I c args) C brs).
-Proof.
-  intros.
-Admitted.
 
 (** Helper: lift a single step into `steps`. *)
 Lemma steps_step (t u : tm) : step t u -> steps t u.
@@ -242,6 +236,37 @@ Proof.
     split; [exact Happs|exact Hv].
 Qed.
 
+(** Motive propagation is semantically a no-op.
+
+    Our call-by-name semantics does not inspect the case motive at runtime, so
+    changing it does not affect termination-to-value observations.
+*)
+Lemma propagate_motive_preserves_terminates_to :
+  forall I c args C brs v,
+    terminates_to (tCase I (tRoll I c args) (subst0 (tRoll I c args) C) brs) v
+    <->
+    terminates_to (tCase I (tRoll I c args) C brs) v.
+Proof.
+  intros I c args C brs v.
+  split; intro Hterm.
+  - destruct (terminates_to_case_inv I (tRoll I c args) (subst0 (tRoll I c args) C) brs v Hterm)
+      as (c' & args' & br & Hscrut & Hbr & Happs).
+    destruct Happs as [Happs_steps Hv].
+    split.
+    + eapply steps_trans.
+      * eapply steps_case_to_apps; eauto.
+      * exact Happs_steps.
+    + exact Hv.
+  - destruct (terminates_to_case_inv I (tRoll I c args) C brs v Hterm)
+      as (c' & args' & br & Hscrut & Hbr & Happs).
+    destruct Happs as [Happs_steps Hv].
+    split.
+    + eapply steps_trans.
+      * eapply steps_case_to_apps; eauto.
+      * exact Happs_steps.
+    + exact Hv.
+Qed.
+
 Lemma terminates_to_steps_prefix (t u v : tm) :
   steps t u -> terminates_to t v -> terminates_to u v.
 Proof.
@@ -273,6 +298,23 @@ Proof.
     destruct (x <? 0) eqn:Hx.
     - apply Nat.ltb_lt in Hx. lia.
     - lia. }
+  rewrite Hxi.
+  assert (Hren : ren (fun x => x) = ids).
+  { apply functional_extensionality; intro x.
+    reflexivity. }
+  rewrite Hren.
+  unfold ids.
+  exact (subst_id t).
+Qed.
+
+Lemma shift0_id_cutoff (c : nat) (t : tm) : shift 0 c t = t.
+Proof.
+  unfold shift, rename.
+  rewrite rename_subst.
+  assert (Hxi : shift_sub 0 c = fun x => x).
+  { apply functional_extensionality; intro x.
+    unfold shift_sub.
+    destruct (x <? c) eqn:Hx; lia. }
   rewrite Hxi.
   assert (Hren : ren (fun x => x) = ids).
   { apply functional_extensionality; intro x.
@@ -341,6 +383,38 @@ Proof.
   reflexivity.
 Qed.
 
+(* Variant used for dependent case motives: shift under cutoff 1, then substitute
+   under the binder (`up`). *)
+Lemma shift_plug_sub_cutoff1 (k : nat) (u t : tm) :
+  (shift (S k) 1 t).[up (plug_sub k u)] = shift k 1 t.
+Proof.
+  unfold shift, rename.
+  repeat rewrite rename_subst.
+  rewrite subst_comp.
+  assert (Hσ : ren (shift_sub (S k) 1) >> up (plug_sub k u) = ren (shift_sub k 1)).
+  { apply functional_extensionality; intro x.
+    unfold funcomp.
+    cbn [ren].
+    asimpl.
+    destruct x as [|x].
+    - (* x = 0 *)
+      cbn [shift_sub].
+      unfold up, Autosubst_Classes.up.
+      cbn.
+      reflexivity.
+    - (* x = S x *)
+      cbn [shift_sub].
+      replace (S x <? 1) with false by (symmetry; apply Nat.ltb_ge; lia).
+      replace (S x + S k) with (S (x + S k)) by lia.
+      unfold up, Autosubst_Classes.up.
+      cbn.
+      rewrite plug_sub_on_shift.
+      cbn [rename].
+      reflexivity. }
+  rewrite Hσ.
+  reflexivity.
+Qed.
+
 Lemma map_shift_plug_sub (k : nat) (u : tm) (ts : list tm) :
   (map (shift (S k) 0) ts)..[plug_sub k u] = map (shift k 0) ts.
 Proof.
@@ -384,14 +458,39 @@ Lemma commute_branch_typed_rec_plug_sub
     (k : nat) (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc u : tm) :
   (commute_branch_typed_rec (S k) J D brsJ argsTys br_acc).[plug_sub k u]
   = commute_branch_typed_rec k J D brsJ argsTys (br_acc.[plug_sub k u]).
-Admitted.
+Proof.
+  revert k br_acc.
+  induction argsTys as [|A argsTys IH]; intros k br_acc; cbn [commute_branch_typed_rec].
+  - asimpl.
+    f_equal.
+    all: try reflexivity.
+    all: try (apply shift_plug_sub_cutoff1).
+    all: try (symmetry; apply shift_plug_sub_cutoff1).
+    all: try apply map_shift_plug_sub.
+  - asimpl.
+    f_equal.
+    + apply shift_plug_sub.
+    + (* Put the substitution in `plug_sub (S k) u` form so IH matches. *)
+      replace (up (plug_sub k u)) with (plug_sub (S k) u) by reflexivity.
+      rewrite (IH (S k) (tApp (shift1 br_acc) (tVar 0))).
+      f_equal.
+      cbn.
+      rewrite shift1_subst_up.
+      reflexivity.
+Qed.
 
 Lemma subst0_commute_branch_typed_rec
     (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc u : tm) :
   subst0 u
       (commute_branch_typed_rec 1 J D brsJ argsTys (tApp (shift1 br_acc) (tVar 0)))
   = commute_branch_typed_rec 0 J D brsJ argsTys (tApp br_acc u).
-Admitted.
+Proof.
+  unfold subst0.
+  (* instantiate commute_branch_typed_rec_plug_sub at k=0 *)
+  pose proof (commute_branch_typed_rec_plug_sub 0 J D brsJ argsTys (tApp (shift1 br_acc) (tVar 0)) u) as H.
+  cbn [plug_sub] in H.
+  exact H.
+Qed.
 
 Lemma steps_commute_branch_typed
     (J : nat) (D : tm) (brsJ : list tm) (argsTys : list tm) (br_acc : tm)
@@ -404,7 +503,7 @@ Proof.
   induction argsTys as [|A argsTys IH]; intros br_acc args Hlen.
   - destruct args as [|u us]; simpl in Hlen; [|discriminate].
     cbn [commute_branch_typed_rec].
-    rewrite shift0_id.
+    rewrite (shift0_id_cutoff 1 D).
     rewrite map_shift0_id.
     apply rt_refl.
   - destruct args as [|u us]; simpl in Hlen; [discriminate|].
@@ -573,7 +672,11 @@ Qed.
 
 Lemma subst_list_shift0 (σ : list tm) (t : tm) :
   Ty.subst_list σ (shift 0 0 t) = shift 0 0 (Ty.subst_list σ t).
-Admitted.
+Proof.
+  rewrite shift0_id.
+  rewrite shift0_id.
+  reflexivity.
+Qed.
 
 
 Lemma subst_list_commute_branch_typed
