@@ -267,6 +267,30 @@ Proof.
     + exact Hv.
 Qed.
 
+(** More generally, the case motive is runtime-irrelevant under CBN. *)
+Lemma terminates_to_case_motive_irrelevant
+    (I : nat) (scrut C C' : tm) (brs : list tm) (v : tm) :
+  terminates_to (tCase I scrut C brs) v <-> terminates_to (tCase I scrut C' brs) v.
+Proof.
+  split; intro Hterm.
+  - destruct (terminates_to_case_inv I scrut C brs v Hterm)
+      as (c & args & br & Hscrut & Hbr & Happs).
+    destruct Happs as [Huv Hv].
+    split.
+    + eapply steps_trans.
+      * eapply steps_case_to_apps; eauto.
+      * exact Huv.
+    + exact Hv.
+  - destruct (terminates_to_case_inv I scrut C' brs v Hterm)
+      as (c & args & br & Hscrut & Hbr & Happs).
+    destruct Happs as [Huv Hv].
+    split.
+    + eapply steps_trans.
+      * eapply steps_case_to_apps; eauto.
+      * exact Huv.
+    + exact Hv.
+Qed.
+
 Lemma terminates_to_steps_prefix (t u v : tm) :
   steps t u -> terminates_to t v -> terminates_to u v.
 Proof.
@@ -472,11 +496,16 @@ Proof.
     + apply shift_plug_sub.
     + (* Put the substitution in `plug_sub (S k) u` form so IH matches. *)
       replace (up (plug_sub k u)) with (plug_sub (S k) u) by reflexivity.
-      rewrite (IH (S k) (tApp (shift1 br_acc) (tVar 0))).
-      f_equal.
-      cbn.
-      rewrite shift1_subst_up.
-      reflexivity.
+      pose proof (IH (S k) (tApp (shift1 br_acc) (tVar 0))) as IHk.
+      eapply eq_trans.
+      * exact IHk.
+      * f_equal.
+        cbn.
+        (* simplify the substituted accumulator *)
+        asimpl.
+        f_equal; try reflexivity.
+        rewrite shift1_subst_up.
+        reflexivity.
 Qed.
 
 Lemma subst0_commute_branch_typed_rec
@@ -486,10 +515,19 @@ Lemma subst0_commute_branch_typed_rec
   = commute_branch_typed_rec 0 J D brsJ argsTys (tApp br_acc u).
 Proof.
   unfold subst0.
-  (* instantiate commute_branch_typed_rec_plug_sub at k=0 *)
-  pose proof (commute_branch_typed_rec_plug_sub 0 J D brsJ argsTys (tApp (shift1 br_acc) (tVar 0)) u) as H.
+  pose proof
+    (commute_branch_typed_rec_plug_sub 0 J D brsJ argsTys (tApp (shift1 br_acc) (tVar 0)) u)
+    as H.
   cbn [plug_sub] in H.
-  exact H.
+  etransitivity.
+  { exact H. }
+  f_equal.
+  asimpl.
+  f_equal.
+  - pose proof (shift_plug_sub 0 u br_acc) as Hshift.
+    cbn [plug_sub] in Hshift.
+    rewrite shift0_id in Hshift.
+    exact Hshift.
 Qed.
 
 Lemma steps_commute_branch_typed
