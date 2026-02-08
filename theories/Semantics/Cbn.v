@@ -306,3 +306,68 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma list_subst_as_map (σ : var -> tm) (ts : list tm) :
+  ts..[σ] = map (fun t => t.[σ]) ts.
+Proof.
+  induction ts as [|t ts IH]; cbn; [reflexivity|].
+  f_equal; auto.
+Qed.
+
+Lemma apps_subst (σ : var -> tm) (t : tm) (us : list tm) :
+  (apps t us).[σ] = apps (t.[σ]) (map (fun u => u.[σ]) us).
+Proof.
+  revert t.
+  induction us as [|u us IH]; intro t; cbn [apps].
+  - reflexivity.
+  - (* apply IH to the accumulator (tApp t u) *)
+    specialize (IH (tApp t u)).
+    rewrite IH.
+    asimpl.
+    reflexivity.
+Qed.
+
+Lemma step_subst (σ : var -> tm) (t u : tm) :
+  step t u -> step t.[σ] u.[σ].
+Proof.
+  intro Hstep.
+  induction Hstep.
+  - (* beta *)
+    asimpl.
+    rewrite subst0_subst.
+    apply step_beta.
+  - (* app1 *)
+    asimpl.
+    apply step_app1.
+    exact IHHstep.
+  - (* fix *)
+    asimpl.
+    rewrite subst0_subst.
+    apply step_fix.
+  - (* case scrut *)
+    asimpl.
+    apply step_case_scrut.
+    exact IHHstep.
+  - (* case roll *)
+    asimpl.
+    rewrite (list_subst_as_map σ args).
+    rewrite (list_subst_as_map σ brs).
+    rewrite apps_subst.
+    apply step_case_roll.
+    unfold branch.
+    rewrite nth_error_map.
+    unfold branch in H.
+    rewrite H.
+    reflexivity.
+Qed.
+
+Lemma steps_subst (σ : var -> tm) (t u : tm) :
+  steps t u -> steps t.[σ] u.[σ].
+Proof.
+  intro H.
+  induction H.
+  - apply rt_step.
+    now apply step_subst.
+  - apply rt_refl.
+  - eapply rt_trans; eauto.
+Qed.
+

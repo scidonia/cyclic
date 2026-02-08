@@ -26,9 +26,10 @@
     Transform.CyclicRules
     Transform.BetaReduce
     Transform.Supercompile
-    Transform.CaseCase
-    Transform.CaseCaseProof
-    Transform.ReadOffExtractCorrectness
+     Transform.CaseCase
+     Transform.CaseCaseProof
+     Transform.ScrutineeProp
+     Transform.ReadOffExtractCorrectness
     Equiv.Bisimulation
     Equiv.CIU
     Equiv.CIUJudgement))

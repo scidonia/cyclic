@@ -93,6 +93,9 @@ See \texttt{theories/Syntax/StrictPos.v} for the signature representation and \t
 \subsection{Call-by-name operational semantics}
 
 We use a weak-head, call-by-name reduction relation \(t \step u\) (see \texttt{Semantics/Cbn.v}).
+
+\smallskip
+
 Key rules include:
 
 \begin{Rules}
@@ -101,11 +104,11 @@ Key rules include:
   \Infer{Step-Fix}{}{\Fix{A}{t} \step t[\Fix{A}{t}/0]}\\
   \Infer{Step-CaseScrut}{t \step t'}{\Case{I}{t}{C}{\overline{\mathit{br}}} \step \Case{I}{t'}{C}{\overline{\mathit{br}}}}\\
   \Infer{Step-CaseRoll}{\mathit{branch}(\overline{\mathit{br}},c)=\mathit{br}}
-                     {\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}} \step C[\Roll{I}{c}{\overline{a}}/x] \mathbin{\triangleright} (\mathit{br}\; \overline{a})}
+                     {\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}} \step (\mathit{br}\; \overline{a})}
 \end{Rules}
 
-In the \textsc{Step-CaseRoll} rule, the motive \(C\) is instantiated with the constructor term, then the branch is applied to the constructor arguments.
-This combines the dependent elimination (motive instantiation) with the standard case reduction.
+In the \textsc{Step-CaseRoll} rule, the runtime step selects the branch and applies it to the constructor arguments.
+Dependence is tracked by typing: the case expression has type \(C[t/x]\) (i.e. the motive instantiated with the scrutinee), even though the motive does not appear at runtime.
 
 We write \(t \steps u\) for the reflexive-transitive closure of \(\step\).
 Values are \(\lambda\)-abstractions and constructor rolls.

@@ -34,7 +34,7 @@ This paper-style note motivates a cyclic variant of a Calculus of Inductive Cons
 The central claim is that \emph{the induction/recursion principle need not be fixed syntactically}: instead, proofs can be finite graphs with cycles, validated by a global progress condition.
 This extra freedom makes it possible for program/proof transformations (commuting conversions, unfolding/refolding, etc.) to \emph{identify} proofs that were previously distinct---in the strongest sense, they may become literally the same cyclic object after normalization.
 Such ``post-hoc proof identity'' is hard to express in systems where recursion is baked in as a fixed-point operator or as a rigid family of induction schemata.
-We then outline (i) the source term calculus, (ii) a fix-free cyclic proof/term language with explicit substitution evidence, (iii) the global condition on cycles, and (iv) representative transformations like \textsc{CaseCase} and head beta-reduction.
+We then outline (i) the source term calculus, (ii) a fix-free cyclic proof/term language with explicit substitution evidence, (iii) the global condition on cycles, and (iv) the use of \emph{supercompilation} as a normalization procedure.
 \end{abstract}
 
 \tableofcontents

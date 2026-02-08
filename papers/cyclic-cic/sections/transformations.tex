@@ -51,17 +51,44 @@ where each inner branch is transformed to:
 
 In the development, the constructor arity/types are obtained from the inductive signature environment, and the branch transform is implemented by a function \texttt{commute\_branch\_typed\_rec}.
 
-\subsection{Motive propagation}
+\subsection{Information propagation in case scrutinee}
 
-With dependent case elimination, we can propagate information about the scrutinee into the motive when the scrutinee is known to be a constructor:
+When the scrutinee of a case is known to be a constructor, we can propagate this information in two complementary ways:
+
+\paragraph{Motive propagation.}
+Instantiate the motive with the known constructor:
 \[
 \Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}}
 \quad\leadsto\quad
 \Case{I}{(\Roll{I}{c}{\overline{a}})}{C[\Roll{I}{c}{\overline{a}}/x]}{\overline{\mathit{br}}}
 \]
 
-This is semantically a no-op (the substitution happens anyway during case reduction), but it makes the motive concrete and can enable further simplifications.
+This is semantically a no-op at runtime (the motive is erased by reduction), but it makes the instantiated motive explicit and can enable further simplifications.
 The transformation is implemented as \texttt{propagate\_motive\_once} in \texttt{theories/Transform/CaseCase.v}.
+
+\paragraph{Scrutinee propagation into branches.}
+More aggressively, we can specialize the selected branch knowing the scrutinee's constructor form.
+When the scrutinee is \(\Roll{I}{c}{\overline{a}}\), the branch \(\mathit{br}_c\) will receive arguments \(\overline{a}\) at runtime.
+We can transform \(\mathit{br}_c\) by:
+\begin{enumerate}
+\item Computing the branch's result type with the motive fully instantiated: \(C[\Roll{I}{c}{\ldots}/x]\)
+\item Reducing/simplifying this instantiated type (e.g. if \(C\) itself contains a case-of-constructor, it can reduce)
+\item Adjusting the branch body to take advantage of the simplified result type
+\end{enumerate}
+
+Formally:
+\[
+\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}}
+\quad\leadsto\quad
+\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{[\mathit{br}_0,\ldots,\mathit{br}'_c,\ldots]}
+\]
+where \(\mathit{br}'_c\) is the specialized version of \(\mathit{br}_c\).
+
+\textbf{Example.} If the motive is \(C = \lambda x.\;\Case{I}{x}{D}{\ldots}\), then knowing \(x = \Roll{I}{c}{\overline{a}}\) allows us to reduce the inner case in the result type, potentially unlocking further simplifications in the branch body.
+
+This transformation is CIU-preserving because the branch's observable behavior (which arguments it receives, what value it computes) is unchanged; we are only making the type information more concrete.
+
+\emph{Implementation status:} This transformation is implemented with a proved CIU preservation theorem in \texttt{theories/Transform/ScrutineeProp.v}.
 
 \subsection{Full normalization: driving under binders}
 
@@ -69,20 +96,24 @@ For supercompilation-style transformations, we need to normalize terms fully, no
 This requires \emph{driving under binders}: reducing subterms even when they appear under \(\lambda\), \(\Pi\), or case motives.
 
 \paragraph{Driving strategy.}
-The supercompiler (see \texttt{theories/Transform/Supercompile.v}) uses a fuel-limited driving function that:
+The supercompiler (see \texttt{theories/Transform/Supercompile.v}) uses a fuel-limited driving function that applies the following transformations iteratively:
 \begin{enumerate}
-\item Applies head reductions (beta, fix unfolding, case-of-constructor)
-\item Commutes nested cases (\textsc{CaseCase})
-\item Propagates motives when scrutinees are known
-\item Descends into subterms (including under binders)
+\item \textbf{Head reductions}: beta, fix unfolding, case-of-constructor (iota)
+\item \textbf{CaseCase}: commute nested case expressions
+\item \textbf{Information propagation}: propagate known scrutinee into motive and branches
+\item \textbf{Unfold/fold}: manage cycle structure at the proof graph level
+\item \textbf{Descend under binders}: recursively drive subterms under \(\lambda\), \(\Pi\), and case motives
 \end{enumerate}
+
+These five components constitute the minimal supercompilation toolkit for cyclic proof normalization.
+Each transformation preserves CIU equivalence, and together they enable aggressive term simplification while maintaining the global progress condition on cycles.
 
 \paragraph{Eta-expansion.}
 A key question for full normalization is whether we need eta-rules:
 \[
 \begin{array}{rcl}
 \text{(eta-lambda)} & & \lambda x.\; (t\; x) \equiv t \quad\text{if } x \notin \mathit{FV}(t) \\
-\text{(eta-case)} & & \Case{I}{t}{C}{\overline{\mathit{br}}} \equiv t \quad\text{if each } \mathit{br}_c = \Roll{I}{c}{\ldots}
+\text{(eta-case)} & & \Case{I}{t}{C}{\overline{\mathit{br}}} \equiv t \quad\text{if each } \mathit{br}_c = \Roll{I}{c}{\ldots}\\
 \end{array}
 \]
 
