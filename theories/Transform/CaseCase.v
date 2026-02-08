@@ -167,7 +167,7 @@ Lemma terminates_to_case_inv
   exists c args br,
     steps scrut (tRoll I c args)
     /\ branch brs c = Some br
-    /\ terminates_to (subst0 (tRoll I c args) (Cbn.apps br args)) v.
+    /\ terminates_to (Cbn.apps br args) v.
 Proof.
   intros [Hcase Hv].
 
@@ -180,8 +180,8 @@ Proof.
                \/
                (exists c args br,
                    steps scrut0 (tRoll I c args)
-                   /\ branch brs c = Some br
-                   /\ steps (subst0 (tRoll I c args) (Cbn.apps br args)) t)).
+                    /\ branch brs c = Some br
+                    /\ steps (Cbn.apps br args) t)).
   {
     intros t0 t Hsteps0.
     induction Hsteps0; intros scrut0 ->.
@@ -584,7 +584,7 @@ Lemma steps_case_to_apps
     (c : nat) (args : list tm) (br : tm) :
   steps scrut (tRoll I c args) ->
   branch brs c = Some br ->
-  steps (tCase I scrut C brs) (subst0 (tRoll I c args) (Cbn.apps br args)).
+  steps (tCase I scrut C brs) (Cbn.apps br args).
 Proof.
   intros Hscrut Hbr.
   eapply Cbn.steps_case_to_apps; eauto.

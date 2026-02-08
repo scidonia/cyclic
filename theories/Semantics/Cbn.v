@@ -1,4 +1,7 @@
 From Stdlib Require Import List Utf8 Relations Relation_Operators.
+From Stdlib Require Import FunctionalExtensionality.
+
+From Autosubst Require Import Autosubst.
 
 From Cyclic.Syntax Require Import StrictPos Term.
 
@@ -36,8 +39,7 @@ Inductive step : tm -> tm -> Prop :=
     step (tCase I scrut C brs) (tCase I scrut' C brs)
 | step_case_roll I c args C brs br :
     branch brs c = Some br ->
-    step (tCase I (tRoll I c args) C brs)
-      (subst0 (tRoll I c args) (apps br args)).
+    step (tCase I (tRoll I c args) C brs) (apps br args).
 
 Definition steps : tm -> tm -> Prop :=
   clos_refl_trans tm step.
@@ -219,7 +221,7 @@ Lemma steps_case_to_apps
     (c : nat) (args : list tm) (br : tm) :
   steps scrut (tRoll I c args) ->
   branch brs c = Some br ->
-  steps (tCase I scrut C brs) (subst0 (tRoll I c args) (apps br args)).
+  steps (tCase I scrut C brs) (apps br args).
 Proof.
   intros Hscrut Hbr.
   eapply steps_trans.
@@ -276,3 +278,31 @@ Proof.
   - eapply steps_to_value_unique; eauto.
   - exact Hv.
 Qed.
+
+Lemma branch_subst (σ : var -> tm) (brs : list tm) (c : nat) :
+  branch (map (fun t => t.[σ]) brs) c = option_map (fun t => t.[σ]) (branch brs c).
+Proof.
+  unfold branch.
+  rewrite nth_error_map.
+  reflexivity.
+Qed.
+
+Lemma subst0_subst (σ : var -> tm) (u : tm) (t : tm) :
+  (subst0 u t).[σ] = subst0 u.[σ] t.[up σ].
+Proof.
+  unfold subst0.
+  asimpl.
+  apply (f_equal (fun θ => t.[θ])).
+  extensionality x.
+  destruct x as [|x].
+  - asimpl. reflexivity.
+  - cbn.
+    unfold scomp.
+    cbn.
+    unfold up.
+    unfold Autosubst_Classes.up.
+    cbn.
+    asimpl.
+    reflexivity.
+Qed.
+

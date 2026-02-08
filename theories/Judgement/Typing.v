@@ -124,14 +124,17 @@ Module Typing.
       SP.lookup_ind Σenv I = Some ΣI ->
       length brs = length (SP.ind_ctors ΣI) ->
       has_type Σenv Γ scrut (T.tInd I []) ->
-      has_type Σenv Γ C (T.tSort i) ->
+      has_type Σenv (ctx_extend Γ (T.tInd I [])) C (T.tSort i) ->
       (forall c ctor,
         SP.lookup_ctor ΣI c = Some ctor ->
         exists br,
           T.branch brs c = Some br
-          /\ has_type Σenv Γ br
-              (mk_pis (SP.ctor_param_tys ctor ++ repeat (T.tInd I []) (SP.ctor_rec_arity ctor)) C)) ->
-      has_type Σenv Γ (T.tCase I scrut C brs) C.
+          /\
+          let As := SP.ctor_param_tys ctor ++ repeat (T.tInd I []) (SP.ctor_rec_arity ctor) in
+          let m := length As in
+          has_type Σenv Γ br
+            (mk_pis As (C.[T.tRoll I c (map T.tVar (rev (seq 0 m))) .: ren (+m)]))) ->
+      has_type Σenv Γ (T.tCase I scrut C brs) (T.subst0 scrut C).
 
   Lemma branch_exists {ΣI : SP.ind_sig T.tm} (brs : list T.tm) (c : nat) (ctor : SP.ctor_sig T.tm) :
     length brs = length (@SP.ind_ctors _ ΣI) ->
@@ -211,19 +214,13 @@ Module Typing.
     - (* case *)
       eapply ty_case; try eassumption.
       + eapply IH; eauto.
-      + eapply IH; eauto.
+      + (* motive C is typed under binder *)
+        exact (IH (ctx_extend Γ (T.tInd I [])) C (T.tSort i) B Hty2).
       + intros c ctor0 Hctor.
-        match goal with
-        | [ Hbrs : forall c1 ctor1,
-              SP.lookup_ctor _ c1 = Some ctor1 ->
-              exists br,
-                T.branch _ c1 = Some br /\ has_type Σenv Γ br _
-          |- _ ] =>
-            destruct (Hbrs c ctor0 Hctor) as [br [Hbr Htybr]];
-            exists br;
-            split; [exact Hbr|];
-            exact (IH _ _ _ B Htybr)
-        end.
+        destruct (H1 c ctor0 Hctor) as [br [Hbr Htybr]].
+        exists br.
+        split; [exact Hbr|].
+        exact (IH _ _ _ B Htybr).
   Qed.
 
   (* Binder-stable explicit substitutions: (k, σ). *)
