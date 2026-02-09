@@ -29,3 +29,4 @@ theories/Equiv/Bisimulation.v
 theories/Equiv/CIU.v
 theories/Equiv/CIUJudgement.v
 theories/Equiv/CIUNatObs.v
+theories/Equiv/CIUChecklistLengthMap.v
