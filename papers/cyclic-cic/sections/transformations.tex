@@ -48,39 +48,53 @@ This algorithmic view is the basis for our notion of canonicalisation: although 
 \label{sec:index-example}
 
 We return to the index-bureaucracy pattern from Figure~\ref{fig:mapmap-index-pain}.
-Let \(\mathsf{Vec}\;A\;n\) be a length-indexed vector type, and suppose we have a pipeline that computes a vector by converting a list to a vector after mapping:
+The essential computational fact is that mapping does not change length:
+\(
+  \mathsf{length}(\mathsf{map}\;h\;l) = \mathsf{length}(l)
+\)
+and therefore
+\(
+  \mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l)) = \mathsf{length}(l).
+\)
+
+\paragraph{Two terms.}
+Let \(\mathsf{Vec}\;A\;n\) be a length-indexed vector type.
+Assume we have a term
 \[
   t_{\mathsf{raw}}(l) : \mathsf{Vec}\;C\;\bigl(\mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l))\bigr).
 \]
-In an intensional kernel, to obtain a term at the more natural index \(\mathsf{length}(l)\), one often inserts an explicit transport:
+In an intensional kernel, to obtain a term at the more natural index \(\mathsf{length}(l)\), one often inserts an explicit transport (e.g. \texttt{eq\_rect} in Coq):
 \[
-  t_{\mathsf{cast}}(l) \triangleq \mathsf{transport}_{\mathsf{length}(l)}^{\mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l))}(t_{\mathsf{raw}}(l))
-  : \mathsf{Vec}\;C\;(\mathsf{length}(l)).
+  t_{\mathsf{cast}}(l) : \mathsf{Vec}\;C\;(\mathsf{length}(l)).
 \]
 By contrast, an ``ideal'' normal form would be a term \(t_{\mathsf{nf}}(l)\) whose index is already definitionally \(\mathsf{length}(l)\), requiring no transport.
 
-\paragraph{How the algorithm establishes identity.}
-Consider the two closed terms produced by instantiating \(l\) with a concrete list value (or, more generally, by closing the context with a value substitution, as in typed CIU):
-\(t_{\mathsf{cast}}\) and \(t_{\mathsf{nf}}\).
-Running the supercompilation loop on both terms (Section~\ref{sec:transforms}, Algorithm sketch) proceeds by:
-\begin{enumerate}
-\item \textbf{Driving/partial evaluation}: unfold the definitions of \(\mathsf{length}\) and \(\mathsf{map}\) far enough to expose the structural recursion on lists.
-\item \textbf{Information propagation}: propagate the scrutinee information from list constructors into dependent motives so that index computations reduce when possible.
-\item \textbf{Generalisation + folding}: when the same list-recursive configuration reappears up to embedding (e.g. the configuration ``compute \(\mathsf{length}(\mathsf{map}\;h\;xs)\)''), generalise it and fold it into a back-link with explicit substitution evidence.
-\end{enumerate}
-The operational outcome is that both \(t_{\mathsf{cast}}\) and \(t_{\mathsf{nf}}\) are transformed into the same canonical cyclic representative (up to refolding), whose extracted term computes with the simplified index.
+\paragraph{How supercompilation removes the bureaucratic index.}
+To make the algorithmic content explicit, consider the subterm
+\(\mathsf{length}(\mathsf{map}\;h\;l)\).
+After one unfolding step of \(\mathsf{map}\) and \(\mathsf{length}\) (partial evaluation), we obtain a nested case-of-case configuration.
+The \textsc{CaseCase} commuting conversion then distributes the outer case, yielding a single case on the scrutinee \(l\).
+At that point, the algorithm has exposed that the recursive call pattern is identical to \(\mathsf{length}(l)\), and it can fold the configuration back into a shared cyclic representative.
 
-\paragraph{Proof sketch (CIU).}
-Each driving step in the loop is justified by a typed CIU theorem (beta, \textsc{CaseCase}, and information propagation), and fold/refold steps are justified by preservation of progress evidence.
-Therefore, if \(\mathsf{supercompile}(t_{\mathsf{cast}})\) and \(\mathsf{supercompile}(t_{\mathsf{nf}})\) yield the same extracted term, we obtain:
-\[
-  \mathsf{ciu\_jTy}(\env,\ctx,t_{\mathsf{cast}},t_{\mathsf{nf}},A),
-\]
-explaining how the algorithm can eliminate index bureaucracy and establish post-hoc identity of terms that differ only by transports.
+In the dependent setting, information propagation is essential when the length computation appears inside a dependent motive (e.g. a motive producing \(\mathsf{Vec}\;C\;(\mathsf{length}(\cdot))\)).
+When the scrutinee is a constructor, motive propagation and scrutinee propagation (both proved CIU-preserving) make the instantiated motive explicit, so the index reduces along with the scrutinee.
+
+\paragraph{End-to-end identity claim (up to CIU).}
+Let \(\mathsf{NF}(t)\) denote the extracted term obtained by compiling to a cyclic object, supercompiling, and extracting back (Figure~\ref{fig:pipeline}).
+Operationally, the above reasoning implies that \(\mathsf{NF}(t_{\mathsf{cast}})\) and \(\mathsf{NF}(t_{\mathsf{raw}})\) compute the same vector term with index \(\mathsf{length}(l)\), and hence that \(t_{\mathsf{cast}}\) and \(\mathsf{NF}(t_{\mathsf{cast}})\) are identified up to typed CIU.
+
+\paragraph{Proof sketch (CIU, algorithm-driven).}
+The proof follows the algorithm:
+\begin{enumerate}
+\item Each driving step (beta/fix/iota, \textsc{CaseCase}, motive propagation, scrutinee propagation) is justified by a proved typed-CIU theorem.
+\item Each fold/refold step is justified by preservation of local typing and a transported progress witness.
+\item Composing these steps yields \(\mathsf{ciu\_jTy}(t,\mathsf{NF}(t),A)\) for the specific terms in this example.
+\end{enumerate}
+This is exactly the sense in which supercompilation establishes post-hoc identity of indexed terms: it normalises index computations and removes transports that were present only due to intensional definitional equality limitations.
 
 \subsection{Beta-reduction strategies}
 
-The file \texttt{theories/Transform/BetaReduce.v} defines several reduction strategies:
+The mechanized development defines several reduction strategies:
 
 \paragraph{Single-step head reduction.}
 \[

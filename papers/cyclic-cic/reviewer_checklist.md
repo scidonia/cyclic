@@ -4,8 +4,8 @@ This checklist is derived from `papers/cyclic-cic/reviewer_report.md` and tracks
 
 ## A. Scope/claims
 
-- [ ] A1. State precise scope: research note vs journal article level.
-- [ ] A2. Make the canonicalisation claim precise (what is guaranteed vs what is empirical/operational).
+- [x] A1. State precise scope: research note vs journal article level.
+- [x] A2. Make the canonicalisation claim precise (what is guaranteed vs what is empirical/operational).
 
 ## B. Semantics and equality (requested self-containedness)
 
@@ -13,7 +13,7 @@ This checklist is derived from `papers/cyclic-cic/reviewer_report.md` and tracks
   - Target choice (author intent): **extracted-term semantics**.
 - [x] B2. Define the intended equality on cyclic objects.
   - Target choice (author intent): **same extracted term up to typed CIU**.
-- [ ] B3. Explain what is in/out of the TCB (kernel definitional equality vs external normalization).
+- [x] B3. Explain what is in/out of the TCB (kernel definitional equality vs external normalization).
 
 ## C. Cyclic object model
 
@@ -23,25 +23,25 @@ This checklist is derived from `papers/cyclic-cic/reviewer_report.md` and tracks
 ## D. Supercompilation procedure
 
 - [x] D1. Provide a pseudo-code/algorithmic account of driving + control (whistle) + generalise + fold.
-- [ ] D2. Clarify how dependent types/motives are treated by the transformations.
-- [ ] D3. State what correctness is proved (CIU preservation of steps; what is not proved).
+- [x] D2. Clarify how dependent types/motives are treated by the transformations.
+- [x] D3. State what correctness is proved (CIU preservation of steps; what is not proved).
 
 ## E. Refolding soundness
 
 - [x] E1. Explain how progress witnesses prevent unsound refolding.
-- [ ] E2. State/outline the invariants that must be preserved by fold/refold transforms.
+- [x] E2. State/outline the invariants that must be preserved by fold/refold transforms.
 
 ## F. Canonicalisation payoff (examples)
 
-- [ ] F1. Add an end-to-end example where two distinct terms/proofs converge to the same extracted normal form (up to CIU).
-- [ ] F2. Add at least one example where CaseCase + information propagation is essential.
+- [x] F1. Add an end-to-end example where two distinct terms/proofs converge to the same extracted normal form (up to CIU).
+- [x] F2. Add at least one example where CaseCase + information propagation is essential.
 - [x] F3. (Optional) Add an example that involves unfolding/generalisation/folding.
 
 ## G. Presentation cleanup
 
-- [ ] G1. Remove redundant/confusing text in the theorems section.
-- [ ] G2. Reduce “see file X” tone; keep file references but not as primary exposition.
-- [ ] G3. Add a short note justifying CIU as the semantic equivalence.
+- [x] G1. Remove redundant/confusing text in the theorems section.
+- [x] G2. Reduce “see file X” tone; keep file references but not as primary exposition.
+- [x] G3. Add a short note justifying CIU as the semantic equivalence.
 
 ## H. Source `fix` vs cyclic `fix-free`
 

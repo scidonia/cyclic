@@ -39,3 +39,17 @@ The mechanized development currently includes:
 \end{itemize}
 
 Future work is to complete the remaining transformation theorems (including more of the supercompilation bundle), strengthen the canonical-form theory, and refine the notion of canonical cyclic representatives (graph equivalence and refolding invariants).
+
+\paragraph{Future direction: cycle \(\eta\)-elimination for semantically constant cycles.}
+A natural additional normalization step is an ``\(\eta\)-elimination'' principle for cyclic structure.
+Intuitively, if a cyclic strongly connected component (SCC) is observationally \emph{constant}---every way of exiting the SCC yields the same value---then the recursion carried by that SCC is bureaucratic and can be erased.
+
+\textbf{Motivational example.}
+Consider an extracted cyclic graph whose root is a back-link that ultimately returns a fixed value (e.g. a branch that always produces \(0\) regardless of the recursive call).
+Such constant-recursion artifacts can arise during supercompilation when a configuration is memoized and later discovered to compute a value independent of its parameters.
+Contracting the SCC to that value would simplify the cyclic object and improve canonicalisation.
+
+\textbf{Soundness criterion.}
+The global progress condition alone does \emph{not} justify deleting cycles; it only ensures soundness of cyclic reasoning.
+To eliminate a cycle we would require semantic evidence, e.g. a typed CIU proof that the extracted term of the SCC root is equivalent to some value \(v\).
+With extracted-term semantics and equality up to typed CIU, this becomes a proof-carrying transformation: replace the cyclic component by \(v\) when accompanied by a derivation of \(\mathsf{ciu\_jTy}(t,v,A)\).
