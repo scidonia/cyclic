@@ -94,7 +94,7 @@ Instantiate the motive with the known constructor:
 \]
 
 This is semantically a no-op at runtime (the motive is erased by reduction), but it makes the instantiated motive explicit and can enable further simplifications.
-The transformation is implemented as \texttt{propagate\_motive\_once} in \texttt{theories/Transform/CaseCase.v}.
+The transformation is implemented as \texttt{propagate\_motive\_once} and proved CIU-preserving by \texttt{ciu\_jTy\_propagate\_motive\_once}.
 
 \paragraph{Scrutinee propagation into branches.}
 More aggressively, we can specialize the selected branch knowing the scrutinee's constructor form.
