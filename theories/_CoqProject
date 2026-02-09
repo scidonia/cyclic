@@ -2,6 +2,8 @@
 
 Syntax/StrictPos.v
 Syntax/Term.v
+Syntax/Examples.v
+Syntax/ListNat.v
 Judgement/Typing.v
 Semantics/Cbn.v
 Graph/FiniteDigraph.v
@@ -27,3 +29,4 @@ Transform/ReadOffExtractCorrectness.v
 Equiv/Bisimulation.v
 Equiv/CIU.v
 Equiv/CIUJudgement.v
+Equiv/CIUNatObs.v

@@ -6,6 +6,7 @@
     Syntax.StrictPos
     Syntax.Term
     Syntax.Examples
+    Syntax.ListNat
     Judgement.Typing
     Semantics.Cbn
  
@@ -32,6 +33,8 @@
      Transform.ReadOffExtractCorrectness
     Equiv.Bisimulation
     Equiv.CIU
-    Equiv.CIUJudgement))
+    Equiv.CIUJudgement
+    Equiv.CIUNatObs
+    Equiv.CIUChecklistLengthMap))
 
 

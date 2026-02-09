@@ -2,6 +2,8 @@
 
 theories/Syntax/StrictPos.v
 theories/Syntax/Term.v
+theories/Syntax/Examples.v
+theories/Syntax/ListNat.v
 theories/Judgement/Typing.v
 theories/Semantics/Cbn.v
 theories/Graph/FiniteDigraph.v
@@ -26,3 +28,4 @@ theories/Transform/CaseCase.v
 theories/Equiv/Bisimulation.v
 theories/Equiv/CIU.v
 theories/Equiv/CIUJudgement.v
+theories/Equiv/CIUNatObs.v
