@@ -20,23 +20,22 @@ Figure~\ref{fig:pipeline} summarizes the intended end-to-end workflow.
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[
-  node distance=14mm and 18mm,
-  every node/.style={draw,rounded corners,align=center,inner sep=4pt,font=\small},
+  node distance=12mm and 14mm,
+  every node/.style={draw,rounded corners,align=center,inner sep=4pt,font=\small,text width=3.2cm},
   ->,>=Stealth
 ]
 \node (t0) {Source term\\$t$};
 \node (ro) [right=of t0] {Read-off\\(to cyclic object)\\$\mathsf{read\_off}(t)$};
 \node (cy) [right=of ro] {Cyclic proof/term graph\\$p$};
 
-\node (sc) [below=of ro] {Supercompile / normalize\\(CIU-preserving rewrites\\+ fold/refold with progress)};
-
+\node (sc) [below=of cy] {Supercompile / normalize\\(CIU-preserving rewrites\\+ fold/refold with progress)};
 \node (cy2) [below=of sc] {Simplified cyclic graph\\$p'$};
-\node (ex) [right=of cy2] {Extract back\\$\mathsf{extract}(p')$};
-\node (t1) [right=of ex] {Source term\\$t'$};
+\node (ex) [left=of cy2] {Extract back\\$\mathsf{extract}(p')$};
+\node (t1) [left=of ex] {Source term\\$t'$};
 
 \draw (t0) -- (ro);
 \draw (ro) -- (cy);
-\draw (ro) -- (sc);
+\draw (cy) -- (sc);
 \draw (sc) -- (cy2);
 \draw (cy2) -- (ex);
 \draw (ex) -- (t1);
