@@ -42,22 +42,57 @@ The main judgement is \(\hastype{\env}{\ctx}{t}{A}\).
 Below is the core typing system (informally mirroring \texttt{Typing.has\_type}).
 We omit the full inductive signature side-conditions and arity bookkeeping, but include the essential shape.
 
-\begin{Rules}
-  \Infer{TyVar}{\ctx(x)=A}{\hastype{\env}{\ctx}{\Var{x}}{A}}\\
-  \Infer{TySort}{}{\hastype{\env}{\ctx}{\Sort{i}}{\Sort{i+1}}}\\
-  \Infer{TyPi}{\hastype{\env}{\ctx}{A}{\Sort{i}}\\
-              \hastype{\env}{A::\ctx}{B}{\Sort{j}}}
-            {\hastype{\env}{\ctx}{\PiTy{A}{B}}{\Sort{\max(i,j)}}}\\
-  \Infer{TyLam}{\hastype{\env}{\ctx}{A}{\Sort{i}}\\
-               \hastype{\env}{A::\ctx}{t}{B}}
-            {\hastype{\env}{\ctx}{\Lam{A}{t}}{\PiTy{A}{B}}}\\
-  \Infer{TyApp}{\hastype{\env}{\ctx}{t}{\PiTy{A}{B}}\\
-               \hastype{\env}{\ctx}{u}{A}}
-            {\hastype{\env}{\ctx}{\App{t}{u}}{B[u/0]}}\\
-  \Infer{TyFix}{\hastype{\env}{\ctx}{A}{\Sort{i}}\\
-               \hastype{\env}{A::\ctx}{t}{A\uparrow}}
-            {\hastype{\env}{\ctx}{\Fix{A}{t}}{A}}
-\end{Rules}
+\begin{center}
+\begin{prooftree}
+  \AxiomC{$\ctx(x)=A$}
+  \RightLabel{\scriptsize(\textsc{TyVar})}
+  \UnaryInfC{$\hastype{\env}{\ctx}{\Var{x}}{A}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{\scriptsize(\textsc{TySort})}
+  \UnaryInfC{$\hastype{\env}{\ctx}{\Sort{i}}{\Sort{i+1}}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
+  \AxiomC{$\hastype{\env}{A::\ctx}{B}{\Sort{j}}$}
+  \RightLabel{\scriptsize(\textsc{TyPi})}
+  \BinaryInfC{$\hastype{\env}{\ctx}{\PiTy{A}{B}}{\Sort{\max(i,j)}}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
+  \AxiomC{$\hastype{\env}{A::\ctx}{t}{B}$}
+  \RightLabel{\scriptsize(\textsc{TyLam})}
+  \BinaryInfC{$\hastype{\env}{\ctx}{\Lam{A}{t}}{\PiTy{A}{B}}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$\hastype{\env}{\ctx}{t}{\PiTy{A}{B}}$}
+  \AxiomC{$\hastype{\env}{\ctx}{u}{A}$}
+  \RightLabel{\scriptsize(\textsc{TyApp})}
+  \BinaryInfC{$\hastype{\env}{\ctx}{\App{t}{u}}{B[u/0]}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
+  \AxiomC{$\hastype{\env}{A::\ctx}{t}{A\uparrow}$}
+  \RightLabel{\scriptsize(\textsc{TyFix})}
+  \BinaryInfC{$\hastype{\env}{\ctx}{\Fix{A}{t}}{A}$}
+\end{prooftree}
+\end{center}
 
 \paragraph{Typing indexed inductives.}
 Let \(\Sigma(I) = (\overline{P}, \overline{X}, \ell, \overline{\mathit{ctor}})\) where:
@@ -98,14 +133,45 @@ We use a weak-head, call-by-name reduction relation \(t \step u\) (see \texttt{S
 
 Key rules include:
 
-\begin{Rules}
-  \Infer{Step-Beta}{}{\App{(\Lam{A}{t})}{u} \step t[u/0]}\\
-  \Infer{Step-App1}{t \step t'}{\App{t}{u} \step \App{t'}{u}}\\
-  \Infer{Step-Fix}{}{\Fix{A}{t} \step t[\Fix{A}{t}/0]}\\
-  \Infer{Step-CaseScrut}{t \step t'}{\Case{I}{t}{C}{\overline{\mathit{br}}} \step \Case{I}{t'}{C}{\overline{\mathit{br}}}}\\
-  \Infer{Step-CaseRoll}{\mathit{branch}(\overline{\mathit{br}},c)=\mathit{br}}
-                     {\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}} \step (\mathit{br}\; \overline{a})}
-\end{Rules}
+\begin{center}
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{\scriptsize(\textsc{Step-Beta})}
+  \UnaryInfC{$\App{(\Lam{A}{t})}{u} \step t[u/0]$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$t \step t'$}
+  \RightLabel{\scriptsize(\textsc{Step-App1})}
+  \UnaryInfC{$\App{t}{u} \step \App{t'}{u}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{\scriptsize(\textsc{Step-Fix})}
+  \UnaryInfC{$\Fix{A}{t} \step t[\Fix{A}{t}/0]$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$t \step t'$}
+  \RightLabel{\scriptsize(\textsc{Step-CaseScrut})}
+  \UnaryInfC{$\Case{I}{t}{C}{\overline{\mathit{br}}} \step \Case{I}{t'}{C}{\overline{\mathit{br}}}$}
+\end{prooftree}
+
+\medskip
+
+\begin{prooftree}
+  \AxiomC{$\mathit{branch}(\overline{\mathit{br}},c)=\mathit{br}$}
+  \RightLabel{\scriptsize(\textsc{Step-CaseRoll})}
+  \UnaryInfC{$\Case{I}{(\Roll{I}{c}{\overline{a}})}{C}{\overline{\mathit{br}}} \step (\mathit{br}\; \overline{a})$}
+\end{prooftree}
+\end{center}
 
 In the \textsc{Step-CaseRoll} rule, the runtime step selects the branch and applies it to the constructor arguments.
 Dependence is tracked by typing: the case expression has type \(C[t/x]\) (i.e. the motive instantiated with the scrutinee), even though the motive does not appear at runtime.

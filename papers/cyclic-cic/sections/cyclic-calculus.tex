@@ -13,8 +13,15 @@ A preproof is a finite directed graph together with:
 \begin{itemize}
 \item a node-label function \(\labelof : V \to \mathsf{Judgement}\)
 \item a successor function \(\succof : V \to \mathrm{list}\;V\)
-\item a local correctness property stating that each node is justified by a rule instance:
-  \(\Rule(\labelof(v), \; \mathrm{map}\;\labelof\;(\succof(v)))\).
+\item a local correctness property stating that each node is justified by a rule instance.
+
+  Concretely, we can package this as a function \(\Rule\) that checks a node label against the labels of its successors:
+  \[
+    \begin{aligned}
+      \mathsf{local\_ok}(v) &\stackrel{\mathrm{def}}{=}\\
+      &\Rule\bigl(\labelof(v),\; \mathrm{map}\;\labelof\;(\succof(v))\bigr)
+    \end{aligned}
+  \]
 \end{itemize}
 
 This corresponds to \texttt{theories/Preproof/Preproof.v}.
@@ -24,6 +31,19 @@ A \emph{rooted} preproof additionally designates a root vertex.
 
 A cyclic proof packages a preproof together with an additional witness \(W\) and a predicate \(\mathsf{progress\_ok}\) establishing the global soundness condition.
 See \texttt{theories/CyclicProof/CyclicProof.v}.
+
+\subsection{Semantics and intended equality}
+
+For the purposes of this paper, we take the meaning of a cyclic object to be given by its \emph{extracted term}.
+That is, a cyclic proof/term graph \(p\) denotes the source-term \(\mathsf{extract}(p)\) produced by the read-off/extraction pipeline (Section~\ref{sec:theorems}).
+
+Accordingly, the intended equality of cyclic objects is not raw graph isomorphism but \emph{semantic equality of extracted terms}:
+we regard \(p\) and \(q\) as representing the same proof/program when their extracted terms are equivalent up to typed CIU:
+\[
+  p \approx q \;\;\stackrel{\mathrm{def}}{\Longleftrightarrow}\;\; \mathsf{ciu\_jTy}(\env,\ctx,\mathsf{extract}(p),\mathsf{extract}(q),A)
+\]
+for the relevant typing judgement.
+This choice is deliberate: it lets us talk about canonical representatives in a way that matches the mechanized observational semantics, and it avoids committing to a particular quotient on finite graphs before the refolding theory is finalized.
 
 \subsection{Fix-free vertex language (used by read-off)}
 
@@ -68,10 +88,13 @@ The rules reference abstract graph-level operations \(\mathsf{shiftV}\) and \(\m
 \paragraph{Backlink rule (core idea).}
 A backlink node \texttt{nBack} represents a recursive call as an instantiation of an earlier obligation:
 
-\begin{Rules}
-  \Infer{TyBack}{\jTy\;\ctx_0\;\mathit{target}\;A_0 \\
-                \jSub\;\ctx\;sv\;\ctx_0}
-              {\jTy\;\ctx\;\mathit{back}\;(\mathsf{substV}\;sv\;A_0)}
-\end{Rules}
+\begin{center}
+\begin{prooftree}
+  \AxiomC{$\jTy\;\ctx_0\;\mathit{target}\;A_0$}
+  \AxiomC{$\jSub\;\ctx\;sv\;\ctx_0$}
+  \RightLabel{\scriptsize(\textsc{TyBack})}
+  \BinaryInfC{$\jTy\;\ctx\;\mathit{back}\;(\mathsf{substV}\;sv\;A_0)$}
+\end{prooftree}
+\end{center}
 
 This is where recursion lives in the cyclic object: the graph edge from \(\mathit{back}\) to \(\mathit{target}\) closes the cycle, while \(sv\) records how the recursive call is instantiated.

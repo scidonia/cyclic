@@ -26,7 +26,7 @@ This corresponds to the proved Coq theorem \texttt{ciu\_jTy\_beta\_reduce\_once}
 \subsection{Read-off and extraction round-trip}
 
 Let \(\mathsf{read\_off\_raw}\) compile a source term to a fix-free cyclic graph, and let \(\mathsf{extract\_read\_off}\) be the specialized extraction back to terms.
-The Coq development proves a strong round-trip equation (\texttt{theories/Transform/ReadOffExtractCorrectness.v}).
+The Coq development proves a strong round-trip equation.
 
 \begin{theorem}[Round-trip identity]
 \label{thm:extract-read-off-id}
@@ -46,11 +46,15 @@ For all \(\env,\ctx,t,A\),
 \]
 \end{theorem}
 
-These correspond to the proved Coq theorems \texttt{extract\_read\_off\_id} and \texttt{extract\_read\_off\_ciu}.
+These correspond to the proved Coq theorems:
+\begin{itemize}
+\item \texttt{extract\_read\_off\_id}
+\item \texttt{extract\_read\_off\_ciu}
+\end{itemize}
 
 \subsection{Case--case commuting conversion}
 
-Let \(\mathsf{CaseCase}(\env,t)\) be the one-step commuting conversion for nested case (\texttt{theories/Transform/CaseCase.v}).
+Let \(\mathsf{CaseCase}(\env,t)\) be the one-step commuting conversion for nested case.
 
 \begin{theorem}[\textsc{CaseCase} preserves typed CIU]
 \label{thm:casecase-ciu}
@@ -60,13 +64,11 @@ For all \(\env,\ctx,t,A\),
 \]
 \end{theorem}
 
-This corresponds to the Coq theorem \texttt{ciu\_jTy\_commute\_case\_case\_once}.
-The theorem statement and proof infrastructure are in place, including the key lemma \texttt{terminates\_to\_commute\_branch\_typed} (proved).
-This corresponds to the proved Coq theorem \texttt{ciu\_jTy\_commute\_case\_case\_once} in \texttt{theories/Transform/CaseCase.v}.
+This corresponds to the proved Coq theorem \texttt{ciu\_jTy\_commute\_case\_case\_once}.
 
 \subsection{Lifting transformations}
 
-As a first ``lifting'' result, the repository contains a term-level wrapper that uses the above CIU theorem to justify the CaseCase transform on extracted cyclic objects (\texttt{theories/Transform/CaseCaseProof.v}).
+As a first ``lifting'' result, the repository contains a term-level wrapper that uses the above CIU theorem to justify the CaseCase transform on extracted cyclic objects.
 
 \begin{theorem}[CaseCase transform preserves typed CIU (by reduction to term theorem)]
 \label{thm:casecase-lifted}

@@ -1,12 +1,30 @@
 \section{Conclusion}
 
-This paper proposes and mechanizes a cyclic variant of a CIC-like calculus.
-The main contributions are:
+This project is motivated by a proof-engineering problem that is easy to recognize in large dependently typed developments: 
+\emph{semantic computation is often blocked by bureaucratic syntax}.
+Even when two derivations represent the same underlying recursive reasoning, the boundaries of \texttt{fix} binders, the choice of induction schema, and the placement of administrative rewrites can force the proofs to remain syntactically distinct.
+Our claim is that cyclic proof objects provide a principled way to factor this bureaucracy out: recursion becomes \emph{graph structure} (cycles plus explicit substitution evidence), while local steps remain ordinary CIC-style typing and computation.
+
+Three concrete examples (drawn from the companion notes in \texttt{../cyclic-paper}) illustrate why this matters:
+\begin{itemize}
+\item \textbf{Cyclic even/odd reasoning as a proof graph.}
+  A simple parity proof can be represented as a finite derivation with a back-link from a bud to its companion, carrying explicit substitution evidence (e.g. \(\sigma : (n\mapsto m)\)).
+  The cyclic structure expresses the recursion directly, without committing to a particular \texttt{fix} term or induction schema.
+\item \textbf{Index bureaucracy from harmless program composition.}
+  Composing traversals such as \(\mathsf{map}\;g (\mathsf{map}\;f\;l)\) produces indices like \(\mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l))\) that are propositionally equal to \(\mathsf{length}\;l\) but not definitionally equal, forcing explicit transports/casts.
+  We view cyclic normalization (supercompilation-style driving plus fold/refold) as a way to normalise such index computations without strengthening kernel definitional equality.
+\item \textbf{Fix-free recursion via back-links with substitution witnesses.}
+  In the extracted cyclic vertex language, there is no \texttt{fix} node label.
+  Instead, recursive calls are explicit \texttt{nBack} nodes that point to (i) a cycle target and (ii) a linked-list substitution witness.
+  This makes recursion refactorable: fold/refold can change cycle boundaries without changing local typing.
+\end{itemize}
+
+Against this background, the main contributions are:
 \begin{itemize}
 \item \textbf{A cyclic CIC calculus.}
   We give (to our knowledge) the first development of a CIC-style setting where proof objects are finite graphs with cycles, rather than trees with a fixed recursion/induction discipline.
 \item \textbf{Cyclic normalization as supercompilation.}
-  We make a direct connection between cyclic proof normalization and supercompilation: driving steps correspond to local computation/commuting conversions, while fold/refold and back-links correspond to supercompiler-style memoization and generalization, governed by a termination control (homeomorphic embedding).
+  We make a direct connection between cyclic proof normalization and supercompilation: driving steps correspond to local computation/commuting conversions and information propagation, while fold/refold and back-links correspond to memoization, generalization, and controlled reuse, governed by a termination control (homeomorphic embedding).
 \item \textbf{Verified meta-theory and transformation correctness.}
   Substantial parts of the pipeline and its supporting theorems are verified in Coq, including key semantic preservation results and the read-off/extraction round-trip theorem.
 \end{itemize}
@@ -15,9 +33,9 @@ The main contributions are:
 The mechanized development currently includes:
 \begin{itemize}
 \item a proved CIU preservation theorem for head beta reduction (Theorem~\ref{thm:beta-ciu});
+\item a proved CIU preservation theorem for the \textsc{CaseCase} commuting conversion (Theorem~\ref{thm:casecase-ciu});
 \item a proved round-trip identity theorem for read-off and extraction (Theorem~\ref{thm:extract-read-off-id}) and its CIU corollary (Theorem~\ref{thm:extract-read-off-ciu});
-\item a proved ranking-based sufficient condition for the global progress predicate (Proposition~\ref{prop:ranking-nat});
-\item a proved CIU preservation theorem for the \textsc{CaseCase} commuting conversion (Theorem~\ref{thm:casecase-ciu}).
+\item a proved ranking-based sufficient condition for the global progress predicate (Proposition~\ref{prop:ranking-nat}).
 \end{itemize}
 
-Future work is to complete the remaining transformation theorems, strengthen the canonical-form theory, and refine the notion of canonical cyclic representatives (graph equivalence and refolding invariants).
+Future work is to complete the remaining transformation theorems (including more of the supercompilation bundle), strengthen the canonical-form theory, and refine the notion of canonical cyclic representatives (graph equivalence and refolding invariants).

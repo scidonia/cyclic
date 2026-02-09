@@ -289,6 +289,37 @@ Proof.
     + exact Hv.
 Qed.
 
+(** Typed CIU preservation for motive propagation. *)
+Theorem ciu_jTy_propagate_motive_once (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) :
+  Ty.has_type Σenv Γ t A ->
+  CIUJudgement.ciu_jTy Σenv Γ t (propagate_motive_once t) A.
+Proof.
+  intro _Hty.
+  unfold CIUJudgement.ciu_jTy.
+  split.
+  - intros Δ σ v Hσ Hvσ Hterm.
+    destruct t; cbn [propagate_motive_once]; try exact Hterm.
+    destruct t; cbn [propagate_motive_once]; try exact Hterm.
+    destruct (Nat.eqb n n0) eqn:Heq; try exact Hterm.
+    (* motive changes, but is runtime-irrelevant *)
+    cbn [Ty.subst_list Typing.Typing.subst_list Ty.subst_sub Typing.Typing.subst_sub] in *.
+    eapply (proj2 (terminates_to_case_motive_irrelevant n (tRoll n0 n1 l).[Ty.sub_fun (0, σ)]
+              (t.[Ty.up (Ty.sub_fun (0, σ))])
+              ((subst0 (tRoll n0 n1 l) t).[Ty.up (Ty.sub_fun (0, σ))])
+              (l0..[Ty.sub_fun (0, σ)]) v)).
+    exact Hterm.
+  - intros Δ σ v Hσ Hvσ Hterm.
+    destruct t; cbn [propagate_motive_once]; try exact Hterm.
+    destruct t; cbn [propagate_motive_once]; try exact Hterm.
+    destruct (Nat.eqb n n0) eqn:Heq; try exact Hterm.
+    cbn [Ty.subst_list Typing.Typing.subst_list Ty.subst_sub Typing.Typing.subst_sub] in *.
+    eapply (proj1 (terminates_to_case_motive_irrelevant n (tRoll n0 n1 l).[Ty.sub_fun (0, σ)]
+              (t.[Ty.up (Ty.sub_fun (0, σ))])
+              ((subst0 (tRoll n0 n1 l) t).[Ty.up (Ty.sub_fun (0, σ))])
+              (l0..[Ty.sub_fun (0, σ)]) v)).
+    exact Hterm.
+Qed.
+
 Lemma terminates_to_steps_prefix (t u v : tm) :
   steps t u -> terminates_to t v -> terminates_to u v.
 Proof.

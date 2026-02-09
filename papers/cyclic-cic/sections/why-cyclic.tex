@@ -1,6 +1,106 @@
 \section{Why go cyclic? Proof identity and non-fixed induction principles}
 \label{sec:why-cyclic}
 
+We begin with tiny examples that make the motivation concrete: in ordinary CIC developments, the objects we want to treat as ``the same proof'' or ``the same program'' are often separated by administrative syntax.
+Cyclic proof objects aim to eliminate this bureaucracy by making recursion a matter of \emph{graph structure} (cycles + explicit substitutions), leaving local typing and computation unchanged.
+
+\subsection{Example 1: cyclic proofs as proof graphs}
+
+Figure~\ref{fig:eo-cyclic} shows the shape of a cyclic proof as a finite natural-deduction derivation with a back-link from a bud to its companion, carrying explicit substitution evidence.
+
+\begin{figure}[t]
+\centering
+\begingroup
+\scriptsize
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{\scriptsize E-0}
+  \UnaryInfC{$\ctx \vdash E\,0$}
+  \RightLabel{\scriptsize $\lor$-intro}
+  \UnaryInfC{$\ctx \vdash E\,0 \lor O\,0$}
+
+  \AxiomC{$\begin{array}{@{}l@{}}
+    \ctx,\; m : \Nat,\; e : E\,m \\
+    \vdash O\,(S\,m)
+  \end{array}$}
+  \RightLabel{\scriptsize $\lor$-intro}
+  \UnaryInfC{$\begin{array}{@{}l@{}}
+    \ctx,\; m : \Nat,\; e : E\,m \\
+    \vdash E\,(S\,m) \lor O\,(S\,m)
+  \end{array}$}
+
+  \AxiomC{$\begin{array}{@{}l@{}}
+    \ctx,\; m : \Nat,\; o : O\,m \\
+    \vdash E\,(S\,m)
+  \end{array}$}
+  \RightLabel{\scriptsize $\lor$-intro}
+  \UnaryInfC{$\begin{array}{@{}l@{}}
+    \ctx,\; m : \Nat,\; o : O\,m \\
+    \vdash E\,(S\,m) \lor O\,(S\,m)
+  \end{array}$}
+
+  \AxiomC{$\begin{array}{@{}l@{}}
+    \sigma : (n\mapsto m) \\
+    \ctx,\; m : \Nat \\
+    \vdash E\,m \lor O\,m\; (*)\tikzmark{eo-bud}
+  \end{array}$}
+  \RightLabel{\scriptsize $\lor$-elim}
+  \TrinaryInfC{$\begin{array}{@{}l@{}}
+    \ctx,\; m : \Nat \\
+    \vdash E\,(S\,m) \lor O\,(S\,m)
+  \end{array}$}
+
+  \RightLabel{\scriptsize Nat-elim}
+  \BinaryInfC{$\begin{array}{@{}l@{}}
+    \ctx,\; n : \Nat \\
+    \vdash E\,n \lor O\,n\; (*)\tikzmark{eo-comp}
+  \end{array}$}
+\end{prooftree}
+\endgroup
+
+\begin{tikzpicture}[remember picture,overlay]
+  \draw[dashed,->]
+    (pic cs:eo-bud)
+    .. controls ([xshift=55mm]pic cs:eo-bud) and ([xshift=55mm]pic cs:eo-comp) ..
+    (pic cs:eo-comp);
+\end{tikzpicture}
+
+\caption{A schematic cyclic natural-deduction proof in CIC style (example shape due to \cite{brotherston-2006-cyclic}). Write $E\,n$ and $O\,n$ for evenness/oddness judgements over $\Nat$. We treat $A\lor B$ as an inductive type; proof terms are elided. The bud $(*)$ is discharged by a back-link to its companion, carrying explicit substitution evidence $\sigma : (n\mapsto m)$.}
+\label{fig:eo-cyclic}
+\end{figure}
+
+\begin{definition}[Cyclic proof (after \cite{brotherston-2006-cyclic}, informal)]
+A \emph{cyclic preproof} is a finite proof graph whose nodes are labelled by judgements and locally justified by inference rule instances; some leaves (\emph{buds}) are discharged by \emph{back-links} to earlier occurrences of the same obligation (their \emph{companions}).
+In our setting, each back-link additionally carries explicit substitution evidence describing how the bud is instantiated from its companion.
+
+A \emph{cyclic proof} is a cyclic preproof equipped with a \emph{global trace/progress condition} ensuring that the infinite unfolding obtained by repeatedly following back-links is sound (Section~\ref{sec:global}).
+\end{definition}
+
+\subsection{Example 2: dependent index bureaucracy}
+
+In dependently typed developments, index expressions are themselves programs.
+Even when these programs are total and terminating, definitional equality may not normalise them using fusion/algebraic laws, forcing explicit transports/casts.
+A representative pattern is:
+
+\begin{figure}[t]
+\centering
+\begingroup\footnotesize\ttfamily
+\begin{verbatim}
+Definition pipeline_vec_raw (l : list A)
+  : Vector.t C (length (map g (map f l))) :=
+  Vector.of_list (map g (map f l)).
+
+Definition pipeline_vec (l : list A) : Vector.t C (length l) :=
+  eq_rect _ (fun n => Vector.t C n) (pipeline_vec_raw l)
+          _ (length_map_map l).
+\end{verbatim}
+\endgroup
+\caption{Index bureaucracy caused by list pipeline composition: the index \(\mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l))\) must be transported to \(\mathsf{length}\;l\) using an explicit equality proof.}
+\label{fig:mapmap-index-pain}
+\end{figure}
+
+These examples motivate the rest of the paper: cyclic proofs aim to support semantics-preserving transformations (supercompilation-style driving plus fold/refold under a termination control) that eliminate administrative structure and yield canonical cyclic representatives.
+
 A standard way to represent recursive reasoning in type theory is to bake recursion into the term language:
 \begin{itemize}
 \item either directly, via a fixed-point constructor (\texttt{fix}), or
@@ -9,6 +109,10 @@ A standard way to represent recursive reasoning in type theory is to bake recurs
 
 This choice has a subtle but important consequence: it commits the system to a \emph{particular syntactic presentation} of recursive reasoning.
 Two proofs may establish the same semantic property, but remain permanently different pieces of syntax because they encode recursion using different unfoldings, different induction schemata, or different administrative structure.
+
+Of course, there cannot be a single fully automatic principle that always produces a canonical representative for \emph{all} proofs and programs of interest.
+However, in many useful cases one can normalize aggressively enough (using a supercompilation-style bundle of semantics-preserving transformations, plus a termination control) that distinct presentations converge to the same cyclic normal form (up to a chosen graph equivalence).
+This is precisely where the approach pays off: it avoids proof bureaucracy in the common situation where the remaining differences are administrative rather than semantic.
 
 \subsection{The core motivation: induction principles need not be fixed}
 
