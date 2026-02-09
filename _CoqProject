@@ -24,6 +24,7 @@ theories/Transform/Extract.v
 theories/Transform/CyclicRules.v
 theories/Transform/BetaReduce.v
 theories/Transform/CaseCase.v
+theories/Transform/Supercompile.v
 
 theories/Equiv/Bisimulation.v
 theories/Equiv/CIU.v

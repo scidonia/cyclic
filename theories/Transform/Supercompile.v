@@ -1,8 +1,11 @@
 From Stdlib Require Import List Bool Arith Utf8.
 From stdpp Require Import gmap.
 
-From Cyclic.Syntax Require Import Term.
+From Autosubst Require Import Autosubst.
+
+From Cyclic.Syntax Require Import StrictPos Term.
 From Cyclic.Judgement Require Import Typing.
+From Cyclic.Semantics Require Import Cbn.
 From Cyclic.Transform Require Import BetaReduce CaseCase.
 From Cyclic.Progress Require Import PatternUnification.
 
@@ -54,6 +57,80 @@ Fixpoint nub_tm (xs : list tm) : list tm :=
 
 Definition rewrite_step : Type := tm -> tm.
 
+(** * Proper CBN driving (β/iota/fix + scrutinee driving)
+
+    This is the operational "driving" component that enables deforestation and
+    fusion: we unfold and reduce according to the call-by-name semantics from
+    `Semantics/Cbn.v`.
+
+    Important: this is *not* a domain-specific rewrite (no `length∘map` axiom).
+    Any fusion we get must emerge from unfolding + case commuting + folding.
+*)
+
+Fixpoint drive_cbn_once (t : tm) : tm :=
+  match t with
+  | tApp t1 t2 =>
+      let t1' := drive_cbn_once t1 in
+      match t1' with
+      | tLam A body => subst0 t2 body
+      | _ => tApp t1' t2
+      end
+  | tFix A body => subst0 (tFix A body) body
+  | tCase ind scrut C brs =>
+      match scrut with
+      | tRoll ind' c args =>
+          if Nat.eqb ind ind' then
+            match branch brs c with
+            | Some br => Cbn.apps br args
+            | None => t
+            end
+          else t
+      | _ =>
+          let scrut' := drive_cbn_once scrut in
+          if tm_eqb scrut scrut' then t else tCase ind scrut' C brs
+      end
+  | _ => t
+  end.
+
+Fixpoint whnf_drive (fuel : nat) (t : tm) : tm :=
+  match fuel with
+  | 0 => t
+  | S fuel' =>
+      let t' := drive_cbn_once t in
+      if tm_eqb t t' then t else whnf_drive fuel' t'
+  end.
+
+Fixpoint supercompile_tm (fuel : nat) (Σenv : Ty.env) (t : tm) : tm :=
+  match fuel with
+  | 0 => t
+  | S fuel' =>
+      let t1 := whnf_drive fuel' t in
+      let t2 := CC.commute_case_case_once_typed Σenv t1 in
+      let t3 := CC.propagate_motive_once t2 in
+      (* drive under binders / subterms *)
+      match t3 with
+      | tLam A body =>
+          tLam (supercompile_tm fuel' Σenv A) (supercompile_tm fuel' Σenv body)
+      | tPi A B =>
+          tPi (supercompile_tm fuel' Σenv A) (supercompile_tm fuel' Σenv B)
+      | tApp t4 t5 =>
+          (* after driving the head, only descend structurally *)
+          tApp (supercompile_tm fuel' Σenv t4) (supercompile_tm fuel' Σenv t5)
+      | tFix A body =>
+          tFix (supercompile_tm fuel' Σenv A) (supercompile_tm fuel' Σenv body)
+      | tInd ind args =>
+          tInd ind (map (supercompile_tm fuel' Σenv) args)
+      | tRoll ind c args =>
+          tRoll ind c (map (supercompile_tm fuel' Σenv) args)
+      | tCase ind scrut C brs =>
+          tCase ind
+            (supercompile_tm fuel' Σenv scrut)
+            (supercompile_tm fuel' Σenv C)
+            (map (supercompile_tm fuel' Σenv) brs)
+      | _ => t3
+      end
+  end.
+
 Definition drive_terms (rewrites : list rewrite_step) (t : tm) : list tm :=
   nub_tm (filter (fun u => negb (tm_eqb t u)) (map (fun f => f t) rewrites)).
 
@@ -79,31 +156,88 @@ Fixpoint drive_under_binders (fuel : nat) (t : tm) : tm :=
               tApp (drive_under_binders fuel' t1) (drive_under_binders fuel' t2)
         | tFix A body =>
             tFix (drive_under_binders fuel' A) (drive_under_binders fuel' body)
-        | tCase I scrut C brs =>
+        | tCase ind scrut C brs =>
             (* Try case-of-constructor reduction first *)
             let scrut' := drive_under_binders fuel' scrut in
-            tCase I scrut'
+            tCase ind scrut'
                   (drive_under_binders fuel' C)
                   (map (drive_under_binders fuel') brs)
-        | tRoll I c args =>
-            tRoll I c (map (drive_under_binders fuel') args)
-        | tInd I args =>
-            tInd I (map (drive_under_binders fuel') args)
+        | tRoll ind c args =>
+            tRoll ind c (map (drive_under_binders fuel') args)
+        | tInd ind args =>
+            tInd ind (map (drive_under_binders fuel') args)
         | _ => t
         end
       in t'
   end.
 
 Definition default_rewrites (Σenv : Ty.env) : list rewrite_step :=
-  [BetaReduce.whnf_reduce 100;         (* Reduce to WHNF at head *)
+  [drive_cbn_once;
+   (fun t => whnf_drive 20 t);
    CC.commute_case_case_once_typed Σenv;
-   CC.propagate_motive_once;
-   BetaReduce.full_normalize 50        (* Full normalization under binders *)
-  ].
+   CC.propagate_motive_once].
+
+Definition fresh_args (n : nat) : list tm :=
+  rev (map tVar (seq 0 n)).
+
+Definition subst_one (k : nat) (u : tm) :=
+  fun x => if Nat.eqb x k then u else tVar x.
+
+Definition extend_ctx (tys : list tm) (Γ : Ty.ctx) : Ty.ctx :=
+  rev tys ++ Γ.
+
+(** Case-splitting / information propagation.
+
+    If driving exposes a neutral case-scrutinee, we split into one successor per
+    constructor of the scrutinee inductive, introducing fresh variables for the
+    constructor arguments and substituting the scrutinee variable with a `roll`
+    built from those variables.
+*)
+Definition split_case_var
+    (Σenv : Ty.env) (Γ : Ty.ctx) (ind : nat) (x : nat)
+    (Cmot : tm) (brs : list tm) (A : tm) : list config :=
+  match SP.lookup_ind Σenv ind with
+  | None => []
+  | Some ΣI =>
+      let nctors := length (SP.ind_ctors ΣI) in
+      let cs := seq 0 nctors in
+      concat
+        (map
+           (fun c =>
+              match CC.ctor_arg_tys Σenv ind c with
+              | None => []
+              | Some tys =>
+                  let n := length tys in
+                  let Γ' := extend_ctx tys Γ in
+                  let args := fresh_args n in
+                  let scrut := tRoll ind c args in
+                  let σ := subst_one (x + n) scrut in
+                  (* shift the whole judgement into the extended context *)
+                  let t0 := shift n 0 (tCase ind (tVar x) Cmot brs) in
+                  let A0 := shift n 0 A in
+                  (* propagate the constructor fact by substitution *)
+                  let t1 := t0.[σ] in
+                  let A1 := A0.[σ] in
+                  (* immediately drive once to perform the iota-step *)
+                  let t2 := whnf_drive 5 t1 in
+                  [C.jTy Γ' t2 A1]
+              end)
+           cs)
+  end.
 
 Definition drive_step (Σenv : Ty.env) (j : config) : list config :=
   match j with
-  | C.jTy Γ t A => map (fun u => C.jTy Γ u A) (drive_terms (default_rewrites Σenv) t)
+  | C.jTy Γ t A =>
+      let t1 := whnf_drive 20 t in
+      match t1 with
+      | tCase ind (tVar x) Cmot brs =>
+          let splits := split_case_var Σenv Γ ind x Cmot brs A in
+          match splits with
+          | [] => map (fun u => C.jTy Γ u A) (drive_terms (default_rewrites Σenv) t1)
+          | _ => splits
+          end
+      | _ => map (fun u => C.jTy Γ u A) (drive_terms (default_rewrites Σenv) t1)
+      end
   | _ => []
   end.
 
@@ -161,17 +295,15 @@ Fixpoint emb_tm_b (fuel : nat) (t u : tm) : bool :=
                | tFix A' t0' => emb_tm_b fuel' A A' && emb_tm_b fuel' t0 t0'
                | _ => false
                end
-        | tRoll ind ctor params recs =>
-            (existsb (fun p => emb_tm_b fuel' p u) params)
-            || (existsb (fun r => emb_tm_b fuel' r u) recs)
-            || match u with
-               | tRoll ind' ctor' params' recs' =>
-                   Nat.eqb ind ind'
-                   && Nat.eqb ctor ctor'
-                   && emb_list_b fuel' (emb_tm_b fuel') params params'
-                   && emb_list_b fuel' (emb_tm_b fuel') recs recs'
-               | _ => false
-               end
+         | tRoll ind ctor args =>
+             (existsb (fun a => emb_tm_b fuel' a u) args)
+             || match u with
+                | tRoll ind' ctor' args' =>
+                    Nat.eqb ind ind'
+                    && Nat.eqb ctor ctor'
+                    && emb_list_b fuel' (emb_tm_b fuel') args args'
+                | _ => false
+                end
         | tCase ind scrut C0 brs =>
             emb_tm_b fuel' scrut u
             || emb_tm_b fuel' C0 u
