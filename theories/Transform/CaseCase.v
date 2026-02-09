@@ -289,6 +289,19 @@ Proof.
     + exact Hv.
 Qed.
 
+(** Helper: motive irrelevance commutes with closing substitution lists. *)
+Lemma terminates_to_subst_list_case_motive_irrelevant
+    (σ : list tm) (I : nat) (scrut C C' : tm) (brs : list tm) (v : tm) :
+  terminates_to (CIUJudgement.Ty.subst_list σ (tCase I scrut C brs)) v
+  <->
+  terminates_to (CIUJudgement.Ty.subst_list σ (tCase I scrut C' brs)) v.
+Proof.
+  unfold CIUJudgement.Ty.subst_list, Typing.Typing.subst_list.
+  unfold CIUJudgement.Ty.subst_sub, Typing.Typing.subst_sub.
+  cbn.
+  apply terminates_to_case_motive_irrelevant.
+Qed.
+
 (** Typed CIU preservation for motive propagation. *)
 Theorem ciu_jTy_propagate_motive_once (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) :
   Ty.has_type Σenv Γ t A ->
@@ -297,26 +310,28 @@ Proof.
   intro _Hty.
   unfold CIUJudgement.ciu_jTy.
   split.
-  - intros Δ σ v Hσ Hvσ Hterm.
-    destruct t; cbn [propagate_motive_once]; try exact Hterm.
-    destruct t; cbn [propagate_motive_once]; try exact Hterm.
-    destruct (Nat.eqb n n0) eqn:Heq; try exact Hterm.
-    (* motive changes, but is runtime-irrelevant *)
-    cbn [Ty.subst_list Typing.Typing.subst_list Ty.subst_sub Typing.Typing.subst_sub] in *.
-    eapply (proj2 (terminates_to_case_motive_irrelevant n (tRoll n0 n1 l).[Ty.sub_fun (0, σ)]
-              (t.[Ty.up (Ty.sub_fun (0, σ))])
-              ((subst0 (tRoll n0 n1 l) t).[Ty.up (Ty.sub_fun (0, σ))])
-              (l0..[Ty.sub_fun (0, σ)]) v)).
+  - intros Δ σ v _Hσ _Hvσ Hterm.
+    destruct t as
+      [x|s|A0 B0|A0 t0|t1 t2|A0 t0|I0 args0|I0 c0 args0|I scrut C brs];
+      cbn [propagate_motive_once] in *; try exact Hterm.
+    destruct scrut as
+      [x|s|A1 B1|A1 t1|t3 t4|A1 t3|I1 args1|I1 c args|I1 scrut1 C1 brs1];
+      cbn [propagate_motive_once] in *; try exact Hterm.
+    destruct (Nat.eqb I I1) eqn:Heq; try exact Hterm.
+    (* Motive changes, but is runtime-irrelevant (even after closing substitution). *)
+    eapply (proj2 (terminates_to_subst_list_case_motive_irrelevant σ I (tRoll I1 c args)
+      (subst0 (tRoll I1 c args) C) C brs v)).
     exact Hterm.
-  - intros Δ σ v Hσ Hvσ Hterm.
-    destruct t; cbn [propagate_motive_once]; try exact Hterm.
-    destruct t; cbn [propagate_motive_once]; try exact Hterm.
-    destruct (Nat.eqb n n0) eqn:Heq; try exact Hterm.
-    cbn [Ty.subst_list Typing.Typing.subst_list Ty.subst_sub Typing.Typing.subst_sub] in *.
-    eapply (proj1 (terminates_to_case_motive_irrelevant n (tRoll n0 n1 l).[Ty.sub_fun (0, σ)]
-              (t.[Ty.up (Ty.sub_fun (0, σ))])
-              ((subst0 (tRoll n0 n1 l) t).[Ty.up (Ty.sub_fun (0, σ))])
-              (l0..[Ty.sub_fun (0, σ)]) v)).
+  - intros Δ σ v _Hσ _Hvσ Hterm.
+    destruct t as
+      [x|s|A0 B0|A0 t0|t1 t2|A0 t0|I0 args0|I0 c0 args0|I scrut C brs];
+      cbn [propagate_motive_once] in *; try exact Hterm.
+    destruct scrut as
+      [x|s|A1 B1|A1 t1|t3 t4|A1 t3|I1 args1|I1 c args|I1 scrut1 C1 brs1];
+      cbn [propagate_motive_once] in *; try exact Hterm.
+    destruct (Nat.eqb I I1) eqn:Heq; try exact Hterm.
+    eapply (proj1 (terminates_to_subst_list_case_motive_irrelevant σ I (tRoll I1 c args)
+      (subst0 (tRoll I1 c args) C) C brs v)).
     exact Hterm.
 Qed.
 
