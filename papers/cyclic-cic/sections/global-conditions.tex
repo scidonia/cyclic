@@ -26,6 +26,16 @@ The ranking condition requires:
 
 \subsection{Why this matters for transformations}
 
+\paragraph{Fold/refold invariants (informal checklist).}
+Any fold/refold transformation on cyclic objects is required to preserve:
+\begin{itemize}
+\item \textbf{Local correctness}: each node remains justified by a rule instance.
+\item \textbf{Well-typed substitution evidence}: every back-link continues to carry a well-typed substitution witness instantiating the companion judgement.
+\item \textbf{Progress witness}: the transformed graph admits a progress witness (ranking/trace) validating all directed cycles.
+\item \textbf{Extracted-term meaning}: extraction/read-off commutes with the graph transform up to typed CIU.
+\end{itemize}
+These are the invariants that prevent unsound refolding: a fold is only accepted when it can be accompanied by progress evidence and typing of the substitution witness.
+
 Transformations that introduce, remove, or restructure cycles (fold/refold, read-off compilation, or higher-level normalisation steps) are only meaningful if the resulting cyclic object still has a progress witness.
 
 Conceptually:

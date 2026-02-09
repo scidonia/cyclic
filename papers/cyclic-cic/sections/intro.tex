@@ -1,8 +1,5 @@
 \section{Introduction}
 
-The design goal of this project is not simply to add ``cycles'' for convenience.
-The goal is to change what we treat as \emph{primitive} in a proof calculus.
-
 In conventional systems, recursive reasoning is packaged as a fixed-point operator or as a family of induction/recursion schemata.
 Those choices are powerful, but they also hard-code a particular presentation of recursion into the syntax of proofs.
 As a result, proofs that are semantically equivalent can remain syntactically far apart, even after many semantics-preserving transformations.
@@ -15,6 +12,44 @@ A proof is a finite graph of locally-correct steps; recursion is represented by 
 This decomposition has an attractive consequence for proof engineering and normalization:
 we can refactor recursive structure (fold/refold), commute conversions, and perform administrative normalization without being forced to preserve the exact boundaries of \texttt{fix} binders or induction schemata.
 In the best case, normalization can reveal that two proofs are not just equivalent, but \emph{the same cyclic object} after refolding.
+
+\paragraph{Scope and claims.}
+This paper specifies a cyclic CIC-like calculus, its extracted-term semantics, and a normalization pipeline based on supercompilation.
+Figure~\ref{fig:pipeline} summarizes the intended end-to-end workflow.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=14mm and 18mm,
+  every node/.style={draw,rounded corners,align=center,inner sep=4pt,font=\small},
+  ->,>=Stealth
+]
+\node (t0) {Source term\\$t$};
+\node (ro) [right=of t0] {Read-off\\(to cyclic object)\\$\mathsf{read\_off}(t)$};
+\node (cy) [right=of ro] {Cyclic proof/term graph\\$p$};
+
+\node (sc) [below=of ro] {Supercompile / normalize\\(CIU-preserving rewrites\\+ fold/refold with progress)};
+
+\node (cy2) [below=of sc] {Simplified cyclic graph\\$p'$};
+\node (ex) [right=of cy2] {Extract back\\$\mathsf{extract}(p')$};
+\node (t1) [right=of ex] {Source term\\$t'$};
+
+\draw (t0) -- (ro);
+\draw (ro) -- (cy);
+\draw (ro) -- (sc);
+\draw (sc) -- (cy2);
+\draw (cy2) -- (ex);
+\draw (ex) -- (t1);
+
+\end{tikzpicture}
+\caption{Normalization pipeline: compile terms to cyclic objects, simplify by supercompilation, then extract back to term syntax. The intended equality notion is $t \approx t'$ up to typed CIU, and fold/refold steps are constrained by global progress evidence.}
+\label{fig:pipeline}
+\end{figure}
+The canonicalisation claim is deliberately \emph{operational}.
+We can guarantee that the partial-evaluation component is complete for the chosen head-reduction strategy (i.e. driving to weak-head normal form does not miss head redexes).
+For the full supercompilation bundle (driving + information propagation + commuting conversions + unfold/generalise/fold), a natural and desirable property is \emph{idempotence} (a second pass yields no further change); at present we treat this as a conjecture/engineering target rather than a proved meta-theorem.
+However, we do \emph{not} claim that all semantically identical programs/proofs can always be reduced to a single unique normal form.
+Rather, the goal is that many bureaucratic differences---especially those arising from commuting conversions, index computations, and recursion-boundary choices---are eliminated by the procedure.
 
 The rest of the paper outlines:
 \begin{itemize}

@@ -4,6 +4,12 @@
 This section states the main semantic preservation theorems mechanized in the Coq development.
 Our semantic equivalence is CIU-style observational equivalence at a typing judgement (values as observables).
 
+\paragraph{TCB boundary and why CIU.}
+We do \emph{not} propose to change the kernel definitional equality of CIC.
+Instead, supercompilation is an \emph{external} normalization procedure whose output is justified by proved meta-theorems.
+Typed CIU is the right notion here because our transformations are operational (call-by-name) and are intended to preserve program behavior observed by termination to values under all well-typed closing substitutions.
+Thus, the trusted computing base remains the usual type checker plus the metatheory proofs establishing CIU preservation of each transformation.
+
 \subsection{Typed CIU equivalence}
 
 Write \(\mathsf{ciu\_jTy}(\env,\ctx,t,u,A)\) for typed CIU equivalence (see \texttt{theories/Equiv/CIUJudgement.v}).
@@ -53,6 +59,11 @@ These correspond to the proved Coq theorems:
 \end{itemize}
 
 \subsection{Case--case commuting conversion}
+
+\paragraph{What is proved (and what is not).}
+The theorems in this section are all of the form ``typed CIU is preserved by a one-step transformation''.
+They do not (yet) imply that the full supercompilation loop terminates on all inputs or yields unique normal forms.
+Rather, they provide the semantic building blocks used in the algorithmic pipeline of Section~\ref{sec:transforms}.
 
 Let \(\mathsf{CaseCase}(\env,t)\) be the one-step commuting conversion for nested case.
 

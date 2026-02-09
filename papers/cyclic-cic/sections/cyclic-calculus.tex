@@ -27,9 +27,20 @@ A preproof is a finite directed graph together with:
 This corresponds to \texttt{theories/Preproof/Preproof.v}.
 A \emph{rooted} preproof additionally designates a root vertex.
 
+\paragraph{Buds, back-links, and explicit substitutions.}
+To represent recursion explicitly, we distinguish a subset of vertices \(B \subseteq V\) (\emph{buds}) whose outgoing edge is a \emph{back-link} to an earlier vertex (their \emph{companion}).
+Concretely, we record:
+\begin{itemize}
+\item a companion function \(\mathsf{comp} : B \to V\), and
+\item substitution evidence \(\mathsf{sv} : B \to V\) (a vertex encoding a list-backed explicit substitution).
+\end{itemize}
+Intuitively, a bud judgement is an instance of its companion judgement, and \(\mathsf{sv}(b)\) witnesses the instantiation.
+This is the key extra structure beyond an ordinary locally-correct proof tree.
+
 \subsection{Cyclic proofs: global condition + witness}
 
 A cyclic proof packages a preproof together with an additional witness \(W\) and a predicate \(\mathsf{progress\_ok}\) establishing the global soundness condition.
+The role of \(W\) is to justify that every directed cycle contains progress (e.g. via a well-founded ranking or trace argument), preventing unsound self-justifying loops.
 See \texttt{theories/CyclicProof/CyclicProof.v}.
 
 \subsection{Semantics and intended equality}
@@ -64,6 +75,12 @@ Key design points (see \texttt{theories/Transform/ReadOff.v}):
 \item Substitutions are represented as linked lists of evidence nodes:
   \texttt{nSubstNil} and \texttt{nSubstCons}, mirroring list-backed substitutions.
 \end{itemize}
+
+\paragraph{Reintroducing \texttt{fix} when extracting back.}
+Although the cyclic intermediate representation is fix-free, when we reify it back into an ordinary source term we may reintroduce \texttt{fix} to represent back-links.
+Intuitively, a back-link becomes a recursive call to a named fixed point, and the stored substitution evidence becomes the explicit instantiation of its parameters.
+
+This is precisely why the cyclic IR increases identification power: two source terms that differ only in where recursion is packaged (different \texttt{fix} boundaries, different unfoldings, different administrative reshufflings) can still compile to cyclic graphs that fold/refold to the same canonical structure, and hence have extracted terms equal up to typed CIU.
 
 \subsection{Judgements over vertices}
 

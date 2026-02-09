@@ -1,4 +1,4 @@
-\section{Transformations: \textsc{CaseCase}, head beta, unfold/refold}
+\section{Supercompilation for normalisation}
 \label{sec:transforms}
 
 This section outlines the main transformations currently being developed at the term level, with the intended lift to cyclic proof objects via extraction.
@@ -18,6 +18,65 @@ Concretely, it consists of the following ingredients, applied iteratively under 
 \end{enumerate}
 
 The remainder of the section spells out the term-level instances of these steps and how they connect to the cyclic setting.
+
+\subsection{Algorithm sketch (driving + whistle + generalise + fold)}
+
+The intended normalization procedure is a standard supercompilation loop.
+We present a lightweight pseudo-code account; details of the termination control and generalisation policy are discussed in Section~\ref{sec:canonical}.
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\linewidth}
+\small
+\textbf{supercompile}$(t)$
+\begin{enumerate}
+\item Initialize memo table $M := \emptyset$.
+\item \textbf{drive}$(t,M)$:
+  \begin{enumerate}
+  \item Compute a weak-head normal form by repeated head steps (beta/fix/iota).
+  \item Apply commuting conversions (e.g. \textsc{CaseCase}) and information propagation.
+  \item If the whistle blows (embedding repeats), \textbf{generalise} the current configuration.
+  \item If a (generalised) configuration matches a memoized one, \textbf{fold} by introducing a back-link with substitution evidence.
+  \item Otherwise memoize it and recursively drive subterms (including under binders/motives).
+  \end{enumerate}
+\end{enumerate}
+\end{minipage}}
+\end{center}
+
+This algorithmic view is the basis for our notion of canonicalisation: although no fully automatic procedure can canonise \emph{all} terms, in many useful cases this loop normalises away administrative structure (commuting conversions, bureaucratic casts, and refactoring of recursion boundaries) while preserving typed CIU.
+
+\subsection{Worked example: indexed types and cast elimination}
+\label{sec:index-example}
+
+We return to the index-bureaucracy pattern from Figure~\ref{fig:mapmap-index-pain}.
+Let \(\mathsf{Vec}\;A\;n\) be a length-indexed vector type, and suppose we have a pipeline that computes a vector by converting a list to a vector after mapping:
+\[
+  t_{\mathsf{raw}}(l) : \mathsf{Vec}\;C\;\bigl(\mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l))\bigr).
+\]
+In an intensional kernel, to obtain a term at the more natural index \(\mathsf{length}(l)\), one often inserts an explicit transport:
+\[
+  t_{\mathsf{cast}}(l) \triangleq \mathsf{transport}_{\mathsf{length}(l)}^{\mathsf{length}(\mathsf{map}\;g(\mathsf{map}\;f\;l))}(t_{\mathsf{raw}}(l))
+  : \mathsf{Vec}\;C\;(\mathsf{length}(l)).
+\]
+By contrast, an ``ideal'' normal form would be a term \(t_{\mathsf{nf}}(l)\) whose index is already definitionally \(\mathsf{length}(l)\), requiring no transport.
+
+\paragraph{How the algorithm establishes identity.}
+Consider the two closed terms produced by instantiating \(l\) with a concrete list value (or, more generally, by closing the context with a value substitution, as in typed CIU):
+\(t_{\mathsf{cast}}\) and \(t_{\mathsf{nf}}\).
+Running the supercompilation loop on both terms (Section~\ref{sec:transforms}, Algorithm sketch) proceeds by:
+\begin{enumerate}
+\item \textbf{Driving/partial evaluation}: unfold the definitions of \(\mathsf{length}\) and \(\mathsf{map}\) far enough to expose the structural recursion on lists.
+\item \textbf{Information propagation}: propagate the scrutinee information from list constructors into dependent motives so that index computations reduce when possible.
+\item \textbf{Generalisation + folding}: when the same list-recursive configuration reappears up to embedding (e.g. the configuration ``compute \(\mathsf{length}(\mathsf{map}\;h\;xs)\)''), generalise it and fold it into a back-link with explicit substitution evidence.
+\end{enumerate}
+The operational outcome is that both \(t_{\mathsf{cast}}\) and \(t_{\mathsf{nf}}\) are transformed into the same canonical cyclic representative (up to refolding), whose extracted term computes with the simplified index.
+
+\paragraph{Proof sketch (CIU).}
+Each driving step in the loop is justified by a typed CIU theorem (beta, \textsc{CaseCase}, and information propagation), and fold/refold steps are justified by preservation of progress evidence.
+Therefore, if \(\mathsf{supercompile}(t_{\mathsf{cast}})\) and \(\mathsf{supercompile}(t_{\mathsf{nf}})\) yield the same extracted term, we obtain:
+\[
+  \mathsf{ciu\_jTy}(\env,\ctx,t_{\mathsf{cast}},t_{\mathsf{nf}},A),
+\]
+explaining how the algorithm can eliminate index bureaucracy and establish post-hoc identity of terms that differ only by transports.
 
 \subsection{Beta-reduction strategies}
 
@@ -80,6 +139,28 @@ where each inner branch is transformed to:
 \]
 
 In the development, the constructor arity/types are obtained from the inductive signature environment, and the branch transform is implemented by a function \texttt{commute\_branch\_typed\_rec}.
+
+\subsection{Worked example: unfold/generalise/fold (cycle creation)}
+
+A key difference between ordinary rewriting and supercompilation is the ability to \emph{create and re-use cycles}.
+Schematic example: consider a structurally recursive function written with explicit \texttt{fix}, and the same computation written by inlining one unfolding step.
+At the source term level these are distinct pieces of syntax; after extraction to a cyclic graph, both can refold to the same back-link structure.
+
+Concretely, suppose we have a call-by-name term
+\(
+  t \triangleq \mathsf{fix}(A).\;\lambda(n: \Nat).\; \Case{I}{n}{C}{\overline{\mathit{br}}}
+\)
+where one branch contains a recursive call.
+Supercompilation proceeds by:
+\begin{enumerate}
+\item \textbf{Unfolding} the \texttt{fix} once to expose the recursive call site.
+\item \textbf{Driving} until it encounters a configuration already seen up to embedding.
+\item \textbf{Generalising} (if necessary) to a more general call pattern.
+\item \textbf{Folding} by introducing a back-link to the memoized configuration, with explicit substitution evidence recording how parameters are instantiated.
+\end{enumerate}
+
+The result is a finite cyclic object whose extracted term is CIU-equivalent to the original, but whose recursion boundary is now canonicalized by fold/refold rather than fixed by the original \texttt{fix} placement.
+This is the intended mechanism by which the cyclic intermediate form can identify more terms: two terms with different unfold/fold structure can still map to cyclic objects with the same extracted semantics up to CIU.
 
 \subsection{Information propagation in case scrutinee}
 
