@@ -5,6 +5,7 @@ theories/Syntax/Term.v
 theories/Syntax/Examples.v
 theories/Syntax/ListNat.v
 theories/Judgement/Typing.v
+theories/Judgement/SequentTyping.v
 theories/Semantics/Cbn.v
 theories/Graph/FiniteDigraph.v
 theories/Preproof/Preproof.v
@@ -20,14 +21,20 @@ theories/Transform/ReadOffSpec.v
 theories/Transform/ReadOff.v
 theories/Transform/CyclicVertexSpec.v
 theories/Transform/ReadOffPreproof.v
+theories/Transform/ReadOffSequentPreproof.v
 theories/Transform/Extract.v
 theories/Transform/CyclicRules.v
+theories/Transform/CyclicSequentRules.v
 theories/Transform/BetaReduce.v
 theories/Transform/CaseCase.v
+theories/Transform/SequentDrivingRules.v
+theories/Transform/SequentObservationRules.v
 theories/Transform/Supercompile.v
+theories/Transform/SupercompileTrace.v
 
 theories/Equiv/Bisimulation.v
 theories/Equiv/CIU.v
 theories/Equiv/CIUJudgement.v
 theories/Equiv/CIUNatObs.v
 theories/Equiv/CIUChecklistLengthMap.v
+theories/Equiv/SupercompileChecklistIndexPipeline.v

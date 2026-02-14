@@ -99,6 +99,26 @@ Definition pipeline_vec (l : list A) : Vector.t C (length l) :=
 \label{fig:mapmap-index-pain}
 \end{figure}
 
+In our mechanisation, we make this slogan concrete by running our supercompiler on such index programs and checking that the residualised indices coincide by computation (in Coq, by \texttt{\detokenize{vm_compute}}).
+Representative checked examples include:
+\begin{itemize}[leftmargin=*]
+\item \texttt{\detokenize{residualisation_length_map_exact}}\\
+  supercompiling \(\mathsf{length}(\mathsf{map}\;f\;l)\) yields exactly \(\mathsf{length}\;l\).
+\item \texttt{\detokenize{residualisation_length_append_plus_exact}}\\
+  supercompiling \(\mathsf{length}(\mathsf{append}\;l_1\;l_2)\) yields exactly \(\mathsf{plusL}(\mathsf{length}\;l_1)(\mathsf{length}\;l_2)\).
+\item \texttt{\detokenize{residualisation_length_append_assoc_fp_exact}}\\
+  after iterating residualisation to a bounded fixed point, the two indices
+  \[
+    \mathsf{length}(\mathsf{append}(\mathsf{append}\;l_1\;l_2)\;l_3)
+    \quad\text{and}\quad
+    \mathsf{length}(\mathsf{append}\;l_1(\mathsf{append}\;l_2\;l_3))
+  \]
+  residualise to the same term.
+\end{itemize}
+We also package these index equalities as vector-index equalities; see
+\url{residual_vec_index_append_plus_exact} and
+\url{residual_vec_index_append_assoc_fp_exact}.
+
 These examples motivate the rest of the paper: cyclic proofs aim to support semantics-preserving transformations (supercompilation-style driving plus fold/refold under a termination control) that eliminate administrative structure and yield canonical cyclic representatives.
 
 A standard way to represent recursive reasoning in type theory is to bake recursion into the term language:

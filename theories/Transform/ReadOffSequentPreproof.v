@@ -1,0 +1,111 @@
+From Stdlib Require Import List Arith Lia Utf8.
+From stdpp Require Import prelude countable gmap fin_sets.
+
+From Cyclic.Graph Require Import FiniteDigraph.
+From Cyclic.Preproof Require Import Preproof.
+From Cyclic.Transform Require Import ReadOff CyclicSequentRules.
+
+Import ListNotations.
+
+Set Default Proof Using "Type".
+
+Module RO := ReadOff.
+Module CSR := CyclicSequentRules.
+
+Section Packaging.
+  (** Package the raw read-off graph as a rooted preproof whose labels are
+      sequent-style vertex judgements.
+
+      As with [Transform/ReadOffPreproof.v], this is an incremental packaging
+      step: we currently only check the structural [jSub] obligations for
+      substitution evidence nodes.
+
+      All other nodes are labelled by dummy typing goals and accepted by a
+      permissive rule.
+   *)
+
+  Definition V : Type := nat.
+
+  Definition verts_of (b : RO.builder) : gset V :=
+    dom (RO.b_label b).
+
+  Definition succ_of (b : RO.builder) (v : V) : list V :=
+    filter (fun w => bool_decide (w ∈ verts_of b))
+      (default [] (RO.b_succ b !! v)).
+
+  Definition label_of (b : RO.builder) (v : V) : RO.node :=
+    default (RO.nVar 0) (RO.b_label b !! v).
+
+  Definition dummy_type : V := 0.
+
+  Fixpoint sub_ctx (fuel : nat) (b : RO.builder) (sv : V) : list V :=
+    match fuel with
+    | 0 => []
+    | S fuel' =>
+        match RO.b_label b !! sv with
+        | Some (RO.nSubstNil _) => []
+        | Some (RO.nSubstCons _) =>
+            match RO.b_succ b !! sv with
+            | Some [u; sv_tail] => dummy_type :: sub_ctx fuel' b sv_tail
+            | _ => []
+            end
+        | _ => []
+        end
+    end.
+
+  Definition shiftV (_n _k : nat) (x : V) : V := x.
+  Definition substV (_sv : V) (x : V) : V := x.
+
+  Definition Judgement : Type := CSR.judgement (V := V).
+
+  Definition pp_label (b : RO.builder) (v : V) : Judgement :=
+    match label_of b v with
+    | RO.nSubstNil _ => CSR.jSub (V := V) [] v (sub_ctx (RO.b_next b + 1) b v)
+    | RO.nSubstCons _ => CSR.jSub (V := V) [] v (sub_ctx (RO.b_next b + 1) b v)
+    | _ => CSR.jSyn (V := V) [] v dummy_type
+    end.
+
+  Definition Rule (b : RO.builder) (j : Judgement) (premises : list Judgement) : Prop :=
+    match j with
+    | CSR.jSub _ _ _ =>
+        CSR.rule (V := V) (label_of b) (succ_of b) shiftV substV j premises
+    | _ => True
+    end.
+
+  Lemma succ_of_closed (b : RO.builder) (v : V) :
+    Forall (fun w => w ∈ verts_of b) (succ_of b v).
+  Admitted.
+
+  Program Definition graph_of (b : RO.builder) : FiniteDigraph.fin_digraph :=
+    {| FiniteDigraph.verts := verts_of b;
+       FiniteDigraph.succ := succ_of b |}.
+  Next Obligation.
+    intros b v Hv.
+    exact (succ_of_closed b v).
+  Qed.
+
+  Lemma pp_rule_ok (b : RO.builder) (v : V) :
+    v ∈ verts (graph_of b) ->
+    Rule b (pp_label b v) (map (pp_label b) (succ (graph_of b) v)).
+  Admitted.
+
+  Definition preproof_of (b : RO.builder)
+      : @Preproof.preproof Judgement (Rule b) V _ _ :=
+    {| Preproof.pp_graph := graph_of b;
+       Preproof.pp_label := pp_label b;
+       Preproof.pp_rule_ok := fun v Hv => pp_rule_ok b v Hv |}.
+
+  Lemma read_off_root_in (t : Term.Syntax.tm) :
+    let '(root, b) := RO.read_off_raw t in
+    root ∈ verts (graph_of b).
+  Admitted.
+
+  Program Definition rooted_preproof_of (t : Term.Syntax.tm)
+      : @Preproof.rooted_preproof Judgement (fun j ps => Rule (snd (RO.read_off_raw t)) j ps) V _ _ :=
+    let '(root, b) := RO.read_off_raw t in
+    {| Preproof.rpp_proof := preproof_of b;
+       Preproof.rpp_root := root;
+       Preproof.rpp_root_in := _ |}.
+  Next Obligation.
+  Admitted.
+End Packaging.

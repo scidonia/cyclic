@@ -46,6 +46,40 @@ Definition nat_ty : tm := tInd 0 [].
 Definition zero : tm := tRoll 0 0 [].
 Definition succ (n : tm) : tm := tRoll 0 1 [n].
 
+(** plus : Nat -> Nat -> Nat *)
+Definition plus_ty : tm := tPi nat_ty (tPi nat_ty nat_ty).
+
+Definition plus_body : tm :=
+  (* self : plus_ty *)
+  tLam nat_ty ( (* m *)
+    tLam nat_ty ( (* n *)
+      tCase 0 (tVar 0) nat_ty
+        [ tVar 1; (* zero -> m *)
+          (* succ branch: \n'. succ (self m n') *)
+          tLam nat_ty (
+            succ (tApp (tApp (tVar 3) (tVar 2)) (tVar 0))
+          )
+        ]
+    )).
+
+Definition plus : tm := tFix plus_ty plus_body.
+
+(** plusL : Nat -> Nat -> Nat (recursing on left argument) *)
+Definition plusL_body : tm :=
+  (* self : plus_ty *)
+  tLam nat_ty ( (* m *)
+    tLam nat_ty ( (* n *)
+      tCase 0 (tVar 1) nat_ty
+        [ tVar 0; (* zero -> n *)
+          (* succ branch: \m'. succ (self m' n) *)
+          tLam nat_ty (
+            succ (tApp (tApp (tVar 3) (tVar 0)) (tVar 1))
+          )
+        ]
+    )).
+
+Definition plusL : tm := tFix plus_ty plusL_body.
+
 (** * Length-indexed vectors *)
 
 (**

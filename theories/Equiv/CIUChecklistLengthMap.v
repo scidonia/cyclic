@@ -83,19 +83,26 @@ Qed.
 
 From Cyclic.Transform Require Import Supercompile.
 
-Lemma supercompile_length_map_exact :
-  Supercompile.supercompile_tm 400 Σ_listnat t_len_map =
-  Supercompile.supercompile_tm 400 Σ_listnat t_len.
+Definition residual_len_map : option tm :=
+  Supercompile.residualise_jTy 200 400 Σ_listnat Γ_listnat t_len_map Examples.nat_ty.
+
+Definition residual_len : option tm :=
+  Supercompile.residualise_jTy 200 400 Σ_listnat Γ_listnat t_len Examples.nat_ty.
+
+Lemma residualisation_length_map_smoke :
+  exists t1 t2, residual_len_map = Some t1 /\ residual_len = Some t2.
 Proof.
-  (**
-    This is the *desired* deforestation/fusion outcome, but it does not hold yet.
+  unfold residual_len_map, residual_len.
+  (* This is just a sanity check that residualisation runs. *)
+  do 2 eexists.
+  split.
+  - vm_compute. reflexivity.
+  - vm_compute. reflexivity.
+Qed.
 
-    With only proper driving (β/iota/fix) and case commuting, `supercompile_tm`
-    will keep unfolding recursive calls like `length xs` even when `xs` is a
-    variable, producing an ever-growing nest of `case xs of ...`.
-
-    A real supercompiler must add memoization/folding (and usually
-    generalization/whistle control) so that repeated configurations are folded
-    back into a recursive binder rather than endlessly unfolded.
-  *)
-Admitted.
+Lemma residualisation_length_map_exact :
+  residual_len_map = residual_len.
+Proof.
+  vm_compute.
+  reflexivity.
+Qed.

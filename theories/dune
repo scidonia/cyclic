@@ -8,6 +8,7 @@
     Syntax.Examples
     Syntax.ListNat
     Judgement.Typing
+    Judgement.SequentTyping
     Semantics.Cbn
  
     Graph.FiniteDigraph
@@ -23,18 +24,29 @@
     Transform.ReadOff
     Transform.CyclicVertexSpec
     Transform.ReadOffPreproof
+    Transform.ReadOffSequentPreproof
+    Transform.ReadOffDrivingPreproof
+    Transform.ProofGraphRewrite
+    Transform.CyclicTraceCondition
     Transform.Extract
     Transform.CyclicRules
+    Transform.CyclicSequentRules
     Transform.BetaReduce
     Transform.Supercompile
+    Transform.SupercompilationCorrespondence
+    Transform.SupercompileTrace
      Transform.CaseCase
-     Transform.CaseCaseProof
+     Transform.SequentDrivingRules
+     Transform.SequentObservationRules
+      Transform.CaseCaseProof
+
      Transform.ScrutineeProp
      Transform.ReadOffExtractCorrectness
     Equiv.Bisimulation
     Equiv.CIU
     Equiv.CIUJudgement
     Equiv.CIUNatObs
-    Equiv.CIUChecklistLengthMap))
+    Equiv.CIUChecklistLengthMap
+    Equiv.SupercompileChecklistIndexPipeline))
 
 

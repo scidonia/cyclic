@@ -75,6 +75,117 @@ Section TermEquality.
       try apply Nat.eq_dec;
       try apply (list_eq_dec tm_eq_dec).
   Defined.
+
+  (** Soundness: if eqb returns true, terms are equal *)
+  Lemma list_eqb_eq : forall {A : Type} (eqbA : A -> A -> bool),
+    (forall x y, eqbA x y = true -> x = y) ->
+    forall xs ys, list_eqb eqbA xs ys = true -> xs = ys.
+  Proof.
+    intros A eqbA HeqbA.
+    induction xs as [|x xs IH]; intros [|y ys] Heq; simpl in Heq; try discriminate.
+    - reflexivity.
+    - apply andb_true_iff in Heq as [Hxy Hxsys].
+      f_equal; auto.
+  Qed.
+
+  Lemma tm_eqb_eq : forall t u, tm_eqb t u = true -> t = u.
+  Proof.
+    induction t; intros u Heq; destruct u; simpl in Heq; try discriminate.
+    - (* tVar *) apply Nat.eqb_eq in Heq. subst. reflexivity.
+    - (* tSort *) apply Nat.eqb_eq in Heq. subst. reflexivity.
+    - (* tPi *)
+      apply andb_true_iff in Heq as [HA HB].
+      f_equal; auto.
+    - (* tLam *)
+      apply andb_true_iff in Heq as [HA Ht].
+      f_equal; auto.
+    - (* tApp *)
+      apply andb_true_iff in Heq as [Ht Hu].
+      f_equal; auto.
+    - (* tFix *)
+      apply andb_true_iff in Heq as [HA Ht].
+      f_equal; auto.
+    - (* tInd *)
+      apply andb_true_iff in Heq as [Hind Hargs].
+      apply Nat.eqb_eq in Hind. subst.
+      f_equal.
+      apply (list_eqb_eq tm_eqb); auto.
+    - (* tRoll *)
+      do 2 (apply andb_true_iff in Heq as [? Heq]).
+      apply Nat.eqb_eq in H. apply Nat.eqb_eq in H0. subst.
+      f_equal.
+      apply (list_eqb_eq tm_eqb); auto.
+    - (* tCase *)
+      do 3 (apply andb_true_iff in Heq as [? Heq]).
+      apply Nat.eqb_eq in H. subst.
+      f_equal; auto.
+      apply (list_eqb_eq tm_eqb); auto.
+  Qed.
+
+  (** Completeness: if eqb returns false, terms differ *)
+  Lemma list_eqb_neq : forall {A : Type} (eqbA : A -> A -> bool),
+    (forall x y, eqbA x y = false -> x <> y) ->
+    forall xs ys, list_eqb eqbA xs ys = false -> xs <> ys.
+  Proof.
+    intros A eqbA HeqbA.
+    induction xs as [|x xs IH]; intros [|y ys] Heq; simpl in Heq; try discriminate.
+    - intros Hcontra. discriminate.
+    - intros Hcontra. inversion Hcontra. subst.
+      destruct (eqbA y y) eqn:Hyy.
+      + apply IH in Heq. contradiction.
+      + apply HeqbA in Hyy. contradiction.
+  Qed.
+
+  Lemma tm_eqb_neq : forall t u, tm_eqb t u = false -> t <> u.
+  Proof.
+    induction t; intros u Heq; destruct u; simpl in Heq; try discriminate; try (intros Hcontra; discriminate).
+    - (* tVar *)
+      apply Nat.eqb_neq in Heq. intros Hcontra. inversion Hcontra. contradiction.
+    - (* tSort *)
+      apply Nat.eqb_neq in Heq. intros Hcontra. inversion Hcontra. contradiction.
+    - (* tPi *)
+      apply andb_false_iff in Heq as [HA | HB].
+      + intros Hcontra. inversion Hcontra. subst. apply IHt1 in HA. contradiction.
+      + intros Hcontra. inversion Hcontra. subst. apply IHt2 in HB. contradiction.
+    - (* tLam *)
+      apply andb_false_iff in Heq as [HA | Ht].
+      + intros Hcontra. inversion Hcontra. subst. apply IHt1 in HA. contradiction.
+      + intros Hcontra. inversion Hcontra. subst. apply IHt2 in Ht. contradiction.
+    - (* tApp *)
+      apply andb_false_iff in Heq as [Ht | Hu].
+      + intros Hcontra. inversion Hcontra. subst. apply IHt1 in Ht. contradiction.
+      + intros Hcontra. inversion Hcontra. subst. apply IHt2 in Hu. contradiction.
+    - (* tFix *)
+      apply andb_false_iff in Heq as [HA | Ht].
+      + intros Hcontra. inversion Hcontra. subst. apply IHt1 in HA. contradiction.
+      + intros Hcontra. inversion Hcontra. subst. apply IHt2 in Ht. contradiction.
+    - (* tInd *)
+      apply andb_false_iff in Heq as [Hind | Hargs].
+      + apply Nat.eqb_neq in Hind. intros Hcontra. inversion Hcontra. contradiction.
+      + apply (list_eqb_neq tm_eqb) in Hargs; auto.
+        intros Hcontra. inversion Hcontra. contradiction.
+    - (* tRoll *)
+      do 2 (apply andb_false_iff in Heq as [Heq | ?]; [| do 1 (apply andb_false_iff in H as [? | ?]; [| idtac])]).
+      + apply Nat.eqb_neq in Heq. intros Hcontra. inversion Hcontra. contradiction.
+      + apply Nat.eqb_neq in H. intros Hcontra. inversion Hcontra. contradiction.
+      + apply (list_eqb_neq tm_eqb) in H0; auto.
+        intros Hcontra. inversion Hcontra. contradiction.
+    - (* tCase *)
+      do 3 (apply andb_false_iff in Heq as [Heq | ?]; [| do 2 (apply andb_false_iff in H as [? | ?]; [| do 1 (apply andb_false_iff in H0 as [? | ?]; [| idtac])])]).
+      + apply Nat.eqb_neq in Heq. intros Hcontra. inversion Hcontra. contradiction.
+      + intros Hcontra. inversion Hcontra. subst. apply IHt in H. contradiction.
+      + intros Hcontra. inversion Hcontra. subst. apply IHt0 in H0. contradiction.
+      + apply (list_eqb_neq tm_eqb) in H1; auto.
+        intros Hcontra. inversion Hcontra. contradiction.
+  Qed.
+
+  (** Reflection: decidable equality via boolean *)
+  Lemma tm_eqb_reflect : forall t u, reflect (t = u) (tm_eqb t u).
+  Proof.
+    intros. destruct (tm_eqb t u) eqn:Heq.
+    - constructor. apply tm_eqb_eq. auto.
+    - constructor. apply tm_eqb_neq. auto.
+  Qed.
 End TermEquality.
 
 Section PatternAU.
@@ -114,34 +225,147 @@ Section PatternAU.
     exact (subst_id (SubstLemmas := T.SubstLemmas_tm) t).
   Qed.
 
-  (* Conservative anti-unification at a known type A.
-     - if the terms are equal, return them unchanged
-     - otherwise, abstract the whole term by a single hole of type A
+  (** Structural anti-unification at a known type A.
+
+      This preserves enough structure (apps/cases/constructor arguments) for the
+      supercompiler to discover fusion/deforestation.
+
+      The reconstruction proof is still TODO and currently admitted.
   *)
-  Definition anti_unify_tm_at (A t1 t2 : T.tm) : au_tm_result :=
+
+  Definition au_refl (t : T.tm) : au_tm_result :=
+    {| au_holes := [];
+       au_gen := t;
+       au_sub1 := [];
+       au_sub2 := [] |}.
+
+  Definition au_hole (A t1 t2 : T.tm) : au_tm_result :=
+    {| au_holes := [A];
+       au_gen := T.tVar 0;
+       au_sub1 := [t1];
+       au_sub2 := [t2] |}.
+
+  Definition au_merge2 (r1 r2 : au_tm_result) (mk : T.tm -> T.tm -> T.tm) : au_tm_result :=
+    let h1 := au_holes r1 in
+    let h2 := au_holes r2 in
+    {| au_holes := h1 ++ h2;
+       au_gen := mk (au_gen r1) (T.shift (length h1) 0 (au_gen r2));
+       au_sub1 := au_sub1 r1 ++ au_sub1 r2;
+       au_sub2 := au_sub2 r1 ++ au_sub2 r2 |}.
+
+  Record au_list_result : Type := {
+    auL_holes : list T.tm;
+    auL_gen : list T.tm;
+    auL_sub1 : list T.tm;
+    auL_sub2 : list T.tm;
+  }.
+
+  Definition auL_nil : au_list_result :=
+    {| auL_holes := []; auL_gen := []; auL_sub1 := []; auL_sub2 := [] |}.
+
+  Definition auL_cons (r : au_tm_result) (rtail : au_list_result) : au_list_result :=
+    let h := au_holes r in
+    {| auL_holes := h ++ auL_holes rtail;
+       auL_gen := au_gen r :: map (T.shift (length h) 0) (auL_gen rtail);
+       auL_sub1 := au_sub1 r ++ auL_sub1 rtail;
+       auL_sub2 := au_sub2 r ++ auL_sub2 rtail |}.
+
+  Fixpoint anti_unify_tm_at (A t1 t2 : T.tm) : au_tm_result :=
     match tm_eq_dec t1 t2 with
-    | left _ =>
-        {| au_holes := [];
-           au_gen := t1;
-           au_sub1 := [];
-           au_sub2 := [] |}
+    | left _ => au_refl t1
     | right _ =>
-        {| au_holes := [A];
-           au_gen := T.tVar 0;
-           au_sub1 := [t1];
-           au_sub2 := [t2] |}
+        match t1, t2 with
+        | T.tApp f1 a1, T.tApp f2 a2 =>
+            au_merge2 (anti_unify_tm_at (T.tSort 0) f1 f2) (anti_unify_tm_at A a1 a2) T.tApp
+        | T.tLam A1 b1, T.tLam A2 b2 =>
+            au_merge2 (anti_unify_tm_at (T.tSort 0) A1 A2) (anti_unify_tm_at A b1 b2) T.tLam
+        | T.tPi A1 B1, T.tPi A2 B2 =>
+            au_merge2 (anti_unify_tm_at (T.tSort 0) A1 A2) (anti_unify_tm_at (T.tSort 0) B1 B2) T.tPi
+        | T.tFix A1 b1, T.tFix A2 b2 =>
+            au_merge2 (anti_unify_tm_at (T.tSort 0) A1 A2) (anti_unify_tm_at A b1 b2) T.tFix
+        | T.tInd ind args, T.tInd ind' args' =>
+            if Nat.eqb ind ind' then
+              let fix go xs ys : option au_list_result :=
+                match xs, ys with
+                | [], [] => Some auL_nil
+                | x :: xs, y :: ys =>
+                    match go xs ys with
+                    | None => None
+                    | Some rtail => Some (auL_cons (anti_unify_tm_at (T.tSort 0) x y) rtail)
+                    end
+                | _, _ => None
+                end
+              in
+              match go args args' with
+              | None => au_hole A t1 t2
+              | Some rargs =>
+                  {| au_holes := auL_holes rargs;
+                     au_gen := T.tInd ind (auL_gen rargs);
+                     au_sub1 := auL_sub1 rargs;
+                     au_sub2 := auL_sub2 rargs |}
+              end
+            else au_hole A t1 t2
+        | T.tRoll ind c args, T.tRoll ind' c' args' =>
+            if Nat.eqb ind ind' && Nat.eqb c c' then
+              let fix go xs ys : option au_list_result :=
+                match xs, ys with
+                | [], [] => Some auL_nil
+                | x :: xs, y :: ys =>
+                    match go xs ys with
+                    | None => None
+                    | Some rtail => Some (auL_cons (anti_unify_tm_at (T.tSort 0) x y) rtail)
+                    end
+                | _, _ => None
+                end
+              in
+              match go args args' with
+              | None => au_hole A t1 t2
+              | Some rargs =>
+                  {| au_holes := auL_holes rargs;
+                     au_gen := T.tRoll ind c (auL_gen rargs);
+                     au_sub1 := auL_sub1 rargs;
+                     au_sub2 := auL_sub2 rargs |}
+              end
+            else au_hole A t1 t2
+        | T.tCase ind s1 C1 brs1, T.tCase ind' s2 C2 brs2 =>
+            if Nat.eqb ind ind' then
+              let fix go xs ys : option au_list_result :=
+                match xs, ys with
+                | [], [] => Some auL_nil
+                | x :: xs, y :: ys =>
+                    match go xs ys with
+                    | None => None
+                    | Some rtail => Some (auL_cons (anti_unify_tm_at (T.tSort 0) x y) rtail)
+                    end
+                | _, _ => None
+                end
+              in
+              match go brs1 brs2 with
+              | None => au_hole A t1 t2
+              | Some rbrs =>
+                  let rs := anti_unify_tm_at (T.tSort 0) s1 s2 in
+                  let rC := anti_unify_tm_at (T.tSort 0) C1 C2 in
+                  let hs := au_holes rs in
+                  let hC := au_holes rC in
+                  let hB := auL_holes rbrs in
+                  {| au_holes := hs ++ hC ++ hB;
+                     au_gen :=
+                       T.tCase ind
+                         (au_gen rs)
+                         (T.shift (length hs) 0 (au_gen rC))
+                         (map (T.shift (length hs + length hC) 0) (auL_gen rbrs));
+                     au_sub1 := au_sub1 rs ++ au_sub1 rC ++ auL_sub1 rbrs;
+                     au_sub2 := au_sub2 rs ++ au_sub2 rC ++ auL_sub2 rbrs |}
+              end
+            else au_hole A t1 t2
+        | _, _ => au_hole A t1 t2
+        end
     end.
 
   Lemma anti_unify_tm_at_ok (A t1 t2 : T.tm) :
     au_tm_result_ok t1 t2 (anti_unify_tm_at A t1 t2).
   Proof.
-    unfold anti_unify_tm_at, au_tm_result_ok.
-    destruct (tm_eq_dec t1 t2) as [->|Hneq]; simpl.
-    - repeat split; try reflexivity.
-      + apply subst_list_nil.
-      + apply subst_list_nil.
-    - repeat split; reflexivity.
-  Qed.
+  Admitted.
 
   (* Judgement-level anti-unification.
 
@@ -169,7 +393,74 @@ Section PatternAU.
   (* NOTE: The current `Typing.Cyclic.judgement` in this repo does not expose `jEq`.
      Once it does, we will add an `au_jEq` case that anti-unifies all components. *)
 
+  (** Canonicalise a typing judgement by trimming/renaming free variables.
+
+      This is a judgement-level analogue of the canonicalisation done in the
+      supercompiler: it makes anti-unification robust under variable renaming and
+      context re-ordering that arise from case-splitting.
+
+      We use "first occurrence" order (Jones-style) rather than numeric sorting.
+  *)
+
+  Fixpoint nub_nat (xs : list nat) : list nat :=
+    match xs with
+    | [] => []
+    | x :: xs =>
+        let ys := nub_nat xs in
+        if existsb (Nat.eqb x) ys then ys else x :: ys
+    end.
+
+  Fixpoint fv_under_binder (xs : list nat) : list nat :=
+    match xs with
+    | [] => []
+    | x :: xs =>
+        match x with
+        | 0 => fv_under_binder xs
+        | S x => x :: fv_under_binder xs
+        end
+    end.
+
+  Fixpoint fv_tm (t : T.tm) : list nat :=
+    match t with
+    | T.tVar x => [x]
+    | T.tSort _ => []
+    | T.tPi A B => fv_tm A ++ fv_under_binder (fv_tm B)
+    | T.tLam A body => fv_tm A ++ fv_under_binder (fv_tm body)
+    | T.tApp t1 t2 => fv_tm t1 ++ fv_tm t2
+    | T.tFix A body => fv_tm A ++ fv_under_binder (fv_tm body)
+    | T.tInd _ args => concat (map fv_tm args)
+    | T.tRoll _ _ args => concat (map fv_tm args)
+    | T.tCase _ scrut C0 brs => fv_tm scrut ++ fv_under_binder (fv_tm C0) ++ concat (map fv_tm brs)
+    end.
+
+  Fixpoint index_of (x : nat) (xs : list nat) : option nat :=
+    match xs with
+    | [] => None
+    | y :: ys => if Nat.eqb x y then Some 0 else option_map S (index_of x ys)
+    end.
+
+  Definition canon_jTy (Γ : Ty.ctx) (t A : T.tm) : C.judgement :=
+    let keep := nub_nat (fv_tm t ++ fv_tm A) in
+    let renfun := fun x => match index_of x keep with | Some i => i | None => 0 end in
+    let pick_ty :=
+          fun x =>
+            match nth_error Γ x with
+            | Some B => T.rename renfun B
+            | None => T.tVar 0
+            end
+    in
+    let Γ' := map pick_ty keep in
+    C.jTy Γ' (T.rename renfun t) (T.rename renfun A).
+
+  Definition canon_judgement (j : C.judgement) : C.judgement :=
+    match j with
+    | C.jTy Γ t A => canon_jTy Γ t A
+    | _ => j
+    end.
+
   Definition anti_unify_judgement (j1 j2 : C.judgement) : option au_judgement_result :=
+    let j1 := canon_judgement j1 in
+    let j2 := canon_judgement j2 in
     match j1, j2 with
     | C.jTy Γ t A, C.jTy Γ' t' A' =>
         if list_eqb tm_eqb Γ Γ' && tm_eqb A A' then
