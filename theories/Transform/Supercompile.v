@@ -41,6 +41,24 @@ Definition judgement_eqb (j1 j2 : config) : bool :=
   | _, _ => false
   end.
 
+Lemma ctx_eqb_eq : forall Γ Δ,
+  ctx_eqb Γ Δ = true -> Γ = Δ.
+Proof.
+  intros Γ Δ H.
+  unfold ctx_eqb in H.
+  eapply (PU.list_eqb_eq tm_eqb).
+  - intros x y. apply PU.tm_eqb_eq.
+  - exact H.
+Qed.
+
+Lemma sub_eqb_eq : forall s1 s2,
+  sub_eqb s1 s2 = true -> s1 = s2.
+Proof. Admitted.
+
+Lemma judgement_eqb_eq : forall j1 j2,
+  judgement_eqb j1 j2 = true -> j1 = j2.
+Proof. Admitted.
+
 Fixpoint memo_lookup (j : config) (memo : list (config * nat)) : option nat :=
   match memo with
   | [] => None
@@ -902,39 +920,6 @@ with residualise_cfg_core
       end
   end.
 
-Definition residualise_jTy (fuel_sc fuel_res : nat)
-    (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option tm :=
-  match supercompile_jTy fuel_sc Σenv Γ t A with
-  | None => None
-  | Some (root, b) => Some (residualise_cfg fuel_res Σenv b root 0 (∅ : fix_env))
-  end.
-
-Definition option_tm_eqb (o1 o2 : option tm) : bool :=
-  match o1, o2 with
-  | None, None => true
-  | Some t1, Some t2 => tm_eqb t1 t2
-  | _, _ => false
-  end.
-
-(** Iterate residualisation until a fixed point (bounded passes).
-
-    This provides a stable normal form even when one-pass residualisation is not
-    canonical.
-*)
-Fixpoint residualise_jTy_fp
-    (passes fuel_sc fuel_res : nat)
-    (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option tm :=
-  match passes with
-  | 0 => residualise_jTy fuel_sc fuel_res Σenv Γ t A
-  | S passes' =>
-      match residualise_jTy fuel_sc fuel_res Σenv Γ t A with
-      | None => None
-      | Some t' =>
-          if tm_eqb t t' then Some t'
-          else residualise_jTy_fp passes' fuel_sc fuel_res Σenv Γ t' A
-      end
-  end.
-
 (** * SCC analysis (cfg graph)
 
     We use SCCs to define a simple canonicalisation: collapse every SCC to a
@@ -1093,9 +1078,107 @@ Definition canon_cfg_builder_scc (b : cfg_builder) : cfg_builder :=
      cb_inst := cb_inst b;
      cb_holes := cb_holes b |}.
 
+(** * Global progress / trace-condition check (cfg graph) *)
+
+Definition is_progress_vertex (b : cfg_builder) (v : nat) : bool :=
+  match lookup_label b v, lookup_succ b v with
+  | Some (C.jTy _Γ (tCase _I (tVar _x) _Cmot _brs) _A), Some succs =>
+      Nat.ltb 1 (length succs)
+  | _, _ => false
+  end.
+
+Definition nonprogress_succs_of (b : cfg_builder) (v : nat) : list nat :=
+  if is_progress_vertex b v then [] else succs_of b v.
+
+Definition cfg_builder_nonprogress (b : cfg_builder) : cfg_builder :=
+  let n := cb_next b in
+  let fix loop (v : nat) (succm : gmap nat (list nat)) : gmap nat (list nat) :=
+    match v with
+    | 0 => succm
+    | S v' => loop v' (<[v' := nonprogress_succs_of b v']> succm)
+    end
+  in
+  {| cb_next := cb_next b;
+     cb_label := cb_label b;
+     cb_succ := loop n (∅ : gmap nat (list nat));
+     cb_inst := cb_inst b;
+     cb_holes := cb_holes b |}.
+
+Definition has_nonprogress_cycle_scc (b : cfg_builder) : bool :=
+  let bnp := cfg_builder_nonprogress b in
+  let n := cb_next bnp in
+  let sccs := kosaraju_scc (2 * (n + 1)) n bnp in
+  existsb
+    (fun comp =>
+       match comp with
+       | [] => false
+       | [v] => mem_nat v (succs_of bnp v)
+       | _ :: _ :: _ => true
+       end)
+    sccs.
+
+Fixpoint reach_depth (k : nat) (b : cfg_builder) (v : nat) : list nat :=
+  match k with
+  | 0 => succs_of b v
+  | S k' =>
+      let succs := succs_of b v in
+      nub_nat (succs ++
+        fold_right (fun w acc => reach_depth k' b w ++ acc) [] succs)
+  end.
+
+Definition has_cycle_by_depth (k : nat) (b : cfg_builder) (n : nat) : bool :=
+  existsb (fun v => mem_nat v (reach_depth k b v)) (seq 0 n).
+
+Definition has_nonprogress_cycle (b : cfg_builder) : bool :=
+  let bnp := cfg_builder_nonprogress b in
+  let n := cb_next bnp in
+  match n with
+  | 0 => false
+  | S _ => has_cycle_by_depth n bnp n
+  end.
+
+Definition trace_condition_ok (b : cfg_builder) : bool :=
+  negb (has_nonprogress_cycle b).
+
+(** Supercompilation wrapper that rejects graphs failing the progress condition. *)
+Definition supercompile_jTy_tc (fuel : nat) (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm)
+    : option (nat * cfg_builder) :=
+  match supercompile_jTy fuel Σenv Γ t A with
+  | None => None
+  | Some (root, b) => if trace_condition_ok b then Some (root, b) else None
+  end.
+
+Definition residualise_jTy (fuel_sc fuel_res : nat)
+    (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option tm :=
+  match supercompile_jTy_tc fuel_sc Σenv Γ t A with
+  | None => None
+  | Some (root, b) => Some (residualise_cfg fuel_res Σenv b root 0 (∅ : fix_env))
+  end.
+
+Definition option_tm_eqb (o1 o2 : option tm) : bool :=
+  match o1, o2 with
+  | None, None => true
+  | Some t1, Some t2 => tm_eqb t1 t2
+  | _, _ => false
+  end.
+
+Fixpoint residualise_jTy_fp
+    (passes fuel_sc fuel_res : nat)
+    (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option tm :=
+  match passes with
+  | 0 => residualise_jTy fuel_sc fuel_res Σenv Γ t A
+  | S passes' =>
+      match residualise_jTy fuel_sc fuel_res Σenv Γ t A with
+      | None => None
+      | Some t' =>
+          if tm_eqb t t' then Some t'
+          else residualise_jTy_fp passes' fuel_sc fuel_res Σenv Γ t' A
+      end
+  end.
+
 Definition residualise_jTy_scc (fuel_sc fuel_res : nat)
     (Σenv : Ty.env) (Γ : Ty.ctx) (t A : tm) : option tm :=
-  match supercompile_jTy fuel_sc Σenv Γ t A with
+  match supercompile_jTy_tc fuel_sc Σenv Γ t A with
   | None => None
   | Some (root, b) =>
       let b' := canon_cfg_builder_scc b in

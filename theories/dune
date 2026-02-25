@@ -26,16 +26,21 @@
     Transform.ReadOffPreproof
     Transform.ReadOffSequentPreproof
     Transform.ReadOffDrivingPreproof
-    Transform.ProofGraphRewrite
-    Transform.CyclicTraceCondition
-    Transform.Extract
+     Transform.ProofGraphRewrite
+      Transform.CyclicTraceCondition
+      Transform.CyclicTraceConditionObsTree
+      Transform.CyclicTraceConditionBudget
+      Transform.Extract
     Transform.CyclicRules
     Transform.CyclicSequentRules
     Transform.BetaReduce
-    Transform.Supercompile
-    Transform.SupercompilationCorrespondence
-    Transform.SupercompileTrace
-     Transform.CaseCase
+     Transform.Supercompile
+     Transform.SupercompileTest
+     Transform.SupercompilationCorrespondence
+     Transform.SupercompileTrace
+     Transform.SupercompileTraceCheckSound
+     Transform.SupercompileSCCCorrectness
+      Transform.CaseCase
      Transform.SequentDrivingRules
      Transform.SequentObservationRules
       Transform.CaseCaseProof

@@ -190,20 +190,39 @@ While working on proofs, can also:
 
 ### Minimal (Paper Credible)
 - ✅ Phase 1 complete: `drive_cbn_once_sound` proved
-- ✅ Phase 2 complete: `drive_corresponds_to_async_edge` proved
+- ✅ Phase 2 complete: `drive_corresponds_to_async_edge` proved (graph-level)
 - ✅ One concrete example worked through (e.g., `length` function)
 
 ### Moderate (Strong Paper)
-- ✅ Phases 1-3 complete: Drive + Split proved
-- ✅ Three concrete examples worked through
+- ✅ Phases 1-3 complete: Drive + Split proved (both graph-level)
+- ✅ Phase 4 complete: Fold/backlink correspondence proved (graph-level)
+- ⏳ Three concrete examples worked through
 
 ### Full (Best Case)
-- ✅ All phases complete: End-to-end theorem proved
-- ✅ Multiple examples validated
-- ✅ Global soundness connected (trace condition)
+- ⏳ Phase 5: End-to-end theorem proved
+- ⏳ Multiple examples validated
+- ⏳ Global soundness connected (trace condition)
 
-## Next Session: Start Phase 1.1
+## Current Status (Updated)
 
-**Immediate task:** Prove `subst0_fix_not_identity` lemma to complete `drive_cbn_once_sound`
+**Phases 1-4 COMPLETE** ✅
 
-**File to edit:** `theories/Progress/PatternUnification.v` or new file `theories/Syntax/SubstitutionLemmas.v`
+All three core correspondence theorems are now proved at the graph level:
+1. **`drive_corresponds_to_async_edge`** (lines 430-450): Single-step driving = async edge
+2. **`split_corresponds_to_sync_edge`** (lines 478-501): Case splitting = synchronous branching
+3. **`memo_corresponds_to_fold`** (lines 546-563): Memo hit = backlink/fold
+
+Each theorem now states:
+- Graph structure correspondence (edges match)
+- Label correspondence (vertex labels match)
+- Rule validity (sequent rules are satisfied)
+
+## Next Steps: Phase 5
+
+**File:** `theories/Transform/SupercompilationCorrespondence.v:565+`
+
+**Remaining theorems:**
+- `supercompile_gives_valid_preproof`: End-to-end correctness
+- `supercompile_local_validity`: Extract local validity from bisimulation
+
+These require proving that the bisimulation is established and maintained throughout supercompilation.

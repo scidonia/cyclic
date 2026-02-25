@@ -5,7 +5,7 @@ From Autosubst Require Import Autosubst.
 From Cyclic.Syntax Require Import StrictPos Term.
 From Cyclic.Judgement Require Import Typing.
 From Cyclic.Semantics Require Import Cbn.
-From Cyclic.Transform Require Import CaseCase.
+From Cyclic.Transform Require Import CaseCase Supercompile.
 From Cyclic.Progress Require Import PatternUnification.
 
 Import ListNotations.
@@ -16,6 +16,7 @@ Set Default Proof Using "Type".
 Module Ty := Typing.Typing.
 Module C := Typing.Typing.Cyclic.
 Module CC := CaseCase.
+Module SC := Supercompile.
 Module PU := PatternUnification.
 Module SP := StrictPos.
 
@@ -56,41 +57,10 @@ Definition extend_ctx (tys : list tm) (Γ : Ty.ctx) : Ty.ctx :=
 
 (** Case-splitting / information propagation (neutral scrutinee).
 
-    If the goal term is a case on a variable scrutinee, we split into one
-    successor per constructor, introducing fresh variables for constructor
-    arguments and substituting the scrutinee variable with a corresponding
-    [tRoll].
-
-    Note: we do not force an iota-step here; the successor goal exposes a
-    constructor scrutinee, so a subsequent [dr_cbn_once] step performs iota.
+    For now, we re-use the supercompiler's implementation so that the sequent
+    rule matches the operational split exactly.
 *)
-Definition split_case_var_cfgs
-    (Σenv : Ty.env) (Γ : Ty.ctx) (ind : nat) (x : nat)
-    (Cmot : tm) (brs : list tm) (A : tm) : list config :=
-  match SP.lookup_ind Σenv ind with
-  | None => []
-  | Some ΣI =>
-      let nctors := length (SP.ind_ctors ΣI) in
-      let cs := seq 0 nctors in
-      concat
-        (map
-           (fun c =>
-              match CC.ctor_arg_tys Σenv ind c with
-              | None => []
-              | Some tys =>
-                  let n := length tys in
-                  let Γ' := extend_ctx tys Γ in
-                  let args := fresh_args n in
-                  let scrut := tRoll ind c args in
-                  let σ := subst_one (x + n) scrut in
-                  let t0 := shift n 0 (tCase ind (tVar x) Cmot brs) in
-                  let A0 := shift n 0 A in
-                  let t1 := t0.[σ] in
-                  let A1 := A0.[σ] in
-                  [C.jTy Γ' t1 A1]
-              end)
-           cs)
-  end.
+Definition split_case_var_cfgs := SC.split_case_var.
 
 (** One-step CBN driving, presented relationally.
 
@@ -129,6 +99,17 @@ Inductive drive_cbn_onceR : tm -> tm -> Prop :=
     ind = ind' ->
     branch brs c = Some br ->
     drive_cbn_onceR (tCase ind scrut Cmot brs) (Cbn.apps br args)
+
+| dc_case_roll_ind_mismatch ind ind' c args scrut Cmot brs :
+    scrut = tRoll ind' c args ->
+    ind <> ind' ->
+    drive_cbn_onceR (tCase ind scrut Cmot brs) (tCase ind scrut Cmot brs)
+
+| dc_case_roll_no_branch ind ind' c args scrut Cmot brs :
+    scrut = tRoll ind' c args ->
+    ind = ind' ->
+    branch brs c = None ->
+    drive_cbn_onceR (tCase ind scrut Cmot brs) (tCase ind scrut Cmot brs)
 
 | dc_case_scrut_step ind scrut Cmot brs scrut' :
     (forall ind' c args, scrut <> tRoll ind' c args) ->
@@ -204,6 +185,10 @@ Proof.
     apply steps_step.
     econstructor.
     exact H1.
+  - (* case roll ind mismatch *)
+    apply rt_refl.
+  - (* case roll no branch *)
+    apply rt_refl.
   - (* case scrut step *)
     apply steps_case_scrut_congr.
     exact IHdrive_cbn_onceR.

@@ -7,7 +7,7 @@ From Cyclic.Graph Require Import FiniteDigraph.
 From Cyclic.Preproof Require Import Preproof.
 From Cyclic.Progress Require Import Ranking.
 From Cyclic.CyclicProof Require Import Ranked.
-From Cyclic.Transform Require Import ReadOff ReadOffDrivingPreproof SequentDrivingRules SequentObservationRules.
+From Cyclic.Transform Require Import ReadOff ReadOffDrivingPreproof SequentDrivingRules SequentObservationRules CyclicTraceConditionObsTree.
 
 Import ListNotations.
 Import Term.Syntax.
@@ -21,6 +21,7 @@ Module SOR := SequentObservationRules.
 Module Ty := Typing.Typing.
 Module C := Typing.Typing.Cyclic.
 Module SP := StrictPos.
+Module CTO := CyclicTraceConditionObsTree.
 
 (** Cyclic trace condition for async-explicit proof graphs (Task 3)
 
@@ -28,25 +29,25 @@ Module SP := StrictPos.
     where:
     - **progress events = case-split on neutral scrutinee**
     - async driving steps are explicit in the graph but don't count as progress
-    - the trace tracks which inductive variable we're measuring descent on
 
-    Architecture:
-    1. Trace state τ = option (I : nat × x : nat) tracks the scrutinee being split
-    2. Async edges keep τ unchanged
-    3. Split edges update τ to track a recursive argument (structural descent)
-    4. The well-founded order ltM on τ is "recursive subterm" (from strict positivity)
-    5. Progress edges are exactly split edges
+    In this version, we prepare an observation-tree based ranking domain:
+
+    - trace state τ = option [obs_tree]
+    - progress steps select a recursive observation subtree
+    - strict decrease is justified via [obs_size]
+
+    This replaces the previous axiomatised "subterm" well-foundedness.
 *)
 
 Section TraceCondition.
   Import RDP.Packaging.
 
-  (** Trace state: which inductive variable are we tracking?
-  
-      - None = no active trace (initial state, or before first split)
-      - Some (I, x) = tracking variable x (de Bruijn index) of inductive type I
+  (** Trace state: a (possibly absent) observation tree.
+
+      Intuition: progress corresponds to descending into one of the recursive
+      sub-observations of a constructor observation.
   *)
-  Definition trace_state : Type := option (nat * nat).
+  Definition trace_state : Type := option SOR.obs_tree.
 
   (** Trace transition: how does τ update along an edge?
   
@@ -67,38 +68,22 @@ Section TraceCondition.
         w ∈ succ_of b v) ->
       trace_step Σenv fuel b v w τ τ
   
-  (** Split edge: update τ to track a recursive argument
-  
-      When we split on scrutinee x : I using constructor c,
-      we pick one of the recursive arguments (those of type I)
-      and update τ to track it.
+  (** Split edge: descend into a recursive observation subtree.
+
+      This is the shape needed for an [obs_tree]-based ranking: a progress step
+      picks one of the recursive sub-observations, which is strictly smaller.
+
+      (How this relates to the supercompiler/proof graph labels is wired up in
+      later correspondence lemmas; here we only define the trace transition.)
   *)
-  | ts_split v w τ I x Γ Cmot brs A c :
+  | ts_split v w c recs o Γ I x Cmot brs A :
       (* v is labeled with a case-split configuration *)
       pp_label fuel b v = jDrive (C.jTy Γ (tCase I (tVar x) Cmot brs) A) ->
-      (* w is one of the split successors (for constructor c) *)
+      (* w is one of the split successors *)
       w ∈ succ_of b v ->
-      (* Look up constructor signature *)
-      (exists ΣI ctor tys n rec_positions,
-        SP.lookup_ind Σenv I = Some ΣI /\
-        SP.lookup_ctor ΣI c = Some ctor /\
-        tys = SP.ctor_param_tys ctor ++ repeat (tInd I []) (SP.ctor_rec_arity ctor) /\
-        n = length tys /\
-        (* rec_positions = indices i where tys[i] = tInd I [] *)
-        rec_positions = filter (fun i => 
-          match nth_error tys i with
-          | Some (tInd I' []) => Nat.eqb I I'
-          | _ => false
-          end) (seq 0 n) /\
-        (* Pick one recursive position (non-deterministically for now) *)
-        (exists i y,
-          i ∈ rec_positions /\
-          (* Compute the de Bruijn index y of that argument in extended context *)
-          (* extend_ctx does rev tys ++ Γ, so arg i becomes index (n-1-i) *)
-          y = n - 1 - i /\
-          (* Update trace to track this recursive argument *)
-          τ = Some (I, y))) ->
-      trace_step Σenv fuel b v w (Some (I, x)) τ
+      (* the trace carries an observation tree whose root matches constructor c *)
+      In o recs ->
+      trace_step Σenv fuel b v w (Some (SOR.obsCtor c recs)) (Some o)
   
   (** Fold/backlink edge: no progress by itself
       (cycles without splits are rejected by the global condition)
@@ -117,35 +102,30 @@ Section TraceCondition.
       w ∈ succ_of b v /\
       trace_step Σenv fuel b v w τ τ'.
 
-  (** Well-founded order on trace states: recursive subterm relation
-  
-      τ' < τ iff τ' arises from τ by taking a split step (constructor descent).
-      
-      This is well-founded because:
-      - splitting a scrutinee of inductive type I
-      - gives arguments that are structurally smaller (by strict positivity)
-      - the recursive arguments are immediate subterms
-  *)
-  Inductive ltM_trace : trace_state -> trace_state -> Prop :=
-  | ltM_split Σenv fuel b v w I x τ' :
-      trace_step Σenv fuel b v w (Some (I, x)) τ' ->
-      (exists Γ Cmot brs A c,
-        pp_label fuel b v = jDrive (C.jTy Γ (tCase I (tVar x) Cmot brs) A) /\
-        w ∈ succ_of b v) ->
-      ltM_trace τ' (Some (I, x)).
+  (** Well-founded order on trace states.
 
-  (** TODO: Prove well-foundedness of ltM_trace
-  
-      This requires showing that the recursive-subterm relation induced by
-      constructor splitting is well-founded. This follows from:
-      
-      1. Strict positivity of inductive definitions (ensures no infinite descent)
-      2. The fact that constructor arguments are structurally smaller
-      3. The fuel/builder bound (finite number of vertices)
-      
-      For now we assume it as an axiom to get the infrastructure working.
+      We use the strict subtree order induced by [obs_size] (see
+      [Transform/CyclicTraceConditionObsTree.v]).
   *)
-  Axiom ltM_trace_wf : well_founded ltM_trace.
+  Definition ltM_trace : trace_state -> trace_state -> Prop := CTO.lt_trace.
+
+  Lemma ltM_trace_wf : well_founded ltM_trace.
+  Proof.
+    exact CTO.lt_trace_wf.
+  Qed.
+
+  Lemma ltM_trace_of_ts_split Σenv fuel b v w c recs o Γ I x Cmot brs A :
+    trace_step Σenv fuel b v w (Some (SOR.obsCtor c recs)) (Some o) ->
+    ltM_trace (Some o) (Some (SOR.obsCtor c recs)).
+  Proof.
+    intro Hstep.
+    inversion Hstep; subst; try contradiction.
+    unfold ltM_trace.
+    unfold CTO.lt_trace.
+    cbn.
+    apply CTO.lt_obs_of_in_recs.
+    assumption.
+  Qed.
 
   (** Rank function: just project the trace state
   
@@ -159,6 +139,76 @@ Section TraceCondition.
     {| Ranked.rw_M := trace_state;
        Ranked.rw_lt := ltM_trace;
        Ranked.rw_rank := snd |}.  (* rank projects the trace component *)
+
+  (** Simplified ranking condition for cfg graphs.
+
+      Instead of building an explicit trace graph with (V, τ) pairs, we provide
+      a ranking function directly on base vertices and prove the conditions
+      locally.
+
+      This approach works when:
+      - We already have cycle-progress (from the boolean trace check)
+      - We can assign a rank to each vertex based on its label
+      - Progress edges strictly decrease the rank
+  *)
+  Section SimplifiedRanking.
+    Context (Σenv : Ty.env) (fuel : nat) (b : RO.builder).
+
+    (** Assign a rank to each vertex based on its label.
+
+        For now, use a dummy constant rank. A real implementation would:
+        - Extract the observation tree from jIndObs labels
+        - Use None for non-observation vertices
+        - Prove that progress edges (splits) strictly decrease the tree size
+    *)
+    Definition vertex_rank (v : V) : trace_state := None.
+
+    (** Progress edges for the base graph (not trace graph). *)
+    Definition is_progress_edge (v w : V) : Prop :=
+      exists I x Γ Cmot brs A,
+        pp_label fuel b v = jDrive (C.jTy Γ (tCase I (tVar x) Cmot brs) A) /\
+        w ∈ succ_of b v.
+
+    (** If we can show:
+        1. well_founded ltM_trace (done: ltM_trace_wf)
+        2. rank monotone on all edges
+        3. rank strictly decreases on progress edges
+        4. every cycle has a progress edge (given by trace check)
+
+        Then we have a full ranking_condition witness.
+
+        For now, we state this as a lemma schema that can be instantiated
+        once we have concrete observation-tree extraction.
+    *)
+    Lemma ranking_condition_schema :
+      (forall v w, w ∈ succ_of b v -> 
+         Ranking.leM ltM_trace (vertex_rank w) (vertex_rank v)) ->
+      (forall v w, is_progress_edge v w ->
+         ltM_trace (vertex_rank w) (vertex_rank v)) ->
+      (forall xs, FiniteDigraph.is_cycle (graph_of b) xs ->
+         Ranking.has_progress_edge (fun v w => is_progress_edge v w) xs) ->
+      @Ranking.ranking_condition V _ _
+        (graph_of b)
+        (fun v w => is_progress_edge v w)
+        trace_state
+        ltM_trace
+        vertex_rank.
+    Proof.
+      intros Hmon Hstrict Hcycle.
+      refine {| Ranking.rc_wf := ltM_trace_wf;
+                Ranking.rc_monotone := _;
+                Ranking.rc_strict := _;
+                Ranking.rc_cycle_progress := Hcycle |}.
+      - intros v w Hedge.
+        apply Hmon.
+        destruct Hedge as [Hv Hw].
+        exact Hw.
+      - intros v w Hedge Hprog.
+        apply Hstrict.
+        exact Hprog.
+    Qed.
+
+  End SimplifiedRanking.
 
 End TraceCondition.
 
