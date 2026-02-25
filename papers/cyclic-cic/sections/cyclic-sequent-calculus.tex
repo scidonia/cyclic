@@ -1,0 +1,91 @@
+\section{A cyclic sequent calculus for our CIC fragment (sketch)}
+\label{sec:cyclic-sequent}
+
+The cyclic calculus in this paper is presented in a natural-deduction style: proof terms are built from introductions and eliminations, and cyclic structure appears as back-links in a finite proof graph.
+If this turns out to be an awkward presentation for proof identity or normalization, a reasonable alternative is to present the same core ideas in a \emph{sequent-calculus} style.
+This section is a design sketch of such a presentation for the same CIC-like term language used throughout the mechanisation.
+
+\paragraph{Why a sequent calculus?}
+A sequent calculus makes \emph{structural rules} (weakening, exchange, contraction, cut) explicit and treats eliminations as left rules.
+This can make the interaction between (i) commuting conversions, (ii) explicit substitutions, and (iii) fold/refold steps feel less ``baked into'' term syntax.
+It can also be a more convenient starting point for graph-based proof objects, since proof graphs are naturally close to derivation DAGs.
+
+\subsection{Judgements}
+
+We write two mutually defined typing sequents, in the style of bidirectional typing:
+\[
+  \env;\ctx \vdash t \Rightarrow A
+  \qquad\text{(synthesis)}
+  \qquad\qquad
+  \env;\ctx \vdash t \Leftarrow A
+  \qquad\text{(checking)}
+\]
+Intuitively, synthesis sequents compute a type for a term, while checking sequents verify a term against a known type.
+Type formation sequents and universe levels are elided in this sketch; the intent is that they match the source calculus of Section~\ref{sec:source}.
+
+\subsection{Core rules (Pi, lambda, application)}
+
+The following rules are representative.
+We use the paper's lightweight inference macro \texttt{\detokenize{\Infer}} (see \texttt{macros.tex}).
+
+\begin{Rules}
+\Infer{Var}{}{\env;\ctx, x:A \vdash x \Rightarrow A}
+\qquad
+\Infer{Lam}{}{\env;\ctx \vdash \Lam{x:A}{t} \Leftarrow \PiTy{x:A}{B}}
+\\
+\multicolumn{1}{c}{\text{where } \env;\ctx, x:A \vdash t \Leftarrow B}
+\\[2mm]
+\Infer{App}{}{\env;\ctx \vdash \App{t}{u} \Rightarrow B[u/x]}
+\\
+\multicolumn{1}{c}{\text{where } \env;\ctx \vdash t \Rightarrow \PiTy{x:A}{B} \text{ and } \env;\ctx \vdash u \Leftarrow A}
+\end{Rules}
+
+\paragraph{Cut / explicit substitution.}
+A sequent presentation typically treats substitution as a derived admissible operation, with \emph{cut} as its proof-theoretic counterpart.
+To make sharing and cyclic structure explicit, one can either:
+(i) add an explicit-substitution term former (a typed \texttt{let}), or
+(ii) treat cut as a primitive rule in the cyclic proof graph.
+A term-assignment flavour of cut can be written as:
+\[
+  \Infer{Cut}{\env;\ctx \vdash t \Rightarrow A \quad \env;\ctx,x:A \vdash u \Rightarrow C}{\env;\ctx \vdash u[t/x] \Rightarrow C}
+\]
+In the cyclic setting, this is one place where a back-link edge can naturally live: the bud is a cut-premise whose solution is provided by a previously constructed node (Section~\ref{sec:global}).
+
+\subsection{Inductives: roll and case (sketch)}
+
+We keep the same surface constructors as elsewhere: \(\Roll{\iota}{k}{\vec{t}}\) for constructor application and \(\Case{\iota}{s}{\vec{p}}{\vec{t}}\) for case analysis.
+A sequent formulation does not change the operational content, but it encourages presenting \texttt{case} as the primary elimination/left rule for inductives.
+
+\begin{Rules}
+\Infer{Roll}{}{\env;\ctx \vdash \Roll{\iota}{k}{\vec{t}} \Rightarrow \Ind{\iota}{I}}
+\qquad
+\Infer{Case}{}{\env;\ctx \vdash \Case{\iota}{s}{\vec{p}}{\vec{t}} \Rightarrow C}
+\end{Rules}
+
+Informally, \textsc{Roll} checks the constructor arguments against the constructor telescope, and \textsc{Case} checks the branches against the motive instantiated by each constructor.
+A full account would spell out the constructor telescopes, the motive, and the branch checking judgement.
+The important point for this note is that \texttt{case} is the canonical place to attach information-propagation and commuting-conversion transformations.
+
+\subsection{Cyclic sequent proofs}
+
+A \emph{cyclic sequent preproof} can be defined exactly as in the natural-deduction presentation, but with nodes labelled by sequents (either synthesis or checking).
+A back-link edge discharges a bud node by pointing to a companion node with the same goal up to instantiation.
+
+\paragraph{Back-links with instantiation.}
+In our setting, back-links carry explicit substitution evidence.
+For sequents this can be presented as a (typed) context morphism that instantiates the bud context into the companion context.
+Concretely, a back-link from a bud labelled \(\env;\ctx \vdash t \Rightarrow A\) to a companion labelled \(\env;\ctx' \vdash t' \Rightarrow A'\) would additionally carry evidence that \(\ctx\) is obtained by instantiating \(\ctx'\), and that applying that instantiation to \(t'\) and \(A'\) yields \(t\) and \(A\).
+
+\paragraph{Global progress.}
+Soundness again requires a global condition: every infinite unfolding of back-links must witness progress according to a chosen well-founded measure.
+The same trace-based progress condition of Section~\ref{sec:global} can be reused unchanged; only the node labels (sequents rather than ND judgements) differ.
+
+\paragraph{Open design questions.}
+This sketch leaves several choices open:
+\begin{itemize}[leftmargin=*]
+\item Whether to adopt focusing (e.g. separate ``invertible'' and ``non-invertible'' phases) to control proof search and make commuting conversions canonical.
+\item Whether to treat cut as primitive in the proof object, or to represent sharing/instantiation exclusively through explicit substitutions attached to back-links.
+\item How to present dependent pattern matching in a sequent calculus so that the computational behavior (iota reduction) aligns with the extraction semantics used in the rest of the paper.
+\end{itemize}
+
+The main takeaway is that a cyclic sequent calculus is a viable alternative presentation, and it may provide a cleaner substrate for proof-graph identity and normalization if the natural-deduction surface ends up being too rigid.
