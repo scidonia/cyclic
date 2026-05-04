@@ -1,0 +1,1522 @@
+Mathematical Structures in Computer Science (2024), 34, pp. 552–577
+doi:10.1017/S0960129524000070
+
+PA P E R
+
+Abstract cyclic proofs
+Bahareh Afshari1,2 and Dominik Wehr2
+1 Institute for Logic, Language and Computation, University of Amsterdam, Amsterdam, The Netherlands
+2 Department of Philosophy, Linguistics and Theory of Science, University of Gothenburg, Gothenburg, Sweden
+
+Corresponding author: Dominik Wehr; Email: dominik.wehr@gu.se
+
+(Received 20 March 2023; revised 12 February 2024; accepted 26 February 2024; first published online 19 April 2024)
+
+Abstract
+Cyclic proof systems permit derivations that are finite graphs in contrast to conventional derivation trees.
+The soundness of such proofs is ensured by imposing a soundness condition on derivations. The most
+common such condition is the global trace condition (GTC), a condition on the infinite paths through
+the derivation graph. To give a uniform treatment of such cyclic proof systems, Brotherston proposed an
+abstract notion of trace. We extend Brotherston’s approach into a category theoretical rendition of cyclic
+derivations, advancing the framework in two ways: first, we introduce activation algebras which allow for
+a more natural formalisation of trace conditions in extant cyclic proof systems. Second, accounting for the
+composition of trace information allows us to derive novel results about cyclic proofs, such as introducing
+a Ramsey-style trace condition. Furthermore, we connect our notion of trace to automata theory and prove
+that verifying the GTC for abstract cyclic proofs with certain trace conditions is PSPACE-complete.
+Keywords: Cyclic proof theory; category theory; fixed-point logic; Mu-calculi
+
+1. Introduction
+In a cyclic proof system, proofs are finite graphs which represent the ill-founded derivations
+obtained by unravelling them. Broadly speaking, the logics benefiting from cyclic proofs often
+feature notions of (co-)induction or fixed points (e.g., Brotherston 2006; Das 2021; Fortier and
+Santocanale 2013; Niwiński and Walukiewicz 1996; Simpson 2017; Sprenger and Dam 2003).
+Differing from conventional proof systems, cyclic systems typically eschew explicit induction
+axioms which can instead be simulated by cyclic derivations. Cut-free cyclic proof systems lend
+themselves well to proof theoretic investigations (e.g., Afshari and Leigh 2017; Afshari et al. 2021;
+Marti and Venema 2021) and proof search procedures (e.g., Brotherston et al. 2011, 2012; Tellez
+and Brotherston 2017).
+Since cyclic proofs contain infinite paths, their soundness cannot be reduced to the local soundness of their derivation rules. Instead, one usually needs to impose further soundness conditions
+on these paths. The most common such condition is known as the global trace condition (GTC).
+While the concrete formulation of the trace condition differs between logics, it usually adheres to
+a certain form: a path satisfies the trace condition if it has a suffix along which some parameter
+(such as a term or fixed-point quantifier) can be traced and which progresses (e.g., decreases or is
+unfolded) infinitely often.
+Motivated by this structural similarity, Brotherston (2006) developed an abstract framework to
+uniformly represent and reason about cyclic proof systems. The formalism has been used to give
+© The Author(s), 2024. Published by Cambridge University Press. This is an Open Access article, distributed under the terms of the
+Creative Commons Attribution licence (http://creativecommons.org/licenses/by/4.0/), which permits unrestricted re-use, distribution and
+reproduction, provided the original article is properly cited.
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+553
+
+a general proof of the decidability of proof checking for cyclic proofs and to study various transformations of cyclic derivations which maintain the GTC. While Brotherston’s notion of trace
+condition encompasses most cyclic proof systems in the literature, it does not readily capture the
+common trace condition of μ-calculi, which hold a prominent position in cyclic proof theory.
+This article introduces an abstract representation of cyclic proof systems which extends
+Brotherston’s approach. It is formed by an abstract, category theoretical rendition of cyclic derivations and their trace conditions. By replacing Brotherton’s notion of single progress points with
+a more nuanced, algebraic notion of progress, we are able to succinctly express most trace
+conditions, including those of μ-calculi. Our categorical formalism, in addition, allows for the
+composition of trace information, yielding two novel results: derivation compression and an alternative soundness condition. Derivation compression allows a cyclic derivation with n simple
+cycles to be represented as a graph of size O(n), which we believe should yield performancegains in implementations of, for example, cyclic proof checking algorithms. Second, we give a
+soundness condition on derivations that induces a proof checking algorithm reliant on Ramsey’s
+theorem instead of automata-theoretic machinery. While a similar condition has been known
+in the field of program termination (Lee et al. 2001), this is, to the best of our knowledge, the
+first time such a condition has been considered for cyclic proofs. Furthermore, we reprove some
+known results to demonstrate applicability of our representation in cyclic proof theory: we show
+decidability of proof checking and regularisability of ill-founded proofs in finite proof systems via
+automata theory. Lastly, we show that the proof checking problem for our abstract notion of proof
+is PSPACE-complete.
+Overview. In Section 2, we introduce cyclic proof systems, the modal μ-calculus serving as a
+concrete example which is frequently revisited throughout the rest of the article. Section 3 presents
+our abstract notion of trace condition which is then used in Section 4 to introduce an abstract
+notion of cyclic derivation. In Section 5, we give a soundness condition, equivalent to the GTC,
+inspired by a result from program termination. Section 6 relates our abstract notion of trace to
+prevalent uses of automata theory in cyclic proof theory. In Section 7, we give a proof of the
+PSPACE-completeness of checking the GTC of abstract cyclic proofs with certain kind of trace
+conditions. We close with a discussion of related and future work in Section 8.
+This article is an extended version of Afshari and Wehr (2022) with the following notable
+additions.
+
+(1) The notion of trace interpretations is introduced in Section 3 to formally express the
+connection of concrete and abstract cyclic proofs.
+(2) The connection between our notion of trace categories and the most common uses of
+automata theory in cyclic proof theory is included in Section 6.
+(3) Section 7 is extended to incorporate a complete proof of PSPACE-hardness. By applying
+the automata-theoretic results of Section 6, it is shown that proof checking for certain trace
+categories is in PSPACE.
+
+2. Cyclic Proof Systems
+We begin by giving a general account of cyclic proof systems and their associated notion of cyclic
+proof. We illustrate the definitions by presenting a cyclic proof system for the modal μ-calculus
+from the literature.
+A tree is a finite, non-empty set of sequences T ⊆ ω∗ which is prefix closed, that is, if tn ∈ T for
+t ∈ ω∗ and n ∈ ω then t ∈ T as well. We call t ∈ T a node of T and any tn ∈ T a child of t. A node
+t ∈ T is a leaf of T if it has no children. The root of any tree T thus is the empty sequence ε ∈ ω∗ .
+A cyclic tree is a pair C = (T, β) consisting of a tree T and a partial function β : Leaf(T) → T
+mapping (some) leaves of T to nodes of T with β(s)  ∈ dom(β) for all s ∈ dom(β). Each s ∈ dom(β)
+is called a bud and β(s) its companion.
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+554
+
+B. Afshari and D. Wehr
+
+Figure 1. Derivation rules of the modal μ-calculus.  ranges over finite sets of formulas; ϕ[ψ/x] denotes the standard
+substitution of ψ for x in ϕ.
+
+A derivation system is a triple (SEQ, R, ρ) consisting of a set of sequents SEQ, a set R
+of derivation rules and a rule interpretation ρ : R → SEQ+ such that for each r ∈ R, ρ(r) =
+(, 1 , . . . , n ) ∈ SEQn+1 for some n ∈ ω. In this case, we call  the conclusion of r and the
+i its premises. Henceforth, we refer to a derivation system (S EQ , R, ρ) simply by R. An
+R-pre-proof is a triple = (C, λ, δ) consisting of a cyclic tree C = (T, β) together with a labelling
+λ : T → SEQ such that λ(t) = λ(β(t)) for every t ∈ dom(β). δ : T \ dom(β) → R is a function
+with ρ(δ(t)) = (, 1 , . . . , n ), λ(t) =  and λ(ti) = i where Chld(t) = {t1, . . . , tn} for each
+t ∈ dom(δ). The sequent λ(ε) is called the endsequent of .
+We denote by PP(R) the set of R-pre-proofs. A cyclic proof system is a tuple (SEQ, R, ρ, PFS)
+consisting of a derivation system (SEQ, R, ρ) and a set PFS ⊆ PP(R) called R-proofs. A pre-proof
+is said to satisfy the soundness condition of R if is an R-proof. An R-proof with endsequent  is
+called a proof of . We extend the naming convention for derivation systems to cyclic derivation
+systems, referring to (SEQ, R, ρ, PFS) by R.
+To illustrate these notions, we present a cyclic proof system for the modal μ-calculus. It will also
+serve as an example motivating the abstract definitions of Sections 3 and 4. This presentation of
+the system is taken from Afshari and Leigh (2017) and is an adaptation of the tableaux of Niwiński
+and Walukiewicz (1996). The choice of logic for this example is secondary, the main focus being
+the cyclic aspects of the proof system.
+For a set PROP of propositional letters and a countable set VAR of variables, the μ-formulas are
+given by the following grammar:
+ϕ ∈ FORM ....= p | ¬p | x | ϕ ∧ ϕ | ϕ ∨ ϕ | ϕ | ♦ϕ | μx.ϕ | νx.ϕ
+
+p ∈ PROP, x ∈ VAR
+
+If x, y ∈ VAR occur in ϕ, we say x subsumes y, writing x <ϕ y, if σ y.ψ occurs as a subformula
+of ϕ for some σ ∈ {μ, ν} and ψ, and furthermore x is free in σ y.ψ. If the relation <ϕ is a strict
+preorder, we call ϕ well-named. In the remainder of this article, we assume all μ-formulas are wellnamed. This is a reasonable restriction as any μ-formula is α-equivalent to a well-named one. Any
+μ-formula is positive in all variables. The fixed-point formulas μx.ϕ and νx.ϕ denote, respectively,
+the least and greatest fixed point of the semantic counterpart to the function x → ϕ(x). These are
+well defined by the observation on positivity and the Knaster–Tarski theorem. The semantics of
+the modalities and connectives are as in the modal logic K.
+The derivation rules of the cyclic μ-calculus are given in Fig. 1. The sequents of this calculus
+are finite sets of μ-formulas. Not all pre-proofs derive valid endsequents. For example, μx.x
+is invalid but is concluded by the μ-pre-proof given in Fig. 2. It is thus necessary to impose an
+additional soundness condition which delineates μ-proofs from μ-pre-proofs.
+A branch through a pre-proof ((T, β), λ, δ) is an infinite sequence t ∈ T ω such that t0 = ε and
+for any ti , either (a) ti+1 ∈ Chld(ti ) or (b) ti ∈ dom(β) and ti+1 = β(ti ). This induces the sequence
+(i )i∈ω ∈ SEQω with i ..= λ(ti ) and the partially defined r : ω → R with ri ..= δ(ti ), both of which
+we use interchangeably with t ∈ T ω to denote a branch.
+Given a branch (i )i∈ω through a μ-pre-proof, a formula ϕ ∈ i+1 is called a precursor of
+ϕ ∈ i , written ϕ ←i ϕ, if ti+1 ∈ Chld(ti ) and either ϕ is principal in ri , that is, ϕ is ‘altered by
+ri ’, and ϕ is one of the residual formulas, or ϕ is not principal in ri and ϕ = ϕ . If ti ∈ dom(β)
+and ϕ = ϕ then ϕ ←i ϕ as well. A sequence of formulas (ϕi )i∈ω is called a trace along (i )i∈ω if
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+555
+
+Figure 2. A μ-pre-proof of an invalid μ-formula. The dashed arrow represents the budcompanion relation β.
+
+ϕi+1 ←i ϕi for all i ∈ ω. It is easily observed that the subsumption order is preserved along traces,
+that is, <ϕi+1 ⊆ <ϕi whenever ϕi+1 ←i ϕi , whichis why we henceforth associate with each trace
+(ϕi )i∈ω a global subsumption order <ϕ ..= <ϕ0 = i∈ω <ϕi .
+Let (i )i∈ω be a branch through a μ-pre-proof and (ϕi )i∈ω a trace along it. The trace is called a
+ν-trace if there exists an x ∈ VAR(ϕ0 ) such that ϕi = νx.ψ and ϕi+1 = ψ[ϕi /x] for infinitely many
+i ∈ ω, and furthermore for any y ∈ VAR(ϕ0 ) if there are infinitely many ϕi = μy.θ then x <ϕ y. In
+other words, there is a greatest fixed-point variable x that occurs infinitely often and subsumes all
+infinitely occurring μ-variables. A μ-proof is a μ-pre-proof that satisfies the global trace condition,
+that is, every infinite branch has a ν-trace. As the unique branch through the pre-proof in the
+example of Fig. 2 does not have a ν-trace, it fails to be a proof.
+At this point, we want to clearly distinguish between a ‘trace condition’ and a ‘global trace
+condition’. A trace condition is a specification of which traces along infinite branches of a preproof are considered progressing. A global trace condition is a certain type of condition on cyclic
+proofs, usually formulated via a trace condition, used to ensure soundness of proofs. Alternative
+soundness conditions have been considered, such as the reset condition (Jungteerapanich 2009),
+induction orders (Sprenger and Dam 2003) and trace manifolds (Brotherston 2006). These soundness conditions are often still defined in reference to a trace condition, or at least its implicit notion
+of progress. It is, therefore, possible for two differently formulated soundness conditions for a certain derivation system to share the same underlying trace condition. For example, this is the case
+for the GTC of the μ-proofs specified above and the reset proof system for the modal μ-calculus
+given by Stirling (2013).
+
+3. Abstracting the Trace Condition
+In this section, we demonstrate our formalism for capturing the trace conditions of cyclic proof
+systems. It encompasses two levels of abstraction: The notion of a trace category which captures
+what it means to be a trace condition, and a family of concrete trace categories, generated by the
+notion of an activation algebra.
+An abstract notion of trace condition requires an abstract notion of branches through a proof.
+Working in a category theoretical framework, we observe that branches are infinite sequences
+of rule applications and identify them with infinite sequences of morphisms called paths. A trace
+condition is then a condition on such paths which is invariant under certain path transformations.
+A semi-category is a category which may not have (all) identity morphisms. That is,
+a semi-category C consists of a collection of objects Ob(C ) and collections of morphisms
+HOMC (X, Y) between each pair of objects X, Y ∈ Ob(C ). There is a composition ◦ : X, Y, Z ∈
+Ob(C ). HOMC (Y, Z) × HOMC (X, Y) → HOMC (X, Z) which is associative. A semi-functor is a
+semi-category homomorphism. That is, for semi-categories C , D, a semi-functor F : C → D consists of a map on objects F0 : Ob(C ) → Ob(D) and a further map F2 on morphisms of C such that
+for f : X → Y we have F1 (f ) : F0 (X) → F0 (Y). F1 distributes over the composition operation, that
+is, F1 (g ◦ f ) = F1 (g) ◦ F1 (f ). As is also common for standard functors, we denote both F0 and F1
+by F.
+The standard <-ordering of the natural numbers ω induces a semi-category whose objects
+are the natural numbers and in which there is a (unique) morphism between n and m, denoted
+‘n < m : n → m’, if n < m. The ≤-ordering induces an analogous proper category. In this article,
+we denote both of these categories by ω; which one is meant will be clear from the context.
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+556
+
+B. Afshari and D. Wehr
+
+A path through a category T is a functor P : ω → T . Given P, P : ω → T , we call P a subpath
+of P , written P ⊆ P , if there is a semi-functor S : ω → ω between the ω-semi-categories such that
+P = P ◦ S. The transitive, symmetric closure of ⊆ is denoted ∼. This means P ⊆ P holds if P can
+be transformed into the P by applying a combination of two path transformations: (1) discarding
+a finite prefix of path P , for example, by taking S(m) ..= m + n. (2) Composing morphisms along
+P . For example, if P is of the form
+R00
+
+n
+
+R0 0
+
+R10
+
+n
+
+R01
+
+R1 1
+
+n
+
+n
+
+R02
+
+n
+
+R2 2
+
+X00 −→ X01 −→ · · · X0n0 −−→ X10 −→ · · · X1n1 −−→ X20 −→ · · · X2n2 −−→ . . .
+then P ⊆ P for the path P below
+n
+
+witnessed by S(i) ..=
+
+
+
+R0 0 ◦···◦R00
+R1 1 ◦···◦R01
+R2 2 ◦···◦R02
+X00 −−−−−−→ X10 −−−−−−→ X20 −−−−−−→ . . .
+j<i (nj + 1).
+
+Definition 3.1. Given a category T , a trace condition is a predicate on paths invariant under ∼.
+That is, for any two paths P ∼ P the trace condition holds for P if and only if it holds for P .
+A trace category is a category equipped with a trace condition.
+Note that the notion of trace category in the above definition is unrelated to the ‘traced
+monoidal categories’ of Joyal et al. (1996).
+Remark 3.1. Any trace condition is invariant under taking suffixes and composition. All concrete
+trace conditions in the literature are closed under taking suffixes, making closure under suffixes a
+natural criterion for identifying trace conditions.
+Composition of rules along branches is not part of cyclic proof systems and hence there is a priori
+no precedent for it. The cumulative nature of trace conditions, however, suggests that composition
+of traces should not invalidate them. Indeed, all trace categories which we use to model concrete
+trace conditions from the literature have a trace condition closed under composition. Furthermore,
+it is precisely this closure condition that has proven instrumental in deriving new results in our
+framework.
+The remainder of this section is concerned with defining a family of concrete trace categories
+which can model the trace conditions of many cyclic proof systems we know of.
+Definition 3.2. An activation algebra is a tuple A = (A, ≤, ∨, 0, α) consisting of a finite semilattice
+(A, ≤, ∨, 0) and an activation element α ∈ A where 0  = α. We often write A to refer to the carrier
+set A.
+Definition 3.3. Let A be an activation algebra. The A-activated trace category TA has as its
+objects the finite sets. The morphisms between sets X, Y are relations R ⊆ X × A × Y. The identities are 1X ..= {(x, 0, x) | x ∈ X}. We often write xRa y to mean (x, a, y) ∈ R. Given morphisms
+R : X → Y, R : Y → Z, their composition is specified by (x, c, z) ∈ R ◦ R iff
+∃y ∈ Y∃a, b ∈ A. (x, a, y) ∈ R and (y, b, z) ∈ R and a ∨ b = c.
+σ:
+
+A path P : ω → TA satisfies the trace condition if there exists a subpath P ⊆ P and a sequence
+i ∈ ω.P (i) along it such that σi P (i < i + 1)α σi+1 for all i ∈ ω.
+
+Example 3.1. The simplest example of an activation algebra is given by the simplest semilattice of at
+least two elements: the binary Boolean algebra B = {, ⊥}. The choice α ..=  is forced as necessarily
+⊥ = 0  = α. This activation algebra is implicit in Brotherston’s (2006) abstract notion of trace and
+suffices to model most trace conditions in the literature.
+Example 3.2. The activation algebra used to formalise the trace condition of the modal μ-calculus
+is the three-value failure algebra F ..= ({0, 1, 2}, ≤, ∨, 0, 1). In this algebra, the value 2 can be used to
+represent a ‘failure’ state (see the proof of Proposition 3.1).
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+557
+
+ 
+Example 3.3. More complex examples are the ‘k out of n’ algebras for 0 < k ≤ n given by nk ..=
+(A, ≤, ∨, ∅, α) where A ..= {X ⊆ n | |X| < k} ∪ {α}, the order ≤ is such that X ≤Y iff X ⊆ Y for
+X, Y ⊆ n, and a ≤ α for all a ∈ A. More concretely, observe the Hasse diagram of 32 .
+α
+{0}
+
+{1}
+
+{2}
+
+∅
+ 
+The idea behind nk is to view the singleton sets {i} as ‘events’ which can occur along a trace. To
+achieve activation, k distinct ‘events’ need to take place along a segment. As opposed to B and F, we
+are
+n not yet aware of a1cyclic proof system whose trace condition is best expressed in terms of some
+that cyclic proof systems whose trace
+k (except of course 1 which the same as B). We conjecture
+n
+condition is naturally modelled in some non-trivial k would require a kind of fairness condition of
+their progressing traces.
+Lemma 3.1. The trace condition in Definition 3.3 is well defined, that is, it fulfils the invariance
+condition of Definition 3.1.
+Proof. It suffices to prove invariance under ⊆. Let P ⊆ Q with P = Q ◦ S. Suppose P satisfies the
+trace condition meaning there exists P ⊆ P with P = P ◦ S and a validating sequence σ . Then,
+P ⊆ Q via P = Q ◦ S ◦ S , meaning σ is a validating sequence through a subpath of Q as well.
+For the converse direction, let P = Q ◦ S and suppose Q satisfies the trace condition as witnessed by Q = Q ◦ S and a sequence σ : i ∈ ω.Q (i). It remains to show that there is P ⊆ P and
+a suitable sequence σ : i ∈ ω.P (i) along it. By fixing b ..= S (0) and analysing Definition 3.3, one
+can conclude there are two sequences σ : i ∈ ω.Q(b + i) and a : ω → A such that σi Q(b + i <
+i<ij+1
+b + i + 1)ai σi+1 with ai ≤ α. For ij ..= S (j) − b, we then have σij = σj and i=ij ai = α. Now
+construct the following sequence:
+k0 ..= least i ∈ ω such that S(i) ≥ b
+kn+1 ..= least i > kn s.t. S(kn ) ≤ S (j) < S (j + 1) ≤ S(i) for some j ∈ ω
+We claim setting S (i) ..= S(ki ) induces the desired subpath P ..= Q ◦ S P with P (i) = P(ki )
+as witnessed by σ : i ∈ ω.P (i) given by σi ..= σS(ki ) . For this, we need to check that σi+1 P (i <
+i + 1)α σi+1 . Let j ∈ ω be such that S (i) ≤ S (j) < S (j + 1) ≤ S (i + 1). Then, P (i < i + 1) =
+Q(b + ij+1 ≤ S(ki+1 )) ◦ Q(b + ij < b + ij+1 ) ◦ Q(S(ki ) ≤ b + ij ), meaning
+⎞
+⎛
+⎟
+⎜
+l<ij+1
+l<b+ij
+l<S(ki+1 )
+⎟
+⎜
+⎟
+⎜
+al−b ∨
+al ∨
+al−b , σki+1 −b ⎟ ∈ P (i < i + 1)
+⎜ σi ,
+⎜
+⎟
+l=b+ij+1
+l=ij
+l=S(ki )
+⎠
+⎝
+
+=σ
+
+
+i+1
+≤α
+
+=α
+
+≤α
+
+and thus (σi , α, σi+1 ) ∈ P (i < i + 1) as desired.
+We now proceed to demonstrate how trace categories can be used to specify the trace conditions and, thereby, the GTCs of cyclic proof systems. Fix a derivation system R = (SEQ, R, ρ) and
+a trace category T . A trace interpretation ι : R → T consists of a function ι : SEQ → Ob(T ) mapping sequents to their trace sets and for each rule r ∈ R with ρ(r) = (, 1 , . . . , n ) a morphism
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+558
+
+B. Afshari and D. Wehr
+
+ri : ι() → ι( i ) for each 1 ≤ i ≤ n called a trace map. Let (C, λ, δ) be a pre-proof and t ∈ T ω be a
+branch through C. Its corresponding path P : ω → T is defined as follows:
+
+rj : ι(λ(πi )) → ι(λ(πi+1 )) πi  ∈ Leaf(T) and πi+1 = πj
+..
+..
+P(i) = ι(λ(πi ))
+P(i < i + 1) =
+πi ∈ dom(β)
+1P(i)
+This induces a cyclic proof system ι(R) ..= (SEQ, R, ρ, PFS) in which PFS contains those R-preproofs for which every induced path P : ω → T through them satisfies the trace condition of T .
+In the following, we demonstrate how to specify the trace condition for the modal μ-calculus
+by a trace interpretation ι : μ → F.
+Definition 3.4. The trace interpretation ι : μ → TF is given by ι() ..= {(ϕ, x) | ϕ ∈  and
+x ∈ VARν (ϕ)} in which VARν (ϕ) ..= {x | x is bound by ν in ϕ}. For each r ∈ μ with ρ(r) =
+(, 1 , . . . , n ), the trace maps ri : ι() → ι( ) are defined by ri ..= {((ϕ, x), a∗ , (ϕ , x)) | ϕ ←ir ϕ}
+where a∗ is defined by:
+⎧
+⎪
+⎨2, if r instance of μ, ϕ = μy.θ, ϕ = θ[μy.θ/y] and y <ϕ x,
+∗ ..
+a = 1, if r instance of ν, ϕ = νx.θ, ϕ = θ[νx.θ/x],
+⎪
+⎩0, otherwise.
+Proposition 3.1. The notion of μ-proofs and that induced by ι : μ → F coincide.
+Proof. It suffices to prove that a branch (i )i∈ω through a μ-pre-proof has a ν-trace if and only if
+its induced path P : ω → TF satisfies the trace condition of TF .
+
+Suppose (i )i∈ω has a ν-trace (ϕi )i∈ω . Then there exists x ∈ i∈ω VAR(ϕi ) bounded by a
+ν-quantifier and an increasing sequence (ji )i∈ω such that
+(i) ϕji = νx.ψ and ϕji +1 = ψ[ϕji /x], and
+(ii) no formula μy.θ with y <ϕ x is unfolded along (ϕi )i>j0 .
+The subpath P ◦ S ⊆ P induced by S(i) ..= ji and the sequence σi ..= (ϕji , x) witness that P satisfies
+the trace condition: clearly always (σi , a, σi+1 ) ∈ P(ji , ji+1 ) for some a ∈ F. We know 1 ≤ a since
+between ji and ji+1 , νx.ψ is unfolded, and further a < 2, as no μy.θ with y <ϕ x is unfolded after
+j0 , yielding a = 1 as desired.
+Conversely, suppose P satisfied the trace condition. Then there exist S : ω → ω and σ : i ∈
+ω. P(S(i)) such that (σi , 1, σi+1 ) ∈ P(S(i < i + 1)) for every i ∈ ω. Necessarily, σi = (ϕi , x) for some
+fixed ν-variable x and ϕi ∈ S(i) . Furthermore, because the activation algebra element along that
+trace is precisely 1, we can conclude that between S(i) and S(i+1) :
+(i) the formula νx.ψ corresponding to x in ϕi is unfolded (as 1 ≤ α),
+(ii) no μy.θ with y <ϕ x is unfolded (as α < 2).
+By scrutinising the derivation rules, it can be deduced that ϕS(0) can be ‘traced back’ to some ϕ ∈ 0
+and subsequently completed into a trace (ϕi )i∈ω along (i )i∈ω with ϕS(i) = ϕi . By the observations
+above, this must be a ν-trace.
+Remark 3.2. We have claimed that the trace condition given for the modal μ-calculus in Section 2
+cannot be represented naturally in terms of the activation algebra B. From the description in
+Section 2, it is clear that any natural representation of it as ι : μ → TB must coincide with the
+trace interpretation given in Definition 3.4 on trace objects and relations. That is, ι() must be
+the set {(ϕ, x) | ϕ ∈  and x ∈ VARν (ϕ)} (or equivalent) and for a derivation rule with ρ(r) =
+(, 1 , . . . , n ) any ((ϕ, x), a, (ϕ , y)) ∈ ri : ι() → ι( i ) should be such that ϕ ←ir ϕ and x = y.
+It thus remains to describe how to assign the values a in the triples in ri . Clearly, non-unfolding
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+559
+
+rules should assign a = 0 and ν-unfoldings a = 1. For μ-unfoldings, if such an unfolding occurs
+infinitely often, the trace should be ‘spoiled’. Neither an assignment of a = 0 nor a = 1 can model
+this behaviour. The assignment of a = f in Definition 3.4, on the other hand, succinctly takes care of
+this case.
+For further examples of modelling of the trace conditions of cyclic proof systems in trace categories, in particular, those of cyclic arithmetic (Simpson 2017), HFLN (Kori et al. 2021) and
+Grzegorczyk modal logic (Savateev and Shamkanov 2021), we refer the reader to Wehr (2021).
+We close this section by stressing that the purpose of activation algebras is to specify trace
+conditions of cyclic proof systems in a natural manner. Indeed, if naturality is of no concern, the
+following result shows that the trace category TB , or equivalently the formalism of Brotherston
+(2006), is sufficient to model the majority of trace conditions from the literature, including that of
+the modal μ-calculus.
+Concretely, the notion of naturality we allude to here is embodied in the fact that the information of traces may be separated into two parts: the elements of the trace sets signify which objects
+is being tracked, while the elements of the activation algebra describe how progress of these trace
+objects is detected. Indeed, Theorem 3.1 is achieved by collapsing this separation. An example
+of the importance of maintaining this distinction is given by (Leigh and Wehr 2023): the article
+describes how to generate so-called reset proof systems for cyclic proof systems whose trace condition is specified in terms of a trace interpretation into some A-activated category. One of the
+examples considered there is the modal μ-calculus. The trace interpretation in terms of F (as in
+Definition 3.4) leads to a very natural reset system, whereas the reset system induced by the trace
+interpretation into B given by Theorem 3.1 would be highly artificial.
+Theorem 3.1. For any activation algebra A, there exists a function I mapping objects of TA to
+objects of TB and maps R : X → Y in TA to maps I(R) : I(X) → I(Y) in TB . Furthermore, associate to
+each path P : ω → TA a path P̂ : ω → TB given by P̂(i) ..= I(P(i)) and P̂(i < i + 1) ..= I(P(i < i + 1)).
+Then P satisfies the trace condition iff P̂ does.
+Proof. Writing A = (A, ≤, ∨, 0, α), take I(X) ..= X × A and, for R : X → Y,
+I(R) ..= {((x, a), ⊥, (y, a ∨ b)) | a ∈ A, xRb y} ∪ {((x, a), , (y, 0)) | a ∈ A, xRb y, a ∨ b = α}
+Suppose that P satisfied the trace condition. That means there is a subpath P ◦ S and a sequence
+σ : i ∈ ω.P(S(i)) such that σi P(S(i))α σi+1 . We claim that P̂ ◦ S is the witnessing subpath of P
+with the sequence σ̂ : i ∈ ω.P̂(S(i)) given by σ̂i ..= (σi , 0). We prove that σ̂i P̂(S(i < i + 1)) σ̂i+1 :
+.
+There must be σi = x0 , . . . , xn = σ
+S(i + 1) − S(i) and b ..= S(i)
+i+1 and a0 , . . . , an−1 for n .=
+aj
+..
+such that xj P(b + j) xj+1 and α = j<n aj . Then define x̂j = (xj , k<j−1 ak ) and observe that
+
+⊥
+⊥
+
+σ̂i = x̂
+0 P̂(b) x̂1 P̂(b + 1) . . . x̂n−1 P̂(b + n − 1) (xn , 0) = σ̂i+1 because x̂n−1 = (xn−1 , k<n−2 ak )
+and ( k<n−2 ak ) ∨ an−1 = α.
+Conversely, suppose that P̂ satisfied the trace condition. Then there is a subpath P̂ ◦ S and a
+sequence σ̂ : i ∈ ω.P̂(S(i)) such that σ̂i P̂(S(i < i + 1)) σ̂i+1 . There must be σi = (x0 , a0 ), . . . ,
+(xn , an ) = σi+1 and b0 , . . . , bn−1 ∈ B for n ..= S(i + 1) − S(i) and k ..= S(i) such that (xj , aj )
+
+P̂(k + j)bj (xj+1 , aj+1 ) and  = j<n bj . Per construction, the latter means there is some J < n
+such that (xJ , aJ )P̂(k + J) (xJ+1 , 0). Consider analogous σi+1 = (x0 , a0 ), . . . , (xm , am ) = σi+2 and
+b
+
+b0 , . . . , bm−1 ∈ B such that (xj , aj )P̂(k + j) j (xj+1 , aj+1 ) with k ..= S(i + 1), yielding an analogous
+
+J such that (xJ , aJ )P̂(k + J ) (xJ +1 , 0). Intuitively, this means that the aj and aj between
+(xJ+1 , 0) and (xJ +1 , 0) ‘accumulate’ activation algebra elements up to α. That is, there must be
+
+c0 , . . . , cl−1 ∈ A with l ..= n − (J + 1) + (J + 1) such that α = j<l cj and xJ+1 P(k + J + 1 < k +
+J + 2)c0 . . . P(k + n − 1 < k + n)cn−J−1 xn = x0 P(k < k + 1)cn−J . . . P(k + J < k + J + 1)cl−1 xJ +1 .
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+560
+
+B. Afshari and D. Wehr
+
+In other words, xJ+1 P(k + J + 1 < k + J + 1)α xJ +1 , which can be extended to x0 P(k < k + m)α
+xm by observing that necessarily aj < α and aj < α for all j < n and j < m, respectively, for the
+original trace along P̂ to be successful. Based on this observation, we may conclude that the subpath P ◦ S of P with S (i) = S(2i) satisfies the trace condition for the sequence σ : i ∈ ω.P(S (i))
+with σi ..= π1 (σ2i ), that is, π1 (σ2i )P(S(2i < 2i + 2))α π1 (σ2i+2 ) as demonstrated above.
+Remark 3.3. The statement of Theorem 3.1 is given in terms of functions, rather than functors. This
+is so because the resulting functions fail to be functors on both accounts: preserving identities and
+distributing over composition. The failure of identity preservation is easily observed. Notice that any
+I(1X ) will contain triples of the form ((x, α), , (x, 0)) which the identities of TB do not contain. This
+issue could be alleviated by taking the definition to be
+I(R) ..= {((x, a), ⊥, (y, a ∨ b)) | a ∈ A, xRb y}
+∪ {((x, a), , (y, 0)) | a ∈ A \ {α}, xRb y, a ∨ b = α}
+instead, that is, explicitly excluding that kind of transition. However, as this still does not resolve the
+distributivity over composition, we chose to forgo this in favour of a simpler definition and proof.
+The failure of distributivity over composition is a bit more subtle. For this, suppose there were
+a < b < c < α ∈ A such that a ∨ b = α and consider R ..= {(, b, )} and R ..= {(, c, )}. Then
+clearly, (, a) I(R) (, 0) I(R )⊥ (, c). However, as R ◦ R = {(, b ∨ c, )}, the only two transitions
+possible via I(R ◦ R) are (, a) I(R ◦ R)⊥ (, α) and (, a) I(R ◦ R) (, 0). Thus, I(R ) ◦ I(R)  =
+I(R ◦ R).
+
+4. Abstract Cyclic Derivations
+This section combines the abstract notions of branches, traces and the trace condition into an
+abstract presentation of cyclic derivations. Abstract cyclic derivations (ACDs) are pairs (C, Tr) of
+cyclic trees C and maps Tr which ‘decorate’ the edges of C with maps of a trace category. Such an
+ACD is considered to be a proof if all paths which can be generated by traversing C satisfy the trace
+condition imposed by the trace category. To express these ideas in a category theoretical manner,
+we begin by giving a categorical representation of cyclic trees, by defining the (semi-)category
+induced by the finite paths through these trees.
+Fix a cyclic tree C = (T, β). The finite paths from s to t, denoted by PathC (s, t) ⊆ T + , are defined
+as the smallest sets satisfying the following three conditions:
+(1) For any s ∈ T, we have s ∈ PathC (s, s),
+(2) For any t, u ∈ T with u child of t, if p ∈ PathC (s, t) then pu ∈ PathC (s, u),
+(3) For any t ∈ dom(β), if p ∈ PathC (s, t) then pβ(t) ∈ PathC (s, β(t)).
+The category PC of paths through C = (T, β) has the nodes of T as its objects and fixes
+HOMPC (s, t) = PathC (s, t). The identities are 1s = s : s → s and, given morphisms p : s → t and
+PCS of progressing
+q : t → u, we define q ◦ p = pq where q = tq for q ∈ T ∗ . The semi-category
+ 
+..
+
+
+paths is the same as PC except that HOMP S (s, t) = {p ∈ Path(s, t) | p > 1}.
+C
+The informal notion of ‘decorating a cyclic tree with trace information’ can thus be expressed
+as a functor.
+Definition 4.1. An abstract cyclic derivation over a trace category T is a pair (C, Tr) consisting of
+a cyclic tree C = (T, β) and a functor Tr : PC → T such that for any s ∈ dom(β), Tr(s) = Tr(β(s))
+and Tr(sβ(s)) = 1Tr(s) .
+We delineate the abstract cyclic proofs from mere ACDs via a GTC.
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+561
+
+Figure 3. A μ-proof and its corresponding ACD, discussed in
+Example 4.1.
+
+Definition 4.2. Let D be an ACD given by (C, Tr : PC → T ). A path through D is a path P : ω → T
+such that there exists a semi-functor P : ω → PCS with P = Tr ◦ P . D satisfies the GTC if every path
+through D satisfies the trace condition of T . We call an ACD satisfying the GTC an abstract cyclic
+proof.
+Requiring P to be a semi-functor in the definition above rules out constant ‘paths’ obtained
+via P(i) ..= Tr(s), P(i < i + 1) ..= 1Tr(s) which are not generated by traversing the ACD along any
+branch of the cyclic tree.
+As ACDs serve as an abstract representation of pre-proofs, each pre-proof naturally induces an
+ACD.
+Definition 4.3. Let (SEQ, R, ρ, PFS) be a cyclic proof system whose soundness condition is induced
+by a trace interpretation ι : R → T . Any pre-proof (C, λ, δ) induces an abstract cyclic derivation
+(C, Tr) with
+Tr(s) ..= ι(λ(s))
+
+Tr(s < si) ..= ri : ι(λ(s)) → ι(λ(si)) where r = δ(s)
+
+Example 4.1. Consider the μ-pre-proof and its corresponding ACD depicted in Fig. 3. For the
+sake of readability, we have opted to write the carrier sets of the ACD as simple sets of variables
+x, y, etc., instead of sets of pairs (ϕ, x), (ψ, y), etc., since each variable occurs in only one of the
+formulas in the sequent. Fully specified, the first set should be {(νx.x, x), (μy.νz.y, z)}. The annotated morphisms are 1 ..= {(x, 0, x), (z, 0, z)}, Rx ..= {(x, 1, x), (z, 0, z)}, Ry ..= {(x, 0, x), (z, 2, z)} and
+Rz ..= {(x, 0, x), (z, 1, z)}.
+Note that (z, 2, z) ∈ Ry as y <ϕ z with ϕ ..= μy.νz.y. The μ-pre-proof above has only one branch 
+which has one ν-trace (that on x) and is thus a proof. Similarly, its corresponding path ˆ : ω → TF is
+a path through the ACD and satisfies the trace condition with S(i) ..= 5i and σ ..= i → x. In principle,
+verifying that the ACD is a proof would require checking infinitely many other paths P. This is
+because paths through ACDs need not start
+ at their root and a step P(i < i + 1) may correspond
+ˆ they
+to a path segment p ∈ PathC (s, t) with p > 2. However, as all such paths are subpaths of ,
+satisfy the trace condition by subpath invariance. Indeed, this observation extends to arbitrary ACDs
+obtained by transforming concrete cyclic derivations: any path through an ACD is always a subpath
+of ˆ for some branch  through the corresponding concrete cyclic derivation. This means that the
+GTC in Definition 4.2, although it may have seemed stricter than needed, corresponds precisely to
+that of concrete cyclic proof systems.
+We close this section by showing that, via composition of trace maps, ACDs can be transformed into equivalent ACDs whose number of nodes |T| is linear in their number of cyclic edges
+|β|. For ACDs generated from concrete cyclic derivations, as defined in Definition 4.3, this will
+usually result in a drastic reduction of |T|. The procedure can be viewed as a sort of ‘compression algorithm’ which could prove useful for implementing programs, such as proof checking
+(cf. Theorem 5.3), that have |T| as one of their complexity parameters. Indeed, it seems the automated theorem prover CYCLIST already relies on a similar optimisation (see Brotherston et al.
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+562
+
+B. Afshari and D. Wehr
+
+Figure 4. Compressing an ACD via the procedure outlined in the proof of Theorem 4.1.
+
+2012, Section 4.2) though we are not aware of a formal characterisation of this optimisation in the
+literature. An example illustrating the procedure is given in Figure 4.
+Theorem 4.1. Any D = ((T, β), Tr) can
+ be transformed into D = ((T , β ), Tr ) such that D is a
+proof if and only if D is a proof and T  ≤ 2 |β| + 1.
+Proof. Fix B ..= im(β) ∪ dom(β) ∪ {ε | s ∈ im(β).∀t ∈ im(β) ∪ dom(β). s ≤ t}, where s < t if t is
+a proper prefix of s. We now construct a sequence of partial maps (fi : B → ω∗ )i . Fix f0 (s) ..= ε
+where s is the <-least element of B. To construct fn+1 consider each s ∈ dom(fn ), that is, every
+s ∈ B which was added by the previous construction step. For each such s, let {t0 , . . . , tn } ⊆ B be
+all t ∈ B such that s can reach t without crossing any other node from
+ B (formally, if there is
+spt ∈ PathC (s, t) with p ∈ (T \ B)∗ ) and set fn+1 (ti ) ..= fn (s)i. Fixing f ..= n≤|B| fn and T ..= im(f ),
+−1
+.
+.
+observe that f : B → T is a <-isomorphism between B and T . Thus
+  C .= (T , β .= f ◦ β ◦ f ) is
+−1
+−1
+a cyclic tree with β (x) = y iff β(f (x)) = f (y). Also, clearly T  = |B| ≤ 2 |β| + 1.
+To extend C to an ACD D , take Tr (s) ..= Tr(f −1 (s)) for s ∈ T . For any s < t ∈ T , observe
+that per construction of T , there exists a unique path f −1 (s)pst f −1 (t) ∈ PathC (f −1 (s), f −1 (t)) with
+the property that pst ∈ (T \ B)∗ . Pick Tr (st) ..= Tr(f −1 (s)pst f −1 (t)) and note that this is both well
+defined and fully specifies Tr : PC → T . The claim now follows from the following fact, which is
+easily verified: for any path P through D, there exists a path P ∼ P through D and vice versa.
+
+5. A Ramsey-based Soundness Condition
+This section presents a soundness condition on pre-proofs which is equivalent to the common
+global trace condition. It is similar to the condition put forward by Lee et al. (2001) for the purpose of program termination based on the size-change principle, a condition analogous to the
+trace conditions of cyclic proof systems such those put forward in Sprenger and Dam (2003) and
+Simpson (2017). The correctness proof of the soundness condition relies on Ramsey’s (1930) theorem, rather than the automata-theoretic methods prevalent in cyclic proof theory. We employ
+the notation [A]n ..= {X ⊆ A | |X| = n}.
+Theorem 5.1. Ramsey’s theorem. Let A be a countable set, C finite and n ∈ ω. For any colouring
+f : [A]n → C, there exists a colour c ∈ C and a countable B ⊆ A such that f (X) = c for any X ∈ [B]n .
+The central insight motivating the soundness condition is that the Ramsey theorem guarantees
+the existence of certain well-behaved subpaths of paths through HOM-finite categories. For every
+R : X → X in a category T , the periodic R path is Rω : ω → T with by Rω (i) ..= X and Rω (i < i +
+1) ..= R. A morphism R : X → X is idempotent if R = R ◦ R.
+Lemma 5.1. Let P : ω → T be a path and X ∈ Ob(T ) such that P(i) = X infinitely often. If
+HOMT (X, X) is finite, then Rω ⊆ P for some idempotent R : X → X.
+Proof. P(i) = X holding infinitely often means there exists Q ⊆ P such that Q(i) = X for all i ∈ ω.
+Then Q({i, j}) ..= Q(i < j) induces a colouring Q : [ω]2 → HOMT (X, X) on ω. By the Ramsey
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+563
+
+theorem, there exists R ∈ HOMT (X, X) and an infinite M ⊆ ω such that Q(i < j) = R for i < j ∈ M.
+Then, Rω = Q ◦ S where S(i) ..= the ith least m ∈ M. The idempotence of R follows as R = Q(S(0 <
+2)) = Q(S(1 < 2)) ◦ Q(S(0 < 1)) = R ◦ R.
+Similarly to Definition 4.2, we limit our attention to the image of the trace functor 
+Tr : PCS → T
+restricted to the category of progressing paths. Fixing some ACD (C, Tr), we thus write HOM(s, t)
+
+
+for HOMim(
+is, the set of all trace maps that can be generated by walking along
+Tr) (Tr(s), Tr(t)), that
+ 
+some path p ∈ PathC (s, t) with p > 1.
+Definition 5.1. Let (C, Tr) be an ACD such that for every u ∈ dom(β), HOM(u, u) is finite. Then it
+satisfies the Ramsey trace condition if for every u ∈ dom(β) and every idempotent R ∈ HOM(u, u),
+the path Rω : ω → T satisfies the trace condition.
+Theorem 5.2. Let (C, Tr) be an ACD such that for every u ∈ dom(β), HOM(u, u) is finite. Then it
+satisfies the GTC if and only if it satisfies the Ramsey trace condition.
+Proof. First, suppose D satisfies the GTC. Then pick u ∈ dom(β) and
+ R
+ ∈ HOM(u, u). As R is in
+ˆ we know that there exists some p ∈ PathC (u, u) with p > 1 and Tr(p) = R. Then
+the image of Tr,
+Rω = Tr ◦ pω , meaning Rω is a path through D and thus satisfies the trace condition.
+Conversely, if D satisfies the Ramsey trace
+condition
+
+ and pick some path Tr ◦ P for
+P : ω → PCS . Clearly, there exists P ⊆ P with P (i < i + 1) = 2 for all i ∈ ω, that is, a representation of P which does not ‘skip’ any nodes. As P describes an infinite path through C, there
+needs to be some u ∈ dom(β) with P (i) = u for infinitely many i ∈ ω and thus by Lemma 5.1 an
+idempotent R : Tr(u) → Tr(u) such that Rω ⊆ Tr ◦ P ⊇ Tr ◦ P. By the Ramsey trace condition, Rω
+satisfies the trace condition, meaning Tr ◦ P does so as well.
+Remark 5.1. By restricting our attention to HOMTrs (u, u), we guarantee that 1Tr(u) can only occur in
+HOMTrs (u, u) if there is some p ∈ PathC (u, u) such that Tr(p) = 1Tr(u) . This is important as in most
+sensible trace categories – including all trace categories defined in this article – the path 1ωTr(u) does
+not satisfy the trace condition. Naïvely including 1Tr(u) in the collection of idempotent morphisms to
+consider when checking for GTC satisfaction would thus invalidate the condition given above.
+Note that this soundness condition can only be stated in a setting like ours, in which the composition of trace maps is considered. This is because the closed collection of compositions, in this
+case the HOM-set, gives rise to the finite colouring required to apply the Ramsey theorem. The
+Ramsey trace condition induces a novel algorithm for checking whether an ACD is a proof. This
+algorithm is analogous to that given for program termination by Lee et al. (2001). A more careful analysis of algorithms of this type in the realm of cyclic proofs is undertaken by Cohen et al.
+(2024).
+Theorem 5.3. Let T be such that
+(1) from R : X → Y and R : Y → Z one can compute R ◦ R : X → Z,
+(2) for R, R : X → Y one can decide whether R = R , and
+(3) for idempotent R : X → X one can decide whether Rω : ω → T satisfies the trace condition.
+Further let D = (C, Tr : PC → T ) be an ACD with Tr computable and such that for every u, v ∈ T
+the set HOM(u, v) is finite. Then it is decidable whether D is a proof.
+Proof. By Theorem 5.2, we know that it suffices to check that for each u ∈ dom(β) and for all
+idempotent R ∈ HOM(u, u), Rω satisfies the trace condition. Thus, simply compute all of the
+HOM-sets and then check each idempotent endomorphism via procedure (3). The HOM-sets are
+computed by an iterative procedure with base cases:
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+564
+
+B. Afshari and D. Wehr
+
+H 0 (u, v) ..= {Tr(uv) | if v child of u} ∪ {1Tr(u) | if u ∈ dom(β) and β(u) = v}
+and the iterative steps, using the procedure from assumption (1),
+H i+1 (u, v) ..= H i (u, v) ∪ {R ◦ R | w ∈ T, R ∈ H i (u, w), R ∈ H i (w, v)}.
+We carry out the procedure until H i (u, v) = H i+1 (u, v) for all u, v ∈ T, that is, until a fixed point
+is reached, which can be detected using procedure (2). That such a fixed point will be reached
+is guaranteed by the finiteness of the HOM(u, v). It is easily observed that H(u, v) = HOM(u, v).
+Now check whether D satisfies the Ramsey trace condition by using the procedure (3) on all
+R ∈ H(u, u) for u ∈ dom(β) that satisfy R = R ◦ R, which can be detected by using the procedures
+(1) and (2).
+Remark 5.2. As the assumptions of Theorem 5.3 are phrased in terms of computability, nothing
+more can be said about the complexity of the procedure in general. In Section 7, we prove the GTC,
+and equivalently the RTC, to be PSPACE-complete for the category TA of any activation algebra A.
+The witnessing decision procedure in PSPACE (see Lemma 7.4) is based on infinite word automata.
+Lee et al. (2001) demonstrate how an approach similar to Theorem 5.3 can be carried out in PSPACE
+by constructing the HOM-sets ‘not all at once’.
+While the GTC and RTC are equivalent, it may seem that a procedure designed for verification of
+the RTC could be more efficient than one implemented in terms of the GTC, based on the fact that in
+the RTC case a property is only checked per simple cycle (rather than every possible path). However,
+every morphism of a simple cycle’s HOM-set must be checked, which can lead to an exponential
+blowup in cases such as TB . As pointed out above, procedures in PSPACE ‘designed for’ both are
+known.
+Corollary 5.1. Let A be a activation algebra. It is decidable whether an ACD (C, Tr : PC → TA ) is
+a proof.
+Proof. Simply observe that TA satisfies the criteria above. Notably, for an idempotent R : X → X
+in TA , one can decide whether Rω satisfies the trace condition by checking if there exists an x ∈ X
+such that (x, α, x) ∈ R.
+Corollary 5.2. It is decidable whether a μ-pre-proof constitutes a μ-proof.
+Proof. For a μ-pre-proof , compute its induced ACD ˆ over TF as in Definition 4.3 and
+then decide whether ˆ satisfies the GTC via Corollary 5.1. The decision extends to
+via
+Proposition 3.1.
+
+6. Relating Trace Categories and Automata Theory
+This section connects our abstract framework for cyclic derivations to automata theory, a field
+instrumental to cyclic proof theory. The main theorems of this section are abstractions of properties common to many cyclic proof systems. They serve to illustrate that ACDs allow reasoning
+uniformly about a large class of cyclic proof systems by abstracting away the logic-specific details.
+The main point of interaction between cyclic proofs and automata theory is based on the observation that the trace condition of cyclic proof systems tends to be ω-regular. That is, the branches
+of cyclic proofs which satisfy the trace condition can be recognised by infinite word automata. We
+thus begin by recalling Büchi-automata, one of the classes of automata characterising ω-regularity.
+A Büchi-automaton is a tuple B = (, Q, , s, F) consisting of a finite alphabet , a finite set of
+states Q, a starting state s ∈ Q, a transition relation ⊆ Q ×  × Q and a set F ⊆ Q called the
+acceptance condition.
+Given a Büchi-automaton B and a word σ ∈  ω , a sequence ρ ∈ Qω is called a run of B on σ
+if ρ0 = q0 and for each i ∈ ω we have (ρi , σi , ρi+1 ) ∈ . A run ρ is accepting if there is some q ∈ F
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+565
+
+such that ρi = q for infinitely many i ∈ ω. A word σ is accepted by B if there exists an accepting
+run of B on σ . The set L(B) ..= {σ ∈  ω | σ is accepted by B} is the language of B.
+For most cyclic proof systems, given a cyclic pre-proof, there exists a infinite word automaton
+which recognises precisely the branches through that pre-proof that satisfy the trace condition (see Niwiński and Walukiewicz 1996 and Sprenger and Dam 2003 for examples of such
+constructions). This principle is extended to the setting of trace categories below.
+Definition 6.1. Fix a trace category T . Its trace condition is ω-regular if, for any finite set M of
+morphisms of T and starting object S ∈ Ob(T ), there exists a Büchi-automaton B such that
+L(B) = {π ∈ M ω | P(i < i + 1) ..= πi is a valid path with P(0) = S, satisfying the trace condition}
+This notion of ω-recognisably captures most uses of automata theory in the cyclic proof theory
+literature. For example, it allows us to carry out the most common proof of the decidability of the
+GTC in our abstract setting.
+Theorem 6.1. Let the trace condition of T be ω-regular in a computable manner, that is, the recognising automaton B for every set M of morphisms and S ∈ Ob(T ) can be computed. It is decidable
+whether an ACD D = (C, Tr : PC → T ) satisfies the GTC.
+Proof. For C = (T, β), consider the set of trace maps along the edges of D:
+M ..= {Tr(uv) | u ∈ T, v ∈ Chld(u)} ∪ {1Tr(u) | u ∈ dom(β)}
+which is finite as T is. Compute the recognising automaton B for S ..= Tr(ε) and construct a second
+Büchi-automaton A = (T, M, ε, , T) with
+= {(u, Tr(uv), v) | u ∈ T, v ∈ Chld(u)} ∪ {(u, 1Tr(u) , β(u)) | u ∈ dom(β)}
+
+..
+
+A accepts precisely the sequences of morphisms along the infinite branches of D. Thus, deciding
+whether D satisfies the GTC reduces to deciding L(B) ⊆ L(A). Such inclusions between Büchiautomata are decidable (McNaughton 1966).
+
+As a consequence of the Ramsey trace condition Theorem 5.2, every trace category with finite
+HOM-sets has an ω-regular trace condition. Note that under computability conditions analogous to those of Theorem 5.3, the ω-recognisability proven below is ‘computable’ as required for
+Theorem 6.1. Notably, the result below applies (in a computable manner) to every A-activated
+trace category.
+Theorem 6.2. Let T be a trace category with finite HOM(X, Y) for every X, Y ∈ Ob(T ). Then its
+trace condition is ω-regular.
+Proof. As a corollary to Lemma 5.1, a path P : ω → T satisfies the trace condition iff there exists
+an idempotent R : X → X in T such that Rω ⊆ P and Rω satisfies the trace condition. Fix some
+finite M and S ∈ Ob(T ). Define O ..= {dom(R) | R ∈ M} ∪ {cod(R) | R ∈ M}. Define the set of good,
+idempotent morphisms on X ∈ O as:
+GI(X) ..= {R : X → X | R idempotent and Rω satisfies the trace condition}
+and construct a Büchi-automaton B = (M, Q, , F, S) with
+Q ..= O ∪ X, Y ∈ O. GI(X) × HOM(X, Y)
+..
+= {(X, R, Y) | X, Y ∈ O, R : X → Y ∈ M}
+
+(a)
+
+∪ {(X, R , (X, Y, R, R )) | X, Y ∈ O, R ∈ GI(X), R : X → Y}
+
+(b)
+
+∪ {((X, Y, R, R ), R , (X, Z, R, R ◦ R )) | X, Y, Z ∈ O, R : Y → Z ∈ M, R  = R }
+
+(c)
+
+∪ {((X, X, R, R), R , (X, Y, R, R )) | X ∈ O, R ∈ GI(X), R : X → Y ∈ M}
+
+(c)
+
+F = {(X, X, R, R) | X, Y ∈ Ob(T ), R ∈ GI(X), R : X → Y ∈ M}
+..
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+566
+
+B. Afshari and D. Wehr
+
+Q is finite as O and each of the HOM(X, Y) are. First, note that B clearly rejects every sequence
+π ∈ M ω which does not represent a well-formed path starting at S. It thus remains to show B
+accepts a path P : ω → T iff it is such that Rω ⊆ P for some R ∈ GI(X) and X ∈ O. First, suppose
+Rω = P ◦ S as desired. Then an accepting run on the sequence πi ..= P(i < i + 1) is obtained by:
+• Taking (a)-transitions, reading π[0, S(1) − 1], then taking a (b)-transition on P(S(1) − 1,
+S(1)), the ‘first part of ’ P(S(1) < S(2)): (X, Y, R, P(S(1) < S(1) + 1)) where R : X → X. For
+this, note that S(1) − 1 ≥ 0 because S(0) < S(1). Continue reading π[S(1), S(2) − 1], reaching
+(X, X, R, R) as P(S(1) < S(2)) = R.
+• From then on, taking (c)-transitions, reading π[S(i), S(i + 1) − 1], always arriving at
+(X, X, R, R) as P(S(i < i + 1)) = R.
+This run is accepting as (X, X, R, R) ∈ F is passed infinitely often. For the converse direction, simply observe that every accepting run on B needs to be structured as above, that is, eventually
+‘picking’ an X ∈ O and R ∈ GI(X) via a (b)-transition and then ‘assembling’ R along π infinitely
+often via (c)-transitions, thereby demonstrating Rω ⊆ P.
+Remark 6.1. The converse of Theorem 6.2 need not hold. Consider a trace category T with
+ω-regular trace condition. Then T × SET, where SET is the usual category of sets, can be equipped
+with an ω-regular trace condition, namely that of its first component. However, the HOM-sets of
+T × SET are not all finite.
+Remark 6.2. It is also possible to construct recognising Büchi-automata for TA more directly in
+terms of A. Roughly, the states of such automata are triples X ∈ O. X × A which take transitions
+((X, x, a), R : X → Y, (Y, y, a ∨ b)) for (x, b, y) ∈ R. Whenever the third component reaches α, it is
+reset to 0, crossing a state in the acceptance condition F. The resulting automata resemble more
+closely the automata constructions usually found in the cyclic proof theory literature. The full details
+of this automata construction can be found in Wehr (2021, Proposition 5.11).
+The second result connecting the theories of cyclic proofs and automata we cover in this section relates cyclic proofs and ∞-proofs. ∞-proofs allow ill-founded, finitely branching derivation
+trees and thus require a soundness condition, similar to cyclic proofs. From this point of view,
+cyclic proofs are simply regular ∞-proofs, that is, those which are representable as finite graphs.
+The result states that on finite derivation systems, the cyclic and ∞-proof systems induced by
+a trace interpretation prove the same sequents. This property does generally not hold for infinite derivation systems: for example, in cyclic arithmetic (Simpson 2017), the ∞-proofs prove
+all true sentences of first-order arithmetic, whereas the cyclic proofs only prove the same sentences as Peano arithmetic. We begin by formally defining ∞-proof systems and the infinite tree
+Büchi-automata, which play a key role in the result’s proof.
+Given a derivation system (SEQ, R, ρ), an ∞-derivation is a triple (T, λ, δ) consisting of a
+(possibly infinite) tree T and functions λ : T → SEQ and δ : T → R such that for every t ∈ T
+with Chld(t) = {t1, . . . , tn} the functions λ and δ agree: ρ(δ(t)) = (λ(t), λ(t1), . . . , λ(tn)). In other
+words, an ∞-derivation is a derivation which might have infinite branches. Denote the set of
+∞-proofs in R by ID(R). An ∞-proof system is a tuple (SEQ, R, ρ, PFS) consisting of a derivation system (SEQ, R, ρ) and a set of ∞-derivations PFS ⊆ ID(R) called ∞-proofs. An ∞-proof
+= (T, λ, δ) with λ(ε) =  is called a proof of . Analogously to the case for cyclic proof systems,
+a derivation system (SEQ, R, ρ) and a trace interpretation ι : R → T induce an ∞-proof system
+in which ∈ PFS iff every path along its branches satisfies the trace condition of T .
+For a finite alphabet , a -labelled tree is a pair (T, λ : T → ) for a tree T. A -labelled tree
+(T, λ) is a subtree of -labelled (T , λ ) if it is a ‘suffix’ of T , that is, there exists some t ∈ T such
+that T = {ts ∈ T | s ∈ T } and λ(s) = λ (ts). A Büchi tree automaton is a tuple A = (, Q, , s, F)
+consisting of a finite alphabet , a set of states Q, a set of transitions ⊆ Q ×  × Q∗ , a starting
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+567
+
+state s ∈ Q and an acceptance condition F ⊆ Q. Let (T, λ) be a -labelled tree. A run of A on (T, λ) is
+a Q-labelling ρ : T → Q of T such that ρ(ε) = s and for each t ∈ T with Chld(t) = {t1, . . . , tn} the
+transition (ρ(t), λ(t), ρ(t1), . . . , ρ(tn)) ∈ . A run is accepting if for every infinite branch b ∈ T ω
+of T, there exists a q ∈ F such that ρ(bi ) = q infinitely often. A -labelled tree (T, λ) is accepted
+by A if there is an accepting run of A on it. The set L(A) ..= {(T, λ) | (T, λ) is accepted by A} is the
+language of A.
+Theorem 6.3. Let (SEQ, R, ρ) be a derivation system with R finite. Fix a trace interpretation
+ι : R → T such that the trace condition of T is ω-regular. Then any sequent  ∈ SEQ is proven
+by a cyclic proof iff it is proven by an ∞-proof.
+Proof. For the left-to-right direction, simply observe that unfolding the cyclic proof yields an
+∞-derivation satisfying the trace condition induced by ι.
+Conversely, note that any ∞-derivation (T, λ, δ) in R thus constitutes a R-labelled tree
+(T, δ). We begin by constructing a Büchi tree automaton which accepts precisely the ∞-proofs
+of , represented as R-labelled trees. By ω-regularity of T , there exists a Büchi-automaton
+A = (Q, M, , s, F) for M ..= {ri : ι() → ι( i ) | r ∈ R, ρ(r) = (, 1 , . . . , n ), i ≤ n} and
+S ..= ι(). From it, the desired Büchi tree automaton B ..= (SEQ × Q, R, B , (, s), SEQ × F) is
+constructed, taking
+
+
+
+
+  q ∈ Q and ρ(r) = (,  , . . . ,  ) and
+ 
+1
+n
+
+..
+.
+(, q), r, (1 , q1 ), . . . , (n , qn ) 
+B=
+ (q, ri : ι() → ι(i ), qi ) ∈ for each i
+r∈R
+That is, the automaton takes transition steps corresponding to the derivation rule r ∈ R labelling
+the tree, ‘walking the state from Q along according to A’ for the trace maps ri chosen by the trace
+interpretation ι.
+For the correctness of the automaton, observe that by the choice of B , B has a run an
+R-labelled tree if it constitutes an ∞-derivation with endsequent , that is, its rules were applied
+with matching premises and conclusions. Furthermore, such a run is accepting if and only if the
+run of the T -path induced by each infinite branch of the ∞-derivation is accepted by A. Thus, B
+accepts precisely the ∞-proofs of .
+Because there is a ∞-proof of , the language L(B) of B is not empty. It is a classic result
+of infinite tree automata theory (see e.g., Corollary 8.20 in Nieer 2002) that in such a case, L(B)
+contains a regular tree . Such regular trees can be represented as finite graphs, allowing the proof
+to be represented as a cyclic proof . As any element of L(B) is a proof of , so is .
+An application of the result above is establishing the equivalence between cyclic proof systems
+with and without a Cut-rule. Many Cut-elimination procedures for cyclic proof systems in the
+literature are corecursive algorithms which lazily transform cyclic proofs with Cut-applications
+into ∞-proofs without Cuts (e.g., Baelde et al. 2016; Fortier and Santocanale 2013; Savateev and
+Shamkanov 2021). If the Cut-free fragment of the derivation system is finite, the result above can
+then be applied to conclude that there must also exist a Cut-free cyclic proof. An example of the
+result being applied in this way is given by Savateev and Shamkanov (2021). A disadvantage of this
+method of Cut-elimination is that the Cut-free cyclic proof need not be related to the original Cutfree ∞-proof. This means this Cut-elimination result does not preserve computational content.
+The automata construction employed in the proof of Theorem 6.3 also yields a decision procedure for provability in the cyclic and ∞-proof systems. The result again requires some light
+computability assumptions.
+Corollary 6.1. Let (SEQ, R, ρ) be a derivation system with R finite. Fix a trace interpretation
+ι : R → T such that the trace condition of T is ω-regular in a computable manner and for any r ∈ R
+with ρ(r) = (, 1 , . . . , n ) the ri : ι() → ι( i ) can be computed. Then it is decidable whether
+ ∈ SEQ is provable in the induced cyclic and ∞-proof systems.
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+568
+
+B. Afshari and D. Wehr
+
+Proof. The proof of Theorem 6.3 constructs a Büchi tree automaton B such that L(B) is precisely
+the ∞-proofs of . By the computability assumptions, the automaton B can be computed. As the
+emptiness problem for parity tree automata is decidable (Rabin 1969), one can thus decide if there
+exists an ∞-proof of  by deciding whether L(B) is empty.
+Corollary 6.2. The μ-sequents provable by the cyclic proof system and ∞-proof system induced by
+the trace interpretation in Definition 3.4 coincide. Furthermore, the provability of a μ-sequent is
+decidable.
+Proof. As noted above, TF is ω-regular in a computable manner. It is also clear that the trace
+interpretation ι : μ → TF is computable as required by Corollary 6.1. The derivation system given
+for the modal μ-calculus in Fig. 1 is not finite. However, because it is Cut-free, one can restrict
+the sequents occurring in a ∞-derivation of a μ-sequent  to the so-called Fischer–Ladner closure
+of . This closure is well known to be finite, as for example argued by Kozen (1983). Thus, it
+suffices to consider a finite fragment of the derivation system given in Fig. 1 for each sequent ,
+meaning Theorem 6.3 and Corollary 6.1 apply.
+
+7. PSPACE-Completeness of Cyclic Proof Checking
+In addition to putting forward the size-change criterion for program termination, Lee et al.
+(2001) also prove that the associated decision is PSPACE-complete. This result has been transferred to the setting of cyclic proofs by Nollet et al. (2019) who prove that checking the GTC of
+linear logic with least and greatest fixed points (μMALL) is PSPACE-complete. We extend this
+result to ACDs over TA . The proof of PSPACE-hardness proceeds analogously to Nollet et al.
+(2019) by a reduction to BOOLE program termination. Indeed, the ACDs given in Definition 7.2
+are obtained by representing the cyclic derivations given by Nollet et al. as ACDs, applying
+the compression procedure (Theorem 4.1) and removing some spurious elements from their
+trace sets.
+Definition 7.1. A BOOLE program is a numbered sequence of instructions 1 : I1 ; 2 : I2 ; . . . ; m : Im
+composed according to the following grammar
+I ....= X ..= ¬X | IF X THEN  ELSE 
+where the labels ,  ∈ {0, . . . , m} and the variables X stem from some stock of variable letters.
+Fix a BOOLE program p of length m making use of the variables  ..= {X1 , . . . , Xn }. Given
+assignments σ , σ :  → B and labels ,  ∈ {0, . . . , m}, we write (, σ )  ( , σ ) if   = 0 and
+either:
+(1) the instruction labelled by  in p is X ..= ¬X for some X ∈ ,  ≡  + 1 mod (m + 1) and
+σ = σ [X → ¬σ (X)], or
+(2) the instruction labelled by  in p is IF X THEN 1 ELSE 0 for some X ∈ ,  = σ (X) and
+σ = σ.
+We write (, σ ) ∗ ( , σ ) if there are 1 , . . . , k and σ1 , . . . , σk such that (, σ )  (1 , σ1 ) and
+(i , σi )  (i+1 , σi+1 ) and (k , σk )  ( , σ ). To make the labels explicit, we sometimes write
+(, σ ) ∗1 ... , ( , σ ).
+k
+Writing φ for the constant assignment x → 0, define
+BOOLEfalse ..= {p a BOOLE program | (1, φ) ∗ (0, φ) under p}.
+For the remainder of this section, we fix some program p = 1 : I1 , . . . , m : Im making use of
+variables X1 , . . . , Xn .
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+569
+
+Definition 7.2. The ACD associated with p is p ..= (C, Tr : PC → TA ) for an arbitrary activation
+algebra A can be sketched as follows.
+1 : I1 
+
+0
+
+...
+
+m : Im 
+
+Every node s of C shares the same trace values Tr(s) = {X1+ , X1− , . . . , Xn+ , Xn− , R, G0 , . . . , Gm }. The
+‘subtrees’ 0 and  : I  each comprise of one or two buds whose companion is the root of p
+(drawn in white below). We refer to these buds by the names written above them. The TA -morphisms
+‘decorating’ the subtrees’ edges are written next to them. For notational convenience, we often treat
++ and − as the label .
+0
+
+ : Xi ..= ¬Xi 
+
+0
+
+
+
+R0
+
+ : IF Xi THEN 1 ELSE 2 
+
+R¬
+
++
+
+−
+
+R+
+
+R−
+
+The morphisms are specified below. A dashed line between A and B indicates the pair (A, 0, B), a
+bold line the pair (A, α, B) and the absence of a connecting line between A and B the absence of all
+pairs (A, c, B). In R¬ ,  =  + 1 mod m + 1.
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G0 G1 G2 G3
+
+...
+
+Gm
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G0 G1 G2 G3
+
+...
+
+Gm
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G 0 . . . G G
+
+...
+
+Gm
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G 0 . . . G G
+
+...
+
+Gm
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G 0 . . . G . . . G 1 . . . G m
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G 0 . . . G . . . G 1 . . . G m
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G 0 . . . G . . . G 2 . . . G m
+
+X1+ X1− . . . Xi+ Xi− . . . Xn+ Xn−
+
+R
+
+G 0 . . . G . . . G 2 . . . G m
+
+R0 :
+
+R¬ :
+
+R+ :
+
+R− :
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+570
+
+B. Afshari and D. Wehr
+
+Write B for the set of names for buds of p, that is,
+B ..= {0} ∪ { |  : X ..= ¬X in p} ∪
+
+{{+ , − } |  : IF X THEN GOTO 1 ELSE GOTO 0 in p}.
+Any path through p corresponds to an infinite sequence  ∈ Bω describing the sequence in which
+the buds of p are passed to generate said path. For this reason, we treat such sequences and paths
+P : PC → TA interchangeably. The property central to the reduction is that if p ∈ BOOLEfalse , then
+p does not satisfy the trace condition. Thus, sequences  ∈ Bω representing unsuccessful runs will
+satisfy the trace condition. The various aspects of the trace maps given in Definition 7.2 can thus
+be reframed as ensuring certain conditions on such  ∈ V ω .
+We begin by showing that all sequences  ∈ Bω  ∈ Bω which eventually diverge or do not even
+adhere to the control structure of p have progressing traces through R or the Gi s, respectively. For
+this, we define the control-graph of p as G = (B, E) with
+E ..= {(0, 1)} ∪ {(,  + 1 mod m + 1) |  : X ..= ¬X in p}
+
+∪ {{(+ , 1 ), (− , 0 )} |  : IF X THEN GOTO 1 ELSE GOTO 0 in p}
+where, if 2 : IF X THEN GOTO  ELSE GOTO  in p, then pairs (1 , 2 ) are included as (1 , +
+2)
+and (1 , −
+).
+For
+a
+sequence
+
+of
+labels
+from
+B
+(finite
+or
+infinite),
+
+is
+a
+path
+through
+G,
+writing
+2
+ ∈ G, if for each i < ||, (i , i+1 ) ∈ E.
+Lemma 7.1. Let  ∈ Bω be a path through p. Then,
+(1)  has a progressing trace along R iff eventually 0 never occurs along .
+(2)  has a progressing trace along the G0 , . . . , Gm iff no suffix of  is a path through G.
+Proof.
+(1) Observe that R-traces are interrupted by R0 whenever a path passes through 0 ∈ B and are
+activated when passing through any other bud.
+(2) An activation on a G-trace takes place whenever it ‘jumps incorrectly’. That is, if (i , i+1 )  ∈
+E, then there is an activating trace from Gi to Gi+1 in the trace maps of the subtree i .
+Thus, a progressing trace through the Gs indicates that such violations take place infinitely
+often, meaning no suffix of  can be a path through G. Conversely, no suffix of  being a
+path through G indicates infinitely many violations taking place.
+The only paths through p which remain unclassified are of the shape u0u1 0u2 0u3 0 . . . where
+each ui 0 describes a potential run of p which at least is a path through the control-graph of p.
+We continue by analysing the traces on the Xi• along such potential runs. Consider a sequence
+u = 0 . . . n ∈ Bn+1 and denote by Ri the morphism in p from the root to the bud i . In the
+following, we denote the trace map of the sequence u by Ru ..= Rn−1 ◦ . . . ◦ R0 ◦ R0 .
+Lemma 7.2. Let u ∈ (B \ {0})+ with |u| = n + 1 be such that 0u is a path through G. Then
+(1) There is no Xj• ∈ Tr(ε) and no activation algebra element c such that (Xi+ , c, Xj• ) ∈ Ru .
+(2) There are no Xi• , Xj• ∈ Tr(ε) with i  = j and (Xi• , c, Xj• ) ∈ Ru for any activation algebra
+element c.
+(3) If (0 , φ) ∗u (n , σ ) for some σ then for each Xi , there is exactly one a+
+i and exactly one
+− +
++
+− −
+−
+such
+that
+(X
+,
+a
+,
+X
+)
+∈
+R
+and
+(X
+,
+a
+,
+X
+)
+∈
+R
+.
+Furthermore,
+a−
+u
+u
+i
+i
+i
+i
+i
+i
+i
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+571
+
+−
+– if σ (Xi ) = 0 then a+
+i = α and ai = 0
++
+– if σ (Xi ) = 1 then a−
+i = α and ai = 0
+(4) If there is no σ such that (0 , φ) ∗u (n , σ ), then there exists some Xi such that
+(Xi− , 1, Xi+ ), (Xi− , 1, Xi− ) ∈ Ru
+
+Proof.
+(1) Observe that R0 , the map from the root to 0, interrupts all traces starting at the Xi+ .
+(2) Observe that all trace maps in p only ever connect trace values corresponding to the same
+variable Xi .
+(3) At the beginning of a BOOLE-run, all variables are 0. This is mirrored by R0 in the sense of
+(2), as it connects each Xi− to the Xi• according to the first clause. We continue by reasoning inductively along the run (0 , φ) ∗u (n , σ ), performing a case distinction on the final
+transition (n−1 , σ )  (n , σ ). The negation step inverts the value σ (Xi ) of some variable
+Xi . This is mirrored in R¬ by ‘swapping’ the traces on Xi+ and Xi− which preserves the
+property. For the IF -instruction, observe that (n−1 , σ )  (n , σ ) means branch dictated
+by σ (Xi ) is taken (i.e., n−1 is some + and σ (Xi ) = 1). Then the trace of the Xi• dual to
+σ (Xi ) is activated (i.e., Xi− if σ (Xi ) = 1), preserving the property.
+(4) We again reason inductively on u. If |u| = 1, then (0 , φ) ∗u (0 , φ), meaning the claim
+does not apply. Thus, u = u n for some u ∈ (B {0})+ and we perform a case distinction
+on whether there exists a σ such that (0 , φ) ∗u (n−1 , σ ). If there exists no such σ , this
+property holds for Ru per inductive hypothesis and it is easily observed that any possible
+choice of Rn−1 preserves the property for Ru n . If (0 , φ) ∗u (n−1 , σ ) then, as (n−1 , n ) ∈
+E, this must mean that n−1 : IF Xi THEN  ELSE  and n−1 is the ‘incorrect bud’ (i.e.,
+n−1 is some + and σ (Xi ) = 0). In such cases, the Xi• corresponding to the value of σ (Xi )
+is activated by Rn−1 (i.e., Xi− if σ (Xi ) = 0). Combining this with what is known about Ru
+by property (3), this means that (Xi− , α, Xi− ), (Xi− , α, Xi+ ) ∈ Ru .
+With this classification of the potential runs, we can connect the trace condition on branches
+not covered by Lemma 7.1 to the runs of the program p.
+Lemma 7.3. Let  ∈ Bω be a path through p which does not have a progressing trace along R or
+the G0 , . . . , Gm . Then,  = u0u1 0u2 0u3 0 . . . with each ui ∈ (B − {0})+ . Furthermore,  does not
+satisfy the trace condition iff from some N ∈ ω onwards, (1, φ) ∗ui (0, φ) for all i > N.
+Proof. That  = u0u1 0u2 0 . . . follows directly from Lemma 7.1.
+First suppose that (1, φ) ∗ui (0, φ) for i > N. As BOOLE-programs are deterministic, this
+means ui = u for all i > N and some fixed u. From Lemma 7.2 (3), it follows that for every Xj
+we have (Xj− , α, Xj+ ), (Xj− , 0, Xj− ) ∈ Ru . By Lemma 7.2 (1), the trace on Xj+ is interrupted in R0 .
+Thus, there can be no progressing trace along any Xj+ , Xj− along the path 0u0u . . .. Then, because
+of the previous results, there is no progressing trace along any of the elements of Tr(ε) meaning 
+does not satisfy the trace condition.
+Conversely, suppose that infinitely many of the ui did not satisfy (1, φ) ∗ui (0, φ). There are
+two possibilities for such ui s: either there is some σ  = φ with (1, φ) ∗ui (0, σ ) or not. In the former
+case, there thus must be some Xj with σ (Xj ) = 1, meaning (Xj− , 1, Xj− ) ∈ Rui . In the latter case,
+there also must be some Xj with (Xj− , 1, Xj− ). As the traces on Xj− are never interrupted, if infinitely
+many such ‘deviant’ runs exist along , some Xj− must be activated infinitely often, as there are only
+finitely many variables. Then,  satisfies the trace condition.
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+572
+
+B. Afshari and D. Wehr
+
+Corollary 7.1. For any given BOOLE program p, p ∈ BOOLEfalse iff p does not satisfy the trace
+condition of TA .
+Theorem 7.1. Verifying the trace condition on ACDs in TA for any A is PSPACE-hard.
+Proof. A BOOLE-program can be transformed into the ACD given in Definition 7.2 in
+LOGSPACE. By Corollary 7.1, this constitutes a LOGSPACE-reduction of a PSPACE-hard problem (BOOLEfalse ) to cyclic proof checking in TA for any A.
+Remark 7.1. The PSPACE-hardness result in Theorem 7.1 is only given in terms of a concrete family
+of trace categories, the activation algebra induced TA . It remains an open question if a more general
+condition on trace categories can be found which would yield PSPACE-hardness.
+HOM-set finiteness of a trace category T does not entail PSPACE-hardness. For instance, consider
+a HOM-set finite trace category T in which every path satisfies the trace condition and which thus
+makes checking it trivially O(1). This example also illustrates that ω-regularity of the trace condition
+of T does not entail PSPACE-hardness.
+Remark 7.2. Theorem 7.1 does not directly imply that the proof checking of any concrete cyclic
+proof system is PSPACE-hard, even if its trace condition can be expressed in terms of A. Instead,
+Theorem 7.1 only proves that there exist ‘suitably small’ ACDs over A whose GTC satisfaction codes
+the termination of BOOLE-programs. To extend this result to a concrete cyclic proof system, one must
+prove that for any BOOLE-program p, there exists a ‘suitably small’ cyclic proof whose (compressed)
+ACD is p. Usually, this can be accomplished by finding formulas which can produce various traces.
+For example, for the variables, the following ‘trace gadgets’ are required:
+
+To conclude PSPACE-completeness, it remains to show that proof checking for TA -ACDs is in
+PSPACE.
+Lemma 7.4. For a given ACD D = (C, Tr : PC → TA ), the verification whether it constitutes an
+abstract cyclic proof can be carried out in PSPACE.
+Proof. Following the proof of Theorem 6.1, one can verify whether D is a proof by deciding
+whether the language of a Büchi-automaton A recognising all paths through D is included in the
+language of a Büchi-automaton B recognising all paths consisting of morphisms from Tr which
+satisfy the trace condition of TA . The language inclusion problem for regular languages is known
+to be in PSPACE (Kupferman and Vardi 1996). Thus, it remains to find automata A and B adhering
+to the aforementioned specifications whose sizes are polynomial in the size of D. The automaton A
+given in Theorem 6.1 is already suitable for this. On the other hand, the automaton B constructed
+according to Theorem 6.2 is too large, as its set of states contains the sets HOM(X, X) for each
+set X of trace values in the image of Tr, whose size is exponential in the size of X. However, the
+TA -specific construction for the B given in Wehr (2021, Proposition 5.11) is of size polynomial to
+the size of D. Thus, there are suitable automata such that deciding L(A) ⊆ L(B) decides whether D
+is a proof, meaning this can be decided in PSPACE.
+Corollary 7.2. The problem of verifying whether an ACD over TA is a proof is PSPACE-complete.
+The fact that proof checking for TA -ACDs is in PSPACE extends to a concrete cyclic proof
+system R much more readily than PSPACE-hardness. The only restriction is that the set of trace
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+573
+
+values of each R-sequent is of polynomial size and that the trace data of an R-pre-proof can be
+computed in PSPACE. All cyclic proof systems we know of satisfy these properties.
+Lemma 7.5. Let (SEQ, R, ρ, PFS) be a cyclic proof system whose trace condition is given by a
+trace interpretation ι : R → TA . Suppose that ι is such that for sequents  ∈ SEQ the set ι() of
+trace values in  is of size polynomial to the size of  and can be computed from  in PSPACE.
+Suppose further that for each rule r ∈ R with ρ(r) = (, 1 , . . . , n ), the maps ri : ι() → ι( i )
+can be computed in PSPACE. Then deciding whether an R-pre-proof is a proof is in PSPACE.
+Proof. Given an R-pre-proof = (C, λ, δ), simply compute its induced ACD D = (C, Tr : PC →
+TA ) as described in Definition 4.3. By the assumptions about ι, D can be computed in PSPACE.
+Thus, if D is of size polynomial to the size of , checking whether is an R-proof can be carried
+out in PSPACE as described in Lemma 7.4. As C is simply ‘copied’, it suffices to show that Tr is of
+polynomial size. Per assumption, each Tr(s) is ι(λ(s)) and thus of polynomial size of the sequent
+λ(s) which is accounted for in the size of . Similarly, Tr(s si) ⊆ Tr(s) × A × Tr(si) for each s ∈ C
+and si ∈ Chld(s) and is thus of polynomial size to max{|λ(s)| , |λ(si)|}. As this data suffices to code
+Tr, D overall is of polynomial size to as desired.
+Corollary 7.3. Verifying whether a μ-pre-proof is a proof is in PSPACE.
+
+8. Conclusion
+The derivations of cyclic proof systems, which are finite, directed graphs, rather than finite trees,
+may not be sound, that is, they might conclude invalid sequents. Thus, cyclic proof systems distinguish between pre-proofs (well-formed derivations) and proofs (sound, well-formed derivations).
+The most common method is to impose a global trace condition: for a pre-proof to be a proof,
+all of its infinite branches must satisfy a so-called trace condition. We capture this trace condition
+in categorical terms: infinite branches are represented by paths, functors P : ω → T from the preorder category on ω to a trace category T . A trace category T is a category equipped with a trace
+condition, a predicate on paths through T which is closed under taking suffixes and internal composition. We further define a family of trace categories TA whose morphisms are relations between
+finite sets annotated with an activation algebra A: a finite ∨-semilattice with a distinguished activation element α. A path through TA satisfies the trace condition if it carries an infinite sequence
+of connected elements which attains the activation value α infinitely often. Almost all notions of
+trace from the literature can be represented naturally in terms of some TA . Notably, the usual trace
+condition for the cyclic systems of μ-calculi is given in terms of the three-value failure algebra F.
+Using this abstracted notion of trace, a pre-proof with underlying graph C may be represented
+as an annotation of C with maps of a trace category T . In categorical terms, the latter is a functor
+Tr : PC → T from the category of finite paths through C into T . When representing a pre-proof
+in this manner, all details unrelated to the trace condition are abstracted away, leading us to call
+such functors abstract cyclic derivation. The requirement of trace conditions being closed under
+internal composition allows us to prove the following two novel results in cyclic proof theory.
+• Compression: ACDs may be ‘compressed’ to trace-condition-equivalent ACDs over graphs
+whose size is linear in the number of simple cycles in C (Theorem 4.1).
+• Ramsey-style soundness: An ACD Tr : PC → T is a proof (i.e., every path through it satisfies the trace condition) if and only if for every idempotent endomorphism R : X → X in
+the image of Tr, the periodic path Rω : ω → T (which simply repeats R) satisfies the trace
+condition (Theorem 5.2).
+We also prove some well-known results of cyclic proof theory in terms of our abstract notion
+of trace and derivation in order to demonstrate the adequacy of our notions for tackling questions
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+574
+
+B. Afshari and D. Wehr
+
+of cyclic proof theory and connect them to the wider field. In Section 6, we consider trace categories with ω-regular trace conditions, connecting ACDs with ω-automata theory. As a result
+of the Ramsey-style soundness condition, every trace category with finite HOM-sets, including all TA , has an ω-regular trace condition. We prove the following results using automata
+theory.
+• Decidability: If the trace condition of T is ω-regular in a ‘computable’ manner, the GTC of
+ACDs on T is decidable (Theorem 6.1).
+• Regularisation: If a proof system is finite (i.e., the set of sequents occurring in a proof is
+finite), then every sequent provable via a ill-founded proof is provable via a cyclic proof
+(Theorem 6.3).
+In Section 7, we generalise a result about the cyclic proof system for multiplicative-additive
+linear logic with fixed points (μMALL) by Nollet et al. (2019) to obtain.
+• PSPACE-completeness: The problem of deciding whether an ACD over TA satisfies the GTC
+is PSPACE-complete (Theorem 7.1 & Lemma 7.4).
+The above result is proven in such a way that the decision problem being in PSPACE readily transfers to concrete cyclic proof systems with a TA -trace condition. Transferring PSPACE-hardness,
+however, requires certain assumptions on the concrete cyclic proof system.
+8.1 Related work
+
+Definitions and results in this article originate from Wehr’s Masters thesis (Wehr 2021), although
+most have undergone significant changes. The thesis contains results that are not presented in
+this article, including a categorical treatment of a further three cyclic proof systems: cyclic arithmetic (Simpson 2017), HFLN (Kori et al. 2021) and Grzegorczyk modal logic (Savateev and
+Shamkanov 2021).
+To the best of our knowledge, Brotherston (2006) is the only previous work on abstracting
+cyclic proofs. The present article can be viewed as an extension of Brotherston’s in two ways:
+first, his abstract notion of derivation is closer to the common definition of pre-proofs, being
+presented in terms of abstract sequents and derivation rules. Crucially, this bars him from considering the composition of trace information, which enabled us to derive the ACD compression
+result (Theorem 4.1) and the alternative soundness condition (Theorem 5.2). Second, Brotherston
+only considers trace conditions expressed in terms of the Booleans B which, as we have remarked,
+is insufficient to directly express the trace condition of the modal μ-calculus, a problem our
+activation algebras alleviate.
+Lee et al. (2001) propose a termination criterion for first-order programs called the size-change
+principle. This criterion can be considered an instance of the TB trace condition. The authors give
+a decision procedure for the size-change principle which is a variant of the decision procedure for
+the Ramsey trace condition we give in Theorem 5.3, specialised to TB . They also prove PSPACEcompleteness of their criterion by reducing it to BOOLE termination. This argument has been
+adapted by Nollet et al. (2019) to the cyclic proof system for multiplicative, additive linear logic
+with fixed points (μMALL) which we in turn adapted to ACDs in Section 7.
+The Ramsey trace condition (Definition 5.1) is not the first application of Ramsey’s theorem
+in the field of cyclic proof theory. Notably, existing proofs of the equivalence of (extensions
+of) cyclic arithmetic and (extensions of) Peano arithmetic (Berardi and Tatsuta 2017; Das 2020;
+Simpson 2017) rely on (arithmetised) variants of Ramsey’s theorem for concluding provability in
+Peano arithmetic from cyclic provability. In their proofs, it is applied to ‘internalise’ the soundness
+justification given by the GTC into non-cyclic PA proofs.
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+575
+
+Cohen et al. (2024) use a variant of Brotherston’s framework, that is, TB in our setting, to
+carry out a parameterised analysis of the worst-case complexity of various methods for checking
+soundness of cyclic proofs. The two parameters they considered, presented in terms of an ACD
+(C, Tr : PC → TB ) with C = (T, β), are vertex count n = |T| and vertex width w = maxt∈T |Tr(t)|.
+They find that many checking procedures, such as those based on automata akin to those sketched
+in Remark 6.2 and the Ramsey decision procedure of Section 5, are polynomial in vertex count
+n and exponential in vertex width w. They also propose an optimisation to the Ramsey decision
+procedure, called Order-reduced Transitive Looping procedure, which reduces the exponential
+degree in the vertex width w. We conjecture that all of their results can be extended to arbitrary TA .
+In some sense, every cyclic proof system in the literature might be considered related work, as
+one can ask whether its trace condition can be modelled by our formalism. For most cyclic proof
+system we are aware of, including all those referred to in this article, this seems to be the case with
+three exceptions: The first is the bouncing-thread trace condition of Baelde et al. (2022) which considers traces that do not reside along the branches of a pre-proof. The second is the limit condition,
+presented by Hazard and Kuperberg (2022) in their system for transfinite word languages, which
+has traces running through multiple separate pre-proofs. The third are the higher-dimensional
+trace conditions of the hypersequent calculi of Das and Girlando (2022) and Afshari et al. (2023).
+Since the publication of the conference version of this article, further work using the proposed
+framework of A-activated categories has been carried out by Leigh and Wehr (2023). The article
+covers reset proof systems, cyclic proof systems with a soundness that can be verified in polynomial time and which have proven fruitful for proof-theoretic investigation (see, e.g., Afshari
+and Leigh 2017; Afshari et al. 2021; Marti and Venema 2021). In the article, it is shown that for
+each cyclic proof system whose GTC is specified in terms of some TA , there exists an associated
+reset proof system which proves the same theorems. To obtain the reset proof system, the original
+proof system is equipped with an annotation mechanism which is derived from the trace sets and
+trace maps of the trace interpretation. In this application, the ‘naturality’ of a trace interpretation
+culminates in a natural reset proof system.
+Acknowledgements. We thank the anonymous referees for their insightful comments and suggestions. This work was supported by the Knut and Alice Wallenberg Foundation [2020.0199,
+2015.0179] and the Swedish Research Council [2017-05111, 2016-03502].
+
+References
+Afshari, B. and Leigh, G. E. (2017). Cut-free completeness for modal Mu-calculus. In: 2017 32nd Annual ACM/IEEE
+Symposium on Logic in Computer Science (LICS), 1–12.
+Afshari, B., Leigh, G. E. and Menéndez Turata, G. (2021). Uniform interpolation from cyclic proofs: The case of modal Mucalculus. In: Automated Reasoning with Analytic Tableaux and Related Methods, vol. 12842, Cham, Springer International
+Publishing, 335–353.
+Afshari, B., Leigh, G. E. and Turata, G. M. (2023). A cyclic proof system for full computation tree logic. In: Klin, B. and
+Pimentel, E. (eds.) 31st EACSL Annual Conference on Computer Science Logic, CSL 2023, February 13–16, 2023, Warsaw,
+Poland, LIPIcs, vol. 252, Schloss Dagstuhl - Leibniz-Zentrum für Informatik, 5:1–5:19.
+Afshari, B. and Wehr, D. (2022). Abstract cyclic proofs. In: Ciabattoni, A., Pimentel, E. and de Queiroz, R. J. G. B. (eds.)
+Logic, Language, Information, and Computation, Lecture Notes in Computer Science, Springer International Publishing,
+309–325.
+Baelde, D., Doumane, A., Kuperberg, D. and Saurin, A. (2022). Bouncing threads for circular and non-wellfounded proofs:
+Towards compositionality with circular proofs. In: Baier, C. and Fisman, D. (eds.) LICS’22: 37th Annual ACM/IEEE
+Symposium on Logic in Computer Science, Haifa, Israel, August 2–5, 2022, ACM, 63:1–63:13.
+Baelde, D., Doumane, A. and Saurin, A. (2016). Infinitary proof theory: The multiplicative additive case. In: Talbot, J.-M. and
+Regnier, L. (eds.) 25th EACSL Annual Conference on Computer Science Logic (CSL 2016), Leibniz International Proceedings
+in Informatics (LIPIcs), vol. 62. Schloss Dagstuhl–Leibniz-Zentrum fuer Informatik, 42:1–42:17. ISSN: 1868-8969.
+Berardi, S. and Tatsuta, M. (2017). Equivalence of inductive definitions and cyclic proofs under arithmetic. In: 2017 32nd
+Annual ACM/IEEE Symposium on Logic in Computer Science (LICS), 1–12.
+Brotherston, J. (2006). Sequent Calculus Proof Systems for Inductive Definitions. Phd thesis, University of Edinburgh.
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+576
+
+B. Afshari and D. Wehr
+
+Brotherston, J., Distefano, D. and Petersen, R. L. (2011). Automated cyclic entailment proofs in separation logic. In: Bjørner,
+N. and Sofronie-Stokkermans, V. (eds.) Automated Deduction – CADE-23, Lecture Notes in Computer Science, Berlin,
+Heidelberg, Springer, 131–146.
+Brotherston, J., Gorogiannis, N. and Petersen, R. L. (2012). A generic cyclic theorem prover. In: Jhala, R. and Igarashi, A.
+(eds.) Programming Languages and Systems, Lecture Notes in Computer Science, Berlin, Heidelberg, Springer, 350–367.
+Cohen, L., Jabarin, A., Popescu, A. and Rowe, R. N. S. (2024). The complex(ity) landscape of checking infinite descent.
+Proceedings of the ACM on Programming Languages 8. (conditionally accepted).
+Das, A. (2020). On the logical complexity of cyclic arithmetic. Logical Methods in Computer Science 16 (1) 1:1–1:39.
+Das, A. (2021). On the logical strength of confluence and normalisation for cyclic proofs. In: Kobayashi, N. (ed.)
+6th International Conference on Formal Structures for Computation and Deduction (FSCD 2021), Leibniz International
+Proceedings in Informatics (LIPIcs), vol. 195, Dagstuhl, Germany, Schloss Dagstuhl – Leibniz-Zentrum für Informatik,
+29:1–29:23.
+Das, A. and Girlando, M. (2022). Cyclic proofs, hypersequents, and transitive closure logic. In: Blanchette, J., Kovács, L. and
+Pattinson, D. (eds.) Automated Reasoning - 11th International Joint Conference, IJCAR 2022, Haifa, Israel, August 8–10,
+2022, Proceedings, Lecture Notes in Computer Science, vol. 13385, Springer, 509–528.
+Fortier, J. and Santocanale, L. (2013). Cuts for circular proofs: Semantics and cut-elimination. In: Rocca, S. R. D. (ed.)
+Computer Science Logic 2013 (CSL 2013), Leibniz International Proceedings in Informatics (LIPIcs), vol. 23, Dagstuhl,
+Germany, Schloss Dagstuhl–Leibniz-Zentrum fuer Informatik, 248–262.
+Hazard, E. and Kuperberg, D. (2022). Cyclic proofs for transfinite expressions. In: Manea, F. and Simpson, A. (eds.)
+30th EACSL Annual Conference on Computer Science Logic (CSL 2022), Leibniz International Proceedings in Informatics
+(LIPIcs), vol. 216, Schloss Dagstuhl Leibniz-Zentrum für Informatik, 23:1–23:18. ISSN: 1868-8969.
+Joyal, A., Street, R. and Verity, D. (1996). Traced monoidal categories. Mathematical Proceedings of the Cambridge
+Philosophical Society 119 (3) 447–468.
+Jungteerapanich, N. (2009). A tableau system for the modal μ-calculus. In: Giese, M. and Waaler, A. (eds.) Automated
+Reasoning with Analytic Tableaux and Related Methods, Lecture Notes in Computer Science, Berlin, Heidelberg, Springer,
+220–234.
+Kori, M., Tsukada, T. and Kobayashi, N. (2021). A cyclic proof system for HFLN. In: Baier, C. and Goubault-Larrecq, J. (eds.)
+29th EACSL Annual Conference on Computer Science Logic (CSL 2021), Leibniz International Proceedings in Informatics
+(LIPIcs), vol. 183, Dagstuhl, Germany, Schloss Dagstuhl–Leibniz-Zentrum für Informatik, 29:1–29:22.
+Kozen, D. (1983). Results on the propositional μ-calculus. Theoretical Computer Science 27 (3) 333–354. Number: 3
+Publisher: Elsevier.
+Kupferman, O. and Vardi, M. Y. (1996). Verification of fair transition systems. In: Alur, R. and Henzinger, T. A. (eds.)
+Computer Aided Verification, Lecture Notes in Computer Science, Springer, 372–382.
+Lee, C. S., Jones, N. D. and Ben-Amram, A. M. (2001). The size-change principle for program termination. In Proceedings
+of the 28th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages, POPL’01, New York, NY, USA,
+Association for Computing Machinery, 81–92.
+Leigh, G. E. and Wehr, D. (2023). From GTC to Reset: Generating Reset Proof Systems from Cyclic Proof Systems.
+(arXiv:2301.07544).
+Marti, J. and Venema, Y. (2021). A focus system for the alternation-free μ-calculus. In: Das, A. and Negri, S. (eds.) Automated
+Reasoning with Analytic Tableaux and Related Methods - 30th International Conference, TABLEAUX 2021, Birmingham,
+UK, September 6–9, 2021, Proceedings, Lecture Notes in Computer Science, vol. 12842, Springer, 371–388.
+McNaughton, R. (1966). Testing and generating infinite sequences by a finite automaton. Information and Control 9 (5)
+521–530.
+Nieer, F. (2002). Nondeterministic tree automata. In: Grädel, E., Thomas, W. and Wilke, T. (eds.) Automata, Logics, and
+Infinite Games: A Guide to Current Research, Lecture Notes in Computer Science, Springer-Verlag.
+Niwiński, D. and Walukiewicz, I. (1996). Games for the μ-calculus. Theoretical Computer Science 163 (1–2) 99–116.
+Nollet, R., Saurin, A. and Tasson, C. (2019). PSPACE-completeness of a thread criterion for circular proofs in linear logic
+with least and greatest fixed points. In: Cerrito, S. and Popescu, A. (eds.) Automated Reasoning with Analytic Tableaux
+and Related Methods, Lecture Notes in Computer Science, Cham, Springer International Publishing, 317–334.
+Rabin, M. O. (1969). Decidability of second-order theories and automata on infinite trees. Transactions of the American
+Mathematical Society 141 1–35.
+Ramsey, F. P. (1930). On a problem of formal logic. Proceedings of the London Mathematical Society s2-30 (1) 264–286.
+Savateev, Y. and Shamkanov, D. (2021). Non-well-founded proofs for the Grzegorczyk modal logic. The Review of Symbolic
+Logic 14 (1) 22–50.
+Simpson, A. (2017). Cyclic arithmetic is equivalent to Peano arithmetic. In: Esparza, J. and Murawski, A. S. (eds.) Foundations
+of Software Science and Computation Structures, Lecture Notes in Computer Science, Berlin, Heidelberg, Springer, 283–300.
+Sprenger, C. and Dam, M. (2003). On global induction mechanisms in a μ-calculus with explicit approximations. RAIRO Theoretical Informatics and Applications 37 (4) 365–391.
+Stirling, C. (2013). A proof system with names for modal Mu-calculus. Electronic Proceedings in Theoretical Computer Science
+129 18–29.
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+Mathematical Structures in Computer Science
+
+577
+
+Tellez, G. and Brotherston, J. (2017). Automatically verifying temporal properties of pointer programs with cyclic proof. In:
+de Moura, L. (ed.) Automated Deduction – CADE 26, Lecture Notes in Computer Science, Cham, Springer International
+Publishing, 491–508.
+Wehr, D. (2021). An Abstract Framework for the Analysis of Cyclic Derivations. MSc thesis, University of Amsterdam.
+
+Cite this article: Afshari B and Wehr D (2024). Abstract cyclic proofs. Mathematical Structures in Computer Science 34,
+552–577. https://doi.org/10.1017/S0960129524000070
+
+https://doi.org/10.1017/S0960129524000070 Published online by Cambridge University Press
+
+

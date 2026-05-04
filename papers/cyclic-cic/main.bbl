@@ -1,0 +1,54 @@
+\begin{thebibliography}{1}
+
+\bibitem{afshari-wehr-2024-abstract-cyclic}
+Bahareh Afshari and Dominik Wehr.
+\newblock Abstract cyclic proofs.
+\newblock {\em Mathematical Structures in Computer Science}, 34:552--577, 2024.
+
+\bibitem{asperti-ricciotti-sacerdoti-coen-tassi-2009-kernel}
+Andrea Asperti, Wilmer Ricciotti, Claudio Sacerdoti~Coen, and Enrico Tassi.
+\newblock A compact kernel for the calculus of inductive constructions.
+\newblock {\em S\={a}dhan\={a}}, 34(1):71--144, 2009.
+
+\bibitem{brotherston-2006-cyclic}
+James Brotherston.
+\newblock Cyclic proofs for first-order logic with inductive definitions.
+\newblock In {\em TABLEAUX}, 2006.
+
+\bibitem{brotherston-simpson-2011-sequent}
+James Brotherston and Alex Simpson.
+\newblock Sequent calculi for induction and infinite descent.
+\newblock In {\em LICS}, 2011.
+
+\bibitem{kruskal-1960-wqo}
+Joseph~B. Kruskal.
+\newblock Well-quasi-ordering, the tree theorem, and {V}azsonyi's conjecture.
+\newblock {\em Transactions of the American Mathematical Society}, 1960.
+
+\bibitem{leuschel-2002-homeomorphic}
+Michael Leuschel.
+\newblock Homeomorphic embedding for online termination of partial deduction.
+\newblock In {\em Logic-Based Program Synthesis and Transformation}, 2002.
+
+\bibitem{sorensen-gluck-1995-supercompilation}
+Morten~Heine S{\o}rensen and Robert Gl{\"u}ck.
+\newblock An introduction to supercompilation.
+\newblock In {\em Partial Evaluation and Semantics-Based Program Manipulation},
+  1995.
+\newblock Often cited introductory survey; venue details vary by edition.
+
+\bibitem{sprenger-dam-2003-circular-tree}
+Christoph Sprenger and Mads Dam.
+\newblock On the structure of inductive reasoning: Circular and tree-shaped
+  proofs in the $\mu$-calculus.
+\newblock In {\em Foundations of Software Science and Computation Structures
+  (FoSSaCS 2003)}, volume 2620 of {\em Lecture Notes in Computer Science},
+  pages 425--440. Springer, 2003.
+
+\bibitem{turchin-1986-supercompiler}
+Valentin~F. Turchin.
+\newblock {\em The Concept of a Supercompiler}.
+\newblock Springer, 1986.
+\newblock Classic reference introducing supercompilation.
+
+\end{thebibliography}

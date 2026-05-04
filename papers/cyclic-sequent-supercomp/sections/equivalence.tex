@@ -77,11 +77,10 @@ This claim is mechanized via $\texttt{supercompile\_ciu\_soundness\_untyped}$ (\
 \item \textbf{Constructor CIU (CIU.v):} CIU lifts through term constructors: $\texttt{ciu\_tApp}$, $\texttt{ciu\_apps}$, $\texttt{ciu\_shift}$, $\texttt{ciu\_subst0}$, $\texttt{ciu\_case\_branches\_ciu}$.
 \item \textbf{Fuel induction:} $\texttt{residualise\_cfg\_ciu}$ proves by induction on fuel that for any vertex $v$ not yet in the fix environment, the residualised term is CIU-equivalent to the shifted term at $v$. The $\texttt{tFix}$ wrapper is handled by $\texttt{ciu\_fix}$ and the $\texttt{subst0\_shift\_cancel}$ lemma which cancels one level of de Bruijn shift.
 \item \textbf{Self-loop protection:} The trace check ($\texttt{trace\_condition\_ok}$) prevents self-loops without progress edges ($\texttt{trace\_condition\_ok\_no\_self\_loop}$), guaranteeing that the fuel induction never encounters a degenerate fixpoint that would introduce non-termination.
+\item \textbf{Generalisation:} The $\texttt{lookup\_inst}$ case (generalisation) is handled by $\texttt{ciu\_generalise}$: $\texttt{apps (mk\_lams tys body) args}$ $\beta$-reduces to the body with arguments substituted, filling the anti-unification holes. The induction on the generalised vertex then gives CIU for the original vertex via the instantiation substitution.
 \end{enumerate}
 
 The CIU relation itself is defined and proved to be an equivalence in Coq (\texttt{Equiv/CIU.v}); the $\texttt{terminates\_to\_tApp\_decompose}$ and $\texttt{terminates\_to\_tCase\_decompose}$ lemmas in \texttt{Semantics/Cbn.v} provide the decomposition needed for the constructor-lifting proofs.
-
-\textbf{Limitation:} The CIU proof covers the generalisation-free fragment (the branch where $\texttt{lookup\_inst}$ returns $\texttt{None}$). When the supercompiler uses generalisation (the $\texttt{Some}~\sigma$ case), the residualiser produces $\texttt{apps}(r, \sigma)$ and the induction requires a CIU lemma for this pattern. The step correspondence (Theorem~\ref{thm:step-correspondence}) and all other results are unaffected by this restriction.
 
 \subsection{Claim 4: Example validation}
 

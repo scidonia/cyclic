@@ -1,0 +1,142 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Normalization pipeline: compile terms to cyclic objects, simplify by supercompilation, then extract back to term syntax. The intended equality notion is $t \approx t'$ up to typed CIU, and fold/refold steps are constrained by global progress evidence.}}{3}{figure.1}\protected@file@percent }
+\newlabel{fig:pipeline}{{1}{3}{Normalization pipeline: compile terms to cyclic objects, simplify by supercompilation, then extract back to term syntax. The intended equality notion is $t \approx t'$ up to typed CIU, and fold/refold steps are constrained by global progress evidence}{figure.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Scope and claims.}{3}{section*.2}\protected@file@percent }
+\citation{brotherston-2006-cyclic}
+\citation{brotherston-simpson-2011-sequent}
+\citation{afshari-wehr-2024-abstract-cyclic}
+\citation{sprenger-dam-2003-circular-tree}
+\citation{asperti-ricciotti-sacerdoti-coen-tassi-2009-kernel}
+\citation{turchin-1986-supercompiler}
+\citation{sorensen-gluck-1995-supercompilation}
+\citation{kruskal-1960-wqo}
+\citation{leuschel-2002-homeomorphic}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Prior work and relation to Cyclic CIC}{4}{section.2}\protected@file@percent }
+\newlabel{sec:prior}{{2}{4}{Prior work and relation to Cyclic CIC}{section.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Cyclic proof theory: from concrete systems to abstract frameworks.}{4}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Local induction vs global discharge.}{4}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Engineering CIC kernels.}{4}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Supercompilation and termination control.}{4}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Why go cyclic? Proof identity and non-fixed induction principles}{4}{section.3}\protected@file@percent }
+\newlabel{sec:why-cyclic}{{3}{4}{Why go cyclic? Proof identity and non-fixed induction principles}{section.3}{}}
+\citation{brotherston-2006-cyclic}
+\citation{brotherston-2006-cyclic}
+\citation{brotherston-2006-cyclic}
+\savepointas{eo-bud}{pgfid2}{0pt}{0pt}
+\savepicturepage{pgfid2}{5}
+\pgfsyspdfmark {pgfid2}{32902035}{44213502}
+\savepointas{eo-comp}{pgfid3}{0pt}{0pt}
+\savepicturepage{pgfid3}{5}
+\pgfsyspdfmark {pgfid3}{17163418}{41146422}
+\savepicturepage{pgfid4}{5}
+\pgfsyspdfmark {pgfid4}{20129219}{40107675}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces A schematic cyclic natural-deduction proof in CIC style (example shape due to \cite  {brotherston-2006-cyclic}). Write $E\,n$ and $O\,n$ for evenness/oddness judgements over $\ensuremath  {\mathbf  {N}}$. We treat $A\lor B$ as an inductive type; proof terms are elided. The bud $(*)$ is discharged by a back-link to its companion, carrying explicit substitution evidence $\sigma : (n\DOTSB \mapstochar \rightarrow m)$.}}{5}{figure.2}\protected@file@percent }
+\newlabel{fig:eo-cyclic}{{2}{5}{A schematic cyclic natural-deduction proof in CIC style (example shape due to \cite {brotherston-2006-cyclic}). Write $E\,n$ and $O\,n$ for evenness/oddness judgements over $\Nat $. We treat $A\lor B$ as an inductive type; proof terms are elided. The bud $(*)$ is discharged by a back-link to its companion, carrying explicit substitution evidence $\sigma : (n\mapsto m)$}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Index bureaucracy caused by list pipeline composition: the index \(\mathsf  {length}(\mathsf  {map}\tmspace  +\thickmuskip {.2777em}g(\mathsf  {map}\tmspace  +\thickmuskip {.2777em}f\tmspace  +\thickmuskip {.2777em}l))\) must be transported to \(\mathsf  {length}\tmspace  +\thickmuskip {.2777em}l\) using an explicit equality proof.}}{5}{figure.3}\protected@file@percent }
+\newlabel{fig:mapmap-index-pain}{{3}{5}{Index bureaucracy caused by list pipeline composition: the index \(\mathsf {length}(\mathsf {map}\;g(\mathsf {map}\;f\;l))\) must be transported to \(\mathsf {length}\;l\) using an explicit equality proof}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Example 1: cyclic proofs as proof graphs}{5}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Example 2: dependent index bureaucracy}{5}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}The core motivation: induction principles need not be fixed}{6}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Post-transformation proof identity}{7}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Source calculus (terms, typing, semantics)}{7}{section.4}\protected@file@percent }
+\newlabel{sec:source}{{4}{7}{Source calculus (terms, typing, semantics)}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Term syntax}{7}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Indexed inductive families.}{7}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Typing}{7}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Typing indexed inductives.}{8}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Call-by-name operational semantics}{9}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Cyclic CIC objects (proof graphs and fix-free vertex language)}{9}{section.5}\protected@file@percent }
+\newlabel{sec:cyclic}{{5}{9}{Cyclic CIC objects (proof graphs and fix-free vertex language)}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Preproofs: locally-correct finite proof graphs}{9}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Buds, back-links, and explicit substitutions.}{10}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Cyclic proofs: global condition + witness}{10}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Semantics and intended equality}{10}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Fix-free vertex language (used by read-off)}{10}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reintroducing \texttt  {fix} when extracting back.}{11}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Judgements over vertices}{11}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Backlink rule (core idea).}{11}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}A cyclic sequent calculus for our CIC fragment (sketch)}{11}{section.6}\protected@file@percent }
+\newlabel{sec:cyclic-sequent}{{6}{11}{A cyclic sequent calculus for our CIC fragment (sketch)}{section.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Why a sequent calculus?}{11}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Judgements}{12}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Core rules (Pi, lambda, application)}{12}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Cut / explicit substitution.}{12}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Inductives: roll and case (sketch)}{12}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Cyclic sequent proofs}{12}{subsection.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Back-links with instantiation.}{13}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Global progress.}{13}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Open design questions.}{13}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Global conditions on cycles}{13}{section.7}\protected@file@percent }
+\newlabel{sec:global}{{7}{13}{Global conditions on cycles}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Ranking condition (template)}{13}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Why this matters for transformations}{14}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Fold/refold invariants (informal checklist).}{14}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Supercompilation for normalisation}{14}{section.8}\protected@file@percent }
+\newlabel{sec:transforms}{{8}{14}{Supercompilation for normalisation}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Supercompilation (what it consists of)}{14}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Algorithm sketch (driving + whistle + generalise + fold)}{15}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Worked example: indexed types and cast elimination}{15}{subsection.8.3}\protected@file@percent }
+\newlabel{sec:index-example}{{8.3}{15}{Worked example: indexed types and cast elimination}{subsection.8.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Two terms.}{15}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{How supercompilation removes the bureaucratic index.}{16}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{End-to-end identity claim (up to CIU).}{16}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Proof sketch (CIU, algorithm-driven).}{16}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Beta-reduction strategies}{16}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Single-step head reduction.}{16}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Weak-head normal form (WHNF).}{16}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Full normalization.}{17}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}\textsc  {CaseCase}: commuting nested case}{17}{subsection.8.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Canonicalisation example (term-level).}{17}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}Worked example: unfold/generalise/fold (cycle creation)}{17}{subsection.8.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.7}Information propagation in case scrutinee}{18}{subsection.8.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Motive propagation.}{18}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Scrutinee propagation into branches.}{18}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.8}Full normalization: driving under binders}{19}{subsection.8.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Driving strategy.}{19}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Eta-expansion.}{19}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.9}Unfolding and refolding of cycles}{19}{subsection.8.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Why refolding is sound.}{20}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Key theorems (mechanized)}{20}{section.9}\protected@file@percent }
+\newlabel{sec:theorems}{{9}{20}{Key theorems (mechanized)}{section.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{TCB boundary and why CIU.}{20}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Typed CIU equivalence}{20}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Head beta reduction}{20}{subsection.9.2}\protected@file@percent }
+\newlabel{thm:beta-ciu}{{9.1}{20}{Head beta preserves typed CIU}{theorem.9.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}Read-off and extraction round-trip}{20}{subsection.9.3}\protected@file@percent }
+\newlabel{thm:extract-read-off-id}{{9.2}{20}{Round-trip identity}{theorem.9.2}{}}
+\newlabel{thm:extract-read-off-ciu}{{9.3}{20}{Round-trip preserves typed CIU}{theorem.9.3}{}}
+\citation{turchin-1986-supercompiler}
+\citation{sorensen-gluck-1995-supercompilation}
+\citation{kruskal-1960-wqo}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4}Case--case commuting conversion}{21}{subsection.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What is proved (and what is not).}{21}{section*.32}\protected@file@percent }
+\newlabel{thm:casecase-ciu}{{9.4}{21}{\textsc {CaseCase} preserves typed CIU}{theorem.9.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.5}Lifting transformations}{21}{subsection.9.5}\protected@file@percent }
+\newlabel{thm:casecase-lifted}{{9.5}{21}{CaseCase transform preserves typed CIU (by reduction to term theorem)}{theorem.9.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6}Ranking-based global progress (proved)}{21}{subsection.9.6}\protected@file@percent }
+\newlabel{prop:ranking-nat}{{9.6}{21}{Natural-number ranking implies progress condition}{theorem.9.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Canonical forms via supercompilation-style control}{21}{section.10}\protected@file@percent }
+\newlabel{sec:canonical}{{10}{21}{Canonical forms via supercompilation-style control}{section.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Control relation (homeomorphic embedding)}{22}{subsection.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Reductions ``modulo unfolding''}{22}{subsection.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.3}Canonical form (intended)}{22}{subsection.10.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.4}Connection to transformations}{22}{subsection.10.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11}Conclusion}{22}{section.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Verified results and current status.}{23}{section*.33}\protected@file@percent }
+\bibstyle{plain}
+\bibdata{refs}
+\bibcite{afshari-wehr-2024-abstract-cyclic}{1}
+\bibcite{asperti-ricciotti-sacerdoti-coen-tassi-2009-kernel}{2}
+\bibcite{brotherston-2006-cyclic}{3}
+\bibcite{brotherston-simpson-2011-sequent}{4}
+\bibcite{kruskal-1960-wqo}{5}
+\bibcite{leuschel-2002-homeomorphic}{6}
+\bibcite{sorensen-gluck-1995-supercompilation}{7}
+\bibcite{sprenger-dam-2003-circular-tree}{8}
+\bibcite{turchin-1986-supercompiler}{9}
+\@writefile{toc}{\contentsline {paragraph}{Future direction: cycle \(\eta \)-elimination for semantically constant cycles.}{24}{section*.34}\protected@file@percent }
+\gdef \@abspage@last{24}

@@ -1732,6 +1732,24 @@ Section CIUSoundness.
         pose proof (IH t') as Hci2. eapply ciu_trans; [exact Hci1|exact Hci2].
   Qed.
 
+  (** Generalisation CIU: [apps (mk_lams tys body) args] β-reduces to
+      [body] with arguments substituted sequentially via [subst0].
+      Each [tLam] consumes one argument from [args]. *)
+  Lemma ciu_generalise (tys args : list tm) (body : tm) :
+    ciu (apps (SC.mk_lams tys body) args) (fold_right subst0 body args).
+  Proof.
+    revert body args.
+    induction tys as [|ty tys IH]; intros body args.
+    - cbn. destruct args; apply ciu_refl.
+    - cbn. destruct args as [|a args'].
+      + apply ciu_refl.
+      + eapply ciu_trans.
+        * apply steps_ciu. eapply rt_trans.
+          -- apply steps_apps_congr. apply steps_step. apply step_beta.
+          -- apply rt_refl.
+        * apply IH.
+  Qed.
+
   Lemma residualise_cfg_ciu (fuel : nat) (Σ : Ty.env) (b : SC.cfg_builder)
       (Hclosed : STC.builder_succ_closed b) (Hok : SC.trace_condition_ok b = true) :
     forall (v d : nat) (ρ : SC.fix_env) (Γ : Ty.ctx) (t A : tm),
@@ -1752,7 +1770,25 @@ Section CIUSoundness.
       { cbn. apply ciu_refl. }
       destruct ws as [|w2 ws'].
       + destruct (SC.lookup_inst b v) as [σ|] eqn:Hinst.
-        { cbn. apply ciu_refl. }
+        { (* Generalisation: residual = apps (residual w) (shifted σ).
+             The generalised vertex w wraps its body in mk_lams,
+             and apps with σ β-reduces to fill the holes.
+             The IH on w gives CIU for the residual at w. *)
+          cbn.
+          pose proof (STC.builder_succ_closed_label b Hclosed v w (C.jTy Γ t A) [w] Hlabel Hsucc (in_eq w nil)) as [cfg_w Hlabel_w].
+          destruct cfg_w as [Γ_w t_w A_w| | ] eqn:Hcfg.
+          - eapply ciu_trans.
+            { apply ciu_sym. apply ciu_fix. }
+            apply ciu_subst0.
+            eapply ciu_trans.
+            { apply ciu_generalise. }
+            apply (IH fuel'' ltac:(lia)) with (v := w) (d := S d) (ρ := ρ') (Γ := Γ_w) (t := t_w) (A := A_w).
+            + simpl. exact Hlabel_w.
+            + unfold ρ'. cbn. rewrite lookup_insert.
+              destruct (Nat.eq_dec w v) as [->|Hne].
+              * exfalso. eapply (STC.trace_condition_ok_no_self_loop b Hclosed v (C.jTy Γ t A) Hok Hsucc Hlabel).
+              * apply lookup_empty.
+          - apply ciu_refl. }
         cbn.
         eapply ciu_trans.
         { apply ciu_sym. apply ciu_fix. }

@@ -1,0 +1,902 @@
+On the Structure of Inductive Reasoning:
+Circular and Tree-Shaped Proofs in the
+µ-Calculus
+Christoph Sprenger1 and Mads Dam2
+1
+
+INRIA Sophia Antipolis, France
+(sprenger@sophia.inria.fr)
+2
+Royal Institute of Technology, Kista, Sweden
+(mfd@imit.kth.se)
+
+Abstract. In this paper we study induction in the context of the ﬁrstorder µ-calculus with explicit approximations. We present and compare
+two Gentzen-style proof systems each using a diﬀerent type of induction.
+The ﬁrst is based on ﬁnite proof trees and uses a local well-founded induction rule, while the second is based on (ﬁnitely represented) ω-regular
+proof trees and uses a global induction discharge condition to ensure externally that all inductive reasoning is well-founded. We give eﬀective
+procedures for the translation of proofs between the two systems, thus
+establishing their equivalence.
+
+1
+
+Introduction
+
+Induction is the fundamental ﬁnitary method available in mathematics and computer science to generate and reason about ﬁnite and inﬁnite objects. Three main
+proof-theoretic approaches to explicit induction1 can be identiﬁed:
+1. well-founded induction,
+2. Scott/Park ﬁxed point induction (cf. [7]), and
+3. cyclic proofs, based on the idea of reducing induction to a global wellfoundedness check on a locally sound inference graph.
+As general approaches to inductive reasoning the former two are clearly the dominant ones. However, the value of cyclic reasoning in the decidable case has been
+demonstrated quite unequivocally by now. Examples are the well-established
+equivalence between monadic second-order logic, temporal logics (including various µ-calculi) and automata on inﬁnite objects [14] as well as the usefulness of
+
+
+Research done mainly while at Swedish Institute of Computer Science (SICS), supported by Swiss European Fellowship 83EU-065536, and completed at INRIA, supported by an ERCIM fellowship.
+
+Supported by the Swedish Research Council grant 621-2001-2637, ”Semantics and
+Proof of Programming Languages”
+1
+As opposed to implicit induction (cf. [3]), based on Knuth-Bendix completion.
+A.D. Gordon (Ed.): FOSSACS 2003, LNCS 2620, pp. 425–440, 2003.
+c Springer-Verlag Berlin Heidelberg 2003
+
+
+426
+
+Christoph Sprenger and Mads Dam
+
+automata for obtaining decidability results and eﬃcient algorithms [15]. Similar
+claims can be made concerning the usefulness of tableau-based techniques for
+obtaining completeness results in modal and temporal logic [6]. In the context of
+theorem proving and (undecidable) proof search, however, cyclic reasoning has
+received little attention. In our opinion, this situation deserves to be remedied.
+Our claim is that it facilitates proof search, mainly due to its ability to delay decisions concerning induction strategy as far as possible. Although it is too early
+for any real conclusions on the validity of this claim, the experiences with cyclic
+proofs for the µ-calculus using the EVT theorem prover [1, 5] are encouraging.
+In this paper, we address the fundamental question of the relative deductive power of cyclic proofs versus well-founded induction, the latter being the
+yardstick by which other formalisations must be compared. Our investigation is
+based on Park’s ﬁrst-order µ-calculus [8], which provides a minimal setting to
+study formalised induction. In this context, cyclic reasoning underpins work on
+model checking [13], completeness of the modal µ-calculus [16], and, more recently, Gentzen-type proof systems for compositional veriﬁcation [4, 11, 10]. We
+establish eﬀective translations between two Gentzen-style proof systems: one,
+Sloc , for well-founded (local) induction, and the other, Sglob , based on (ﬁnitely
+represented) ω-regular proof trees using an external global induction discharge
+condition ensuring the well-foundedness. We work in an extension of the basic µ-calculus with explicit approximations [4] and ordinal quantiﬁcation [10]
+(Sect. 2). Inductive reasoning in both proof systems rests on this extension. In
+system Sloc (Sect. 3), it is supported by a single local induction rule, an instantiation of the the well-known rule of well-founded induction to ordinals. In
+system Sglob (Sect. 4), the global induction discharge condition organises the
+basic cycles, called repeats, into a partial induction order, assigns a progressing
+induction variable to each repeat and requires each repeat to preserve (i.e. not
+increase) the variables of repeats above it in the induction order. This condition
+ensures that the induction associated with each strongly connected subgraph is
+well-founded. For the translation from Sloc to Sglob (Sect. 5) it is suﬃcient to
+show that the local induction rule of Sloc is derivable in Sglob . The translation
+in the other direction (Sect. 6) is more involved and generally proceeds in two
+stages. We ﬁrst present a direct translation for Sglob -proofs, where the inductive
+structure represented in the induction order matches the proof tree structure.
+Then, we discuss an exponential time algorithm, which unfolds arbitrary cyclic
+proofs until they are in the form required by the direct translation.
+We think that, by clearly exhibiting the underlying structures and their relationships, our present formal treatment sheds some new light on the various
+approaches to inductive reasoning. An important beneﬁt from using explicit
+approximations is that it largely decouples our constructions from the actual
+language (here, the µ-calculus), thus strongly suggesting that they can support
+lazy-style global induction in other contexts such as type theories with inductive
+deﬁnitions [9]. Barthe et al. [2], for instance, points in this direction by proposing
+a type system ensuring termination of recursive functions based on approximations of inductive types. Finally, an interesting practical implication of our result
+
+On the Structure of Inductive Reasoning
+
+427
+
+is that (assuming size blow-ups can be prevented) it permits standard theorem
+provers to be gracefully interfaced with the µ-calculus based EVT prover.
+Set-theoretic preliminaries Let G = (A, R ⊆ A × A) be a graph. We say that
+G is a forest if (a, b) ∈ R and (a, c) ∈ R imply b = c. A tree is a forest with a
+unique root node r ∈ A such that there is no a ∈ A with (a, r) ∈ R. We call G
+forest-like if (a, b) ∈ R and (a, c) ∈ R imply b = c or (b, c) ∈ R ∪ R−1 . A subset
+C ⊆ A is strongly R-connected if for any two x, y ∈ C we have that (x, y) ∈ R∗ .
+C is weakly R-connected if R ∪ R−1 is strongly R-connected. We sometimes call
+C ⊆ A a subgraph of G and mean the subgraph (C, R ∩ C × C) induced by C.
+A strongly connected subgraph (SCS) C ⊆ A is non-trivial if R ∩ C × C = ∅.
+
+2
+
+µ-Calculus with Explicit Approximations
+
+Let 2 = {0, 1} be the two-point lattice and let Pred(S) = 2S be the lattice of
+predicates over S ordered pointwise. For a monotone map f : Pred(S) → Pred(S)
+we deﬁne the ordinal approximation µα f and the fixed point µf by
+
+µ0 f
+= λx.0
+µγ f = α<γ µα f for limit ordinals γ
+
+µf = a µα f
+µα+1 f = f (µα f )
+Proposition 1. Let f : Pred(S) → Pred(S) be a monotone map. Then
+1. µf is the
+ least fixed point of f (Knaster-Tarski), and
+2. µα f = β<α f (µβ f ).
+We assume countably inﬁnite sets of individual variables x, y, z . . . ∈ VI , of predicate variables X, Y, Z, . . . ∈ VP of each arity n ≥ 0, and of ordinal variables
+ι, κ, λ, . . . ∈ VO . Let t range over the terms of some signature Σ.
+Definition 1. (Syntax) The syntax of µ-calculus formulas φ and predicates Φ
+over Σ is inductively defined by
+φ ::= t = t | κ < κ | ¬φ | φ1 ∧ φ2 | ∃x.φ | ∃κ.φ | Φ(t)
+Φ ::= X | µX(x).φ | µκ X(x).φ
+with the restriction that the arities of Φ and t match in Φ(t) and the formation
+of both µX(x).φ and µκ X(x).φ is subject to the conditions that (i) the arities of
+X and x match, and (ii) all occurrences of X in φ appear under an even number
+of negations (formal monotonicity).
+Zero-ary predicates are identiﬁed with formulas. We call formulas of the form
+κ < κ ordinal constraints. The sets of free and bound variables of formulas
+and predicates are deﬁned as expected, in particular, fv(µX(x).φ) = fv(φ) −
+{X, x} and fv(µX κ (x).φ) = (fv(φ) − {X, x}) ∪ {κ}. We will identify formulas
+that are equal up to renaming of bound variables. Dual connectives are deﬁned
+in the usual way, with νX(x).φ = ¬µX(x).¬φ[¬X/X] and the approximated
+
+428
+
+Christoph Sprenger and Mads Dam
+
+ﬁxed point similarly. We also use bounded ordinal quantiﬁers deﬁned by the
+abbreviations ∃ι < κ.φ = ∃ι. ι < κ ∧ φ and ∃ι ≤ κ.φ = (∃ι < κ.φ) ∨ φ[κ/ι].
+Given a Σ-model M = (A, ρ) (A is the structure and ρ the interpretation)
+the semantics interprets a µ-calculus formula φ as an element φ M ∈ 2 and
+an n-ary predicate Φ as an element Φ M ∈ Pred(|A|n ). We often drop M and
+write φ ρ and Φ ρ if the structure A is clear from the context.
+Definition 2. (Semantics) Given a signature Σ and a Σ-model (A, ρ) define
+the semantics of µ-calculus formulas φ and predicates Φ over Σ inductively by
+
+∃κ.φ ρ
+= β φ ρ[β/κ]
+t = t ρ = if t ρ = t ρ then 1 else 0
+κ < κ ρ = if ρ(κ ) < ρ(κ) then 1 else 0
+Φ(t) ρ
+= Φ ρ( t ρ)
+=1− φ ρ
+X ρ
+= ρ(X)
+¬φ ρ
+φ1 ∧ φ2 ρ = 
+min{ φ1 ρ , φ2 ρ }
+µX(x).φ ρ = µΨ
+∃x.φ ρ
+= a∈|A| φ ρ[a/x]
+µκ X(x).φ ρ = µρ(κ) Ψ
+where t ρ is defined as usual and Ψ = λP.λa. φ ρ[P/X,a/x] in the clauses for
+fixed point and approximation predicates.
+Given a model M = (A, ρ), we extend the valuation ρ a posteriori to terms
+t and formulas φ by deﬁning ρ(t) = t ρ and ρ(φ) = φ ρ . This allows us to
+compose substitutions θ with environments ρ as in ρ ◦ θ. We say that a model
+M = (A, ρ) satisfies a formula φ, written M |= φ, if φ ρ = 1. A formula φ is
+valid if M |= φ for all models M.
+
+3
+
+Local Induction: The System S 
+
+In this section we introduce the Gentzen-type proof system Sloc for local wellfounded induction. It shares most deﬁnitions and proof rules with the system
+Sglob for global induction presented in the next section.
+Sequents The sequents of both proof systems are of the form Γ O ∆, where
+Γ and ∆ are ﬁnite multisets of formulas and O is a ﬁnite set of ordinal variables.
+A sequent is well-formed if all ordinal variables occurring free in Γ or ∆ are
+elements of O. We tacitly restrict our attention to well-formed sequents. The
+set of free variables of a sequent is deﬁned by fv(Γ O ∆) = fv(Γ ∪ ∆) ∪ O.
+Substitutions are extended to multisets of formulas by deﬁning Γ [θ] = {φ[θ] |
+φ ∈ Γ }. In sequents we often write O, κ for O ∪ {κ}.
+Given a Σ-model M = (A, ρ) we say that M satisfies a sequent Γ O ∆ if
+M |= φ for all φ ∈ Γ implies that M |= ψ for some ψ ∈ ∆. A model M falsifies
+a sequent Γ O ∆ if M does not satisfy Γ O ∆. The sequent Γ O ∆ is valid
+if it is satisﬁed in all models.
+
+On the Structure of Inductive Reasoning
+
+Structural Rules
+
+(Cut)
+
+Γ, φ O φ, ∆
+(Id)
+·
+
+Γ O ∆
+(Weak) 
+Γ  O  ∆
+
+Γ O ∆
+Γ, φ O ∆ Γ O φ, ∆
+
+(Subst)
+
+Γ  ⊆Γ
+∆ ⊆∆
+O  ⊆O
+
+Γ [θ] O[θ] ∆[θ]
+Γ O ∆
+
+Logical and Equality Rules
+(¬-L)
+
+(∧-L)
+
+Γ, ¬φ O ∆
+Γ O φ, ∆
+
+(¬-R)
+
+Γ, φ1 ∧ φ2 O ∆
+Γ, φ1 , φ2 O ∆
+
+(∧-R)
+
+Γ O ¬φ, ∆
+Γ, φ O ∆
+
+Γ O φ 1 ∧ φ 2 , ∆
+Γ O φ 1 , ∆ Γ O φ 2 , ∆
+Γ O ∃x.φ, ∆
+Γ O φ[t/x], ∆
+
+(∃-L)
+
+Γ, ∃x.φ O ∆
+x ∈ fv(Γ, ∆)
+Γ, φ O ∆
+
+(∃-R)
+
+(=-L)
+
+Γ [t2 /x], t1 = t2 O ∆[t2 /x]
+Γ [t1 /x] O ∆[t1 /x]
+
+(=-R)
+
+Γ O t = t, ∆
+·
+
+Fixed Point Rules
+(µ1 -L)
+
+Γ, (µX(x).φ)(t) O ∆
+Γ, ∃κ.(µκ X(x).φ)(t) O ∆
+
+(µ0 -R)
+
+Γ O (µX(x).φ)(t), ∆
+Γ O φ[µX(x).φ/X, t/x], ∆
+
+(µκ -L)
+
+Γ, (µκ X(x).φ)(t) O ∆
+
+Γ, ∃κ < κ.φ[µκ X(x).φ/X, t/x] 
+
+(µκ -R)
+
+Γ O (µκ X(x).φ)(t), ∆
+Γ O ∃κ < κ.φ[µκ X(x).φ/X, t/x], ∆
+
+O ∆
+
+Ordinal Rules
+(∃κ-L)
+
+Γ, ∃κ.φ O ∆
+κ ∈ O
+Γ, φ O,κ ∆
+
+(<-L)
+
+Γ, κ < κ O ∆
+·
+
+(∃κ-R)
+
+(<-R)
+
+Γ O ∃κ.φ, ∆
+ι∈O
+Γ O φ[ι/κ], ∆
+
+Γ O κ < κ, ∆
+
+Γ O κ < κ , ∆ Γ O κ < κ, ∆
+
+Table 1. The proof rules shared by Sloc and Sglob
+
+429
+
+430
+
+Christoph Sprenger and Mads Dam
+
+(Ind-L)
+
+Γ, ∃κ.φ O ∆
+κ ∈ O
+Γ, φ O,κ ∃κ < κ.φ[κ /κ], ∆
+
+(Ind-R)
+
+Γ O ∀κ.φ, ∆
+κ ∈ O
+Γ, ∀κ < κ.φ[κ /κ] O,κ φ, ∆
+
+Table 2. The local induction rules of Sloc
+
+Proof System The proof system is presented in two parts. Table 1 shows the
+basic set of proof rules, common to both Sloc and Sglob . They are presented in
+tableau-style with the conclusion above the line and the premises below. Fixed
+point rule (µ1 -L) is the essential device which introduces ordinal approximations.
+Note the asymmetry of rules (µ1 -L) and (µ0 -R). However, one can show that the
+symmetric rules (µ0 -L) and (µ1 -R) are derivable in Sloc . The local proof system
+Sloc is then obtained by adding to the basic proof rules the local induction rule
+(Ind-L) of Table 2. The table also shows its derivable dual (Ind-R), which might
+look more familiar to the reader.
+Given a set S of proof rules an S-derivation tree D = (N , E, L) is a tree (N , E)
+with nodes N and edges E ⊆ N × N together with a function L labelling each
+node of the tree with a sequent in a way that is consistent with the application
+of the proof rules in S. We often write N (Γ O ∆) for L(N ) = Γ O ∆.
+Definition 3. An Sloc -proof for a sequent Γ O ∆ is an Sloc -derivation tree D
+whose root is labelled by Γ O ∆ and each leaf of which is labelled by an axiom.
+Lemma 1. The proof rules of Tables 1 and 2 are sound. In particular, if there is
+a Σ-model (A, ρ) falsifying the conclusion C of a rule then there is a environment
+ρ such that (A, ρ ) falsifies some premise P of that rule. Moreover, we can
+choose ρ such that, for all ordinal variables κ free in both P and C, we have
+ρ (κ) = ρ(θ(κ)) for rule (Subst) and ρ (κ) ≤ ρ(κ) for all other rules.
+The proof proceeds by a straightforward inspection of the rules. In particular,
+the soundness of the ﬁxed point rules follows immediately from Proposition 1.
+The soundness of the proof system Sloc is then an immediate corollary.
+Theorem 1. (Soundness of Sloc ) If D is an Sloc -proof for Γ O ∆ then
+Γ O ∆ is valid.
+
+On the Structure of Inductive Reasoning
+
+4
+
+431
+
+Global Induction: The System S 
+
+The proof system Sglob uses the proof rules from Table 1 only. However, proofs in
+this system are not ﬁnite but ω-regular trees, which we represent as ﬁnite trees
+with back edges called repeats. An external global induction discharge condition
+then ensures that all inductive reasoning embodied in the proof structure is
+well-founded. Let us ﬁx an arbitrary Sglob -derivation tree D = (N , E, L).
+Definition 4. (Repeat) A repeat R = (N, M ) for D is a pair of nodes of D
+such that N is a leaf, M lies on the path from the root of D to N and L(N ) =
+L(M ). The node N is called the repeat node and M is called its companion.
+We denote by π(R) the path M · · · N in D.
+Definition 5. (Pre-Proof ) A pre-proof P = (D, R) is composed of an Sglob derivation tree D = (N , E, L) and a set of repeats R for D such that each of its
+non-axiom leaves appears in exactly one repeat of R. We call the graph G(P) =
+(N , E ∪ R, L) the pre-proof graph of P.
+The following lemma will allow us to identify strongly connected subgraphs of
+G(P) with certain subsets of R. For two repeats R = (N, M ) and R = (N  , M  )
+in R deﬁne R → R if there is a path M · · · N  from the companion node M of
+R to the repeat node N  of R in the derivation tree D.
+Lemma 2. There is a bijection between the non-trivial strongly connected subgraphs of G(P) and the strongly connected subgraphs of (R, →).
+We are now ready to deﬁne the basic induction discharge condition qualifying a
+pre-proof as a proof. This condition is based on the notions of preservation and
+progress of repeats with respect to approximant variables.
+Definition 6. (Progress, Preservation) Constraint κ < κ is called derivable
+at N (Γ O ∆), written N  κ < κ, if there is a repeat-free Sglob -pre-proof for
+Γ O κ < κ, ∆. Let R be a repeat with π(R) = N0 · · · Nm and Ni (Γi Oi ∆i )
+and let κ be an ordinal variable. Then we say
+– R preserves κ, if κ ∈ Oi for all i, and if either Nj  θ(κ) < κ or θ(κ) = κ
+whenever rule (Subst) is applied with θ at Nj , and
+– R progresses on κ, if R preserves κ and rule (Subst) is applied with some θ
+at some Nj such that Nj  θ(κ) < κ.
+Definition 7. (Sglob -Proof ) A pre-proof P = (D, R) is an Sglob -proof if for
+each strongly connected subgraph S ⊆ R there is an ordinal variable κ such that
+1. some repeat R ∈ S progresses on κ, and
+2. each repeat R ∈ S preserves κ.
+
+432
+
+Christoph Sprenger and Mads Dam
+
+Theorem 2. (Soundness of Sglob ) If P is an Sglob -proof for Γ O ∆ then
+Γ O ∆ is valid.
+Proof. (Sketch) By contradiction. Using Lemma 1 we construct an inﬁnite sequence (N0 , ρ0 ) · · · (Ni , ρi ) · · · of pairs of nodes and valuations such that each
+ρi falsiﬁes L(Ni ). By the deﬁnition of Sglob -proof there is an ordinal variable κ
+such that the sequence {ρi (κ)}i of ordinals decreases inﬁnitely often from some
+point on, contradicting the well-foundedness of the ordinals.
+
+
+Discharge Using Induction Orders The basic induction discharge mechanism does not exhibit suﬃcient structure for our purpose of comparing the two
+systems Sloc and Sglob . For this reason we introduce an alternative induction discharge condition, ﬁrst proposed by Schöpp [10] and generalising the one in [4],
+which orders the set of repeats appearing in a pre-proof. The new condition
+turns out to be equivalent to the original one.
+Definition 8. (Induction Orders) A partial order (R, ) on the set of repeats is called an induction order for P, if it is forest-like and every strongly
+connected subgraph S ⊆ R has a -greatest element.
+A labelled induction order (R, , δ) is an induction order (R, ) together
+with a map δ assigning an ordinal variable κ to each repeat R ∈ R. The ordinal
+variable δ(R), also written δR , is called the induction variable for R.
+The restriction to forest-like partial orders in this deﬁnition is adopted here for
+convenience. It is not necessary for soundness, but suﬃcient for completeness
+(see Proposition 2 below).
+Definition 9. (Alternative Discharge) We say that a labelled induction order (R, , δ) discharges a pre-proof P = (D, R) if for all R ∈ R
+1. R progresses on δR , and
+2. R preserves δR whenever R  R .
+Proposition 2. For any pre-proof P = (D, R) the following are equivalent:
+(i) there is a labelled induction order (R, , δ) discharging P, and
+(ii) P is an Sglob -proof.
+
+5
+
+From Local to Global Induction
+
+The translation of Sloc -proofs to Sglob -proofs is achieved by showing that the
+local induction rule (Ind-L) is derivable in Sglob , in the strong sense that any
+application of (Ind-L) inside an Sglob -proof can be replaced by an equivalent
+Sglob -derivation.
+Theorem 3. The local induction rule (Ind-L) is derivable in Sglob .
+
+On the Structure of Inductive Reasoning
+
+433
+
+Proof. Consider the following derivation (omitting two applications of the weakening rule):
+Γ, ∃κ.φ O ∆
+Γ, φ O,κ ∆
+Γ, φ O,κ ∃κ < κ.φ[κ /κ], ∆
+
+(∃κ-L)
+
+Γ, ∃κ < κ.φ[κ /κ] O,κ ∆
+Γ, κ < κ, φ[κ /κ] O,κ,κ ∆
+Γ, φ O,κ ∆
+
+(Cut)
+(∃κ-L,∧-L)
+(Subst)
+
+This derivation is sound provided κ ∈ O, the side condition of rule (Ind-L). Since
+the repeat (indicated by brackets) preserves all variables in O and progresses on
+
+κ, this derivation can safely replace applications of (Ind-L) in Sglob -proofs. 
+
+6
+
+From Global to Local Induction
+
+In general, the translation from Sglob -proofs to Sloc -proofs proceeds in two stages.
+If the inductive structure of the Sglob -proof matches its tree structure, it can be
+translated directly into an Sloc -proof. Otherwise, the Sglob -proof needs to be
+unfolded prior to this transformation. We ﬁx an arbitrary pre-proof P = (D, R).
+Definition 10. (Structural dependency) The structural dependency relation ≤P on R is defined as follows: R ≤P R holds for two repeats R, R ∈ R if
+the companion node of R appears on the path π(R).
+Lemma 3. Let S ⊆ R. Then S is strongly →-connected if and only if S is
+weakly ≤P -connected.
+Definition 11. (Tree-compatibility) An induction order (R, ) for P is treecompatible if R ≤P R and R ≤P R imply R  R for all R, R ∈ R. An
+Sglob -proof P is called tree-dischargeable if there is a tree-compatible induction
+order discharging P.
+The inductive structure of a tree-dischargeable proof matches its underlying
+tree structure. The next lemma, which can be proved using Lemma 3, gives
+a useful characterisation of induction orders for P in terms of the structural
+dependency relation ≤P , thereby relating the structure of the proof tree with
+the dependencies between repeats in an arbitrary induction order.
+Lemma 4. Let (R, ) be a forest-like partial order. Then (R, ) is an induction
+order for P if and only if R ≤P R implies R  R or R  R for all R, R ∈ R.
+Let P be the transitive closure of ≤P . The following two remarks are easy
+corollaries of Lemma 4.
+
+434
+
+Christoph Sprenger and Mads Dam
+
+Proposition 3. Let P = (D, R) be a pre-proof such that R is injective (as a
+function from repeat nodes to companions). Then P is a tree-compatible induction order for P.
+Lemma 5. Let P = (D, R) be a proof discharged by the tree-compatible induction order (R, , δ). Then P can be transformed into a proof P  = (D , R ) of
+the same sequent such that R is injective and P  is discharged by (R , P  , δ  )
+for some labelling δ  .
+6.1
+
+Translating Tree-Dischargeable Proofs
+
+Since each repeat R embodies an induction progressing on variable δR along the
+path π(R) from the companion to the repeat node, it seems natural to insert the
+local induction rule (Ind-L) at the companion node and use, essentially, the whole
+sequent as an induction hypothesis. This induction hypothesis is then conveyed
+down the proof tree, exploiting progress on δR along π(R) to remove the bounded
+quantiﬁcation introduced by (Ind-L) and thus making the induction hypothesis
+available for local discharge at the repeat node. The rest of this section is devoted
+to proving the following theorem along these lines.
+Theorem 4. Let P = (D, R) be a Sglob -proof of Γ O ∆, tree-dischargeable by
+(R, , δ). Then P can be transformed into a Sloc -proof D of Γ O ∆.
+Proof. (Sketch) We assume w.l.o.g. that (A) R is injective and  = P , by
+Lemma 5, and (B) companions appear only as descendents of nodes where a
+rule other than (Subst), (Cut), (∧-R) and (<-R) is applied.
+Our construction recursively transforms D = (N , E, L) into a new derivation
+tree D = (N  , E  , L ) by replacing at each node N the rule applied to produce
+ and premises N
+
+the set of descendents NN by a derivation DN with root N
+N =
+ | N  ∈ NN } (and some fresh interior nodes). The procedure keeps the
+{N
+set H of current induction hypotheses, which is added to N (Γ O ∆) yielding
+ (Γ O ∆, H) in D . For any node N ∈ N deﬁne the set of repeats active at N
+N
+by RN = {R ∈ R | ∃R ∈ R.N ∈ π(R) and R P R } and let ON = {δR | R ∈
+RN } be the corresponding set of induction variables. We note fact (C): there is
+some R ∈ RN preserving all variables in ON . Hence, ON ⊆ O for N (Γ O ∆).
+The induction hypothesis HR to be added to the current set of hypotheses H at
+the companion node M (Γ O ∆) of a repeat R = (N, M ) is deﬁned by
+HR = ∃δ < δR .ΨR [δ/δ
+ R]
+ΨR = ∃ι ≤ ιR .∃v. (Γ ∪ ¬∆ ∪ ¬H)[ι/ιR ]
+where {ιR } = OM − {δR } and {v} = fv(Γ O ∆) − OM . The free induction
+hypothesis ΨR packs the sequent at M together with the set H into a single
+formula, existentially quantiﬁes all but the active induction variables in OM
+and binds the (preserved) active induction variables ιR in ΨR by a quantiﬁer
+
+On the Structure of Inductive Reasoning
+
+435
+
+of type ∃· ≤ ιR . The guarded induction hypothesis HR additionally binds the
+(progressing) induction variable δR in ΨR by a quantiﬁer of type ∃· ≤ δR .
+Transformation of D to D . Our procedure ensures that for each node N (Γ O
+ (Γ O ∆, H) such that the following invariant holds:
+∆) in D there is a node N
+g
+⊆ H ⊆ HN
+I(N, H) = HN
+g
+g
+where HN
+= {HR | R ∈ RN } and HN = HN
+∪ {ΨR | R ∈ RN }. By assumption
+(B) the root Nr is not a companion so RN = ∅ and the invariant holds trivially
+by initially setting H = ∅. We now describe the derivations DN replacing in
+D the rule application at N in D. Suppose we have constructed D up to some
+ (Γ  O ∆ , H) where the invariant holds. The cases where a rule other
+node N
+than (Subst) is applied at N and none of the descendents of N is a companion
+are easy to show. We just remark that in order to maintain the invariant at the
+branching rules (Cut), (∧-R) and (<-R) we possibly need weakening on H to
+account for the splitting of the set of active repeats between the two branches.
+Due to assumption (B) the two remaining cases are:
+
+Case 1. The single descendent M (Γ O ∆) of N is the companion of a repeat
+R. The invariant I(M, H) is violated for H, because the induction hypothesis
+ (Γ  O ∆ , H)
+HR is missing in H. The derivation DN in Fig. 1 adds HR to N
+(Γ O ∆, H, HR ) and thus reestablishing the invariant.
+yielding M
+At node M  we cut in ∃δR .ΨR . After weakening away all but the latter formula on the left hand side, we apply the induction rule (Ind-L). This leaves us
+with the sequent ΨR ON HR , which is transformed into the desired sequent
+(Γ O ∆, H, HR ) by applying a series of essentially ﬁrst-order rules (RS1)
+M
+deconstructing ΨR on the left. On the right hand side, we apply a dual series
+of rules (RS2) proving Nr (Γ O ∆, H, ΨR ) locally. Note that the sequent at Nr
+anticipates, thanks to the cut, the desired situation at the repeat node of R,
+since it contains a right hand side occurrence of the free induction hypothesis.
+
+N (Γ  O ∆ , H)
+M  (Γ O ∆, H)
+Γ, ∃δR .ΨR O ∆, H
+∃δR .ΨR ON −{δR }
+ΨR ON HR
+
+(Γ O ∆, H, HR )
+M
+
+(Weak)
+(Ind-L)
+(RS1)
+
+(rule at N )
+
+Γ O ∆, H, ∃δR .ΨR
+Nr (Γ O ∆, H, ΨR )
+·
+
+(Cut)
+(∃κ-R)
+(RS2)
+
+Fig. 1. Derivation DN inserted at companion node N of a repeat R
+
+436
+
+Christoph Sprenger and Mads Dam
+
+Case 2. Rule (Subst) applied at N with descendent M . We need to make sure
+that the substitution rule is correctly applied and that the induction hypotheses
+in H are (re-)generated as in the following compressed version of derivation DN :
+ (Γ [θ] O[θ] ∆[θ], H)
+N
+
+(Regen)
+M  (Γ [θ] O[θ] ∆[θ], H [θ])
+(Subst)
+(Γ O ∆, H )
+M
+where H = {HR | HR ∈ H} ∪ {ΨR | ΨR ∈ H or N  θ(δR ) < δR }. We have
+RM = RN , since M is not a companion by assumption (B). It is then easy to
+see that I(M, H ) holds. Note that, since fv(HN ) ⊆ ON , it follows from fact (C)
+above that each κ ∈ fv(HN ) is preserved by θ at N , that is, N  θ(κ) < κ or
+ to M  labelled (Regen) then includes, for each
+θ(κ) = κ. The derivation from N
+R ∈ RN , a derivation that produces:
+1. ΨR [θ] from HR if N  θ(δR ) < δR , exploiting progress of δR and preservation
+of ιR by θ at N ,
+2. ΨR [θ] from ΨR if θ(δR ) = δR and ΨR ∈ H, using preservation of δR and ιR
+by θ at N , and
+3. HR [θ] from HR , also using preservation of δR and ιR by θ at N .
+In each of the derivations (1)-(3) the leading bounded ordinal quantiﬁers in ΨR
+and HR are duplicated and commuted prior to instantiation as necessary, by
+applying some easily derivable auxiliary rules.
+Continuing this procedure down to the leaves of D yields, for each repeat
+(Γ O ∆, H) and N
+ (Γ O ∆, H ) in D (where N
+ is
+R = (N, M ), two nodes M
+
+
+
+a leaf of D so far). We now show that H ⊆ H and ΨR ∈ H , implying that the
+ is provable in Sloc in the same way as the one at node Nr in Fig. 1.
+sequent at N
+Consider some R ∈ RM . From RM = RN and the invariant it follows that HR
+is in both HM and HN . If ΨR ∈ HM then we also have ΨR ∈ HN , since R
+preserves δR and so ΨR is regenerated along π(R) (see discussion in case (2)
+above). Hence, H ⊆ H . Since R progresses on δR , ΨR will be generated from
+HR at some point on the path π(R) and then regenerated in each subsequent
+application of rule (Subst) along π(R). Hence, we have ΨR ∈ H . This shows
+that D can be completed into an Sloc -proof.
+
+
+6.2
+
+General Case: Unfolding Proofs
+
+The previous translation crucially depends on the tree-dischargeability of the
+induction order: repeats with companions lower in the proof tree preserve induction variables of repeats higher in the proof tree (“higher” and “lower” being
+determined by P ). In general, we need to unfold the proof until it becomes
+tree-dischargeable. This task is achieved by Algorithm 1.
+
+On the Structure of Inductive Reasoning
+
+437
+
+1: input
+2:
+P0 = (D0 , R0 ) where D0 = (N0 , E0 , L0 ), root Nr { R0 injective }
+3:
+(R0 , 0 , δ0 ) { induction order discharging P0 }
+4: output
+{ unfolded proof }
+5:
+P = (D, R) where D = (N , E , L), N ⊆ N0 ×
+6: globals
+{ sequence number to distinguish copies of nodes }
+7:
+s∈
+8: begin
+9:
+s := 0; E := ; R := 
+10:
+N := {(Nr , s)}; L := {((Nr , s), L0 (Nr ))}
+11:
+unfold (Nr , s) 
+12: end
+13: procedure unfold (N, k) B
+14: parameters
+{ node of P = (node of P0 , copy number) }
+15:
+(N, k) ∈ N0 ×
+{ copy numbers for companions available in P }
+16:
+B : R0
+17: if N is the repeat node of some R = (N, M ) ∈ R0 then
+18:
+if (R, i) ∈ B for some i then { companion (M, i) available for (N, k) }
+19:
+R := R ∪ {((N, k), (M, i))}
+20:
+else { no companion available, continue unfolding through repeat }
+21:
+s := s + 1 { get a new sequence number }
+22:
+add node (M, s) labelled L0 (M ) as child of (N, k) to D
+23:
+unfold (M, s) B
+24:
+end if
+25: else { N is an axiom leaf or an inner node of D0 }
+26:
+if N is the companion of some R ∈ R0 and R ∈ dom B then
+27:
+B := {(R, k)} ∪ {(R , k ) ∈ B | R 0 R }
+28:
+end if
+29:
+for each child N  of N in D0 do { add and unfold each child node }
+30:
+add node (N  , k) labelled L0 (N  ) as child of (N, k) to D
+31:
+unfold (N  , k) B
+32:
+end for
+33: end if
+
+Algorithm 1. Unfolding proofs
+
+It takes a proof P0 = (D0 , R0 ) with injective R0 as input and produces a
+tree-dischargeable proof P = (D, R). Note that no generality is lost by requiring
+that R0 is injective. The nodes of P are pairs (N, k), where N is a node of
+P0 and k is the copy number. The original proof tree is traversed recursively,
+unfolding repeats into new copies of the proof tree as necessary. The procedure
+maintains a partial map B from repeats R0 to copy numbers in N to keep track
+of companions that are available for looping back at repeat nodes. This map is
+updated whenever we encounter the companion of some repeat R ∈ R without
+an entry in B: the entry (R, k) is added to B, while any entry for a repeat R not
+above R with respect to 0 is removed from B (line 26-27). When examining
+
+438
+
+Christoph Sprenger and Mads Dam
+
+copy l of the repeat node N of some repeat R = (N, M ) ∈ R we check whether
+there is some entry (R, k) ∈ B (lines 17-18). If so, then we can safely close the
+loop and add ((N, l), (M, k)) as a new repeat to R (line 19). Otherwise, if there
+is no companion available for R, we proceed by unfolding the tree at (N, l) by
+adding the node (M, k) with a fresh k as a descendant of (N, l) to P (line 21-23).
+The labelled induction order (R, , δ) for P is obtained by lifting (R0 , 0 , δ0 )
+ = (N, M ) ∈ R0 for R = ((N, k), (M, i)) ∈ R, we deﬁne
+to P. Writing R
+ or (R
+ ≺0 R
+=R
+ and k ≤ k  ) and
+R  R ⇔ R
+
+
+δ(R) = δ0 (R)
+
+where R = ((N, k), (M, i)) and R = ((N  , k  ), (M  , i )). Note the tie-breaking
+role of the repeat sequence number in case of identical projected repeats.
+Theorem 5. Let P0 = (D0 , R0 ) be a Sglob -proof of Γ O ∆ such that R0 is
+injective and P0 is discharged by (R0 , 0 , δ0 ). Then Algorithm 1 produces, in
+time O(2|N0 |×|R0 | ), a proof P = (D, R) of Γ O ∆, discharged by the treecompatible induction order (R, , δ) defined above.
+Proof. For partial correctness it is suﬃcient to show that
+1. P = (D, R) is a pre-proof,
+2. (R, ) is a tree-compatible induction order for P, and
+3. (R, , δ) discharges P.
+It is easy to see that P is a pre-proof. As a preparation for (2) and (3) consider
+a repeat R = ((N, k), (M, i)) in R. Let
+c = ((N0 , k0 ), B0 ) · · · ((Nj , kj ), Bj ) · · · ((Nm , km ), Bm )
+with (N0 , k0 ) = (M, i) and (Nm , km ) = (N, k) be the (suﬃx of the) sequence of
+ i) is added to
+recursive calls leading to the introduction of R in P. The pair (R,
+B0 in call c0 (line 27) and appears in all subsequent Bj (1 ≤ j ≤ m). Finally, the
+repeat R is added to R in call cm (line 19). Consider a repeat R = (N  , M  ) ∈
+ i) is
+R0 with its companion M  = Nj occurring in cj with 0 ≤ j ≤ m. Since (R,
+
+in both Bj and Bj+1 and (R , kj ) is added to Bj at in call cj (line 27), we have
+
+(A) if R ∈ dom Bj then R 0 R.
+Ad (2). It is easy to check that (R, , δ) is a forest-like partial order. Now suppose
+R ≤P R for some R, R ∈ R. Since the companion of R appears on π(R) in P
+ ∈ dom Bj so we have
+and hence as Nj in some cj it must be the case that R
+
+
+
+R 0 R by (A). From the deﬁnition of  and Lemma 4 it follows that (R, )
+ = R,
+ since R
+ cannot be
+is an induction order. If, moreover, R ≤P R then R
+unfolded on π(R). This implies that (R, ) is tree-compatible.
+
+Ad (3). Let S  ⊆ R0 be the set of repeats unfolded on π(R) and let S = S  ∪{R}.
+Note that π(R) in P is the composition of all the paths π(R ) in P0 with R ∈ S.
+
+On the Structure of Inductive Reasoning
+
+439
+
+ . Let R ∈ S  with
+ 0 R
+Suppose R  R for some R ∈ R. Then certainly R
+
+companion M . Since R is unfolded in some call cj−1 , we have Nj = M and
+ ), implying
+ by (A) and R preserves δ(R ) = δ0 (R
+R ∈ dom Bj . Hence, R 0 R
+
+
+that R preserves δ(R ). Moreover, R progresses on δ(R), since R progresses on
+ This shows (3).
+δ0 (R).
+Complexity. Suppose for a contradiction that there is a (suﬃx of a) sequence of
+calls of the form c above such that m > 0 and (N0 , dom B0 ) = (Nm , dom Bm ).
+Note ﬁrst that, since the control ﬂow of unfold does not depend on the copy
+numbers, there is an extension ((Nm+1 , km+1 ), Bm+1 ) · · · ((N2m , k2m ), B2m ) of c
+such that (Ni , dom Bi ) = (Ni+m , dom Bi+m ) for all i ≤ m (and, in fact, so on ad
+inﬁnitum). Let S be the set of repeats R ∈ R0 such that Ni is the companion
+of R and R ∈ dom Bi for some i ≤ m. It is not diﬃcult to see that S is strongly
+ ∈ S. Suppose
+connected in (R0 , →) and thus there is a 0 -greatest element R
+ for some i ≤ m. Since R
+ ∈ dom Bi and R
+ is 0 -greatest
+Ni is the companion of R
+ ∈ dom Bk for all i < k ≤ i + m (line 27). In particular,
+in S, it follows that R
+ ∈ dom Bi+m , which contradicts dom Bi = dom Bi+m . Hence, length of any call
+R
+sequence c of unfold is bounded by |c| ≤ |N0 |×|R0 |, yielding an upper bound of
+|N | ≤ 2|N0 |×|R0 | for the size of P and the time complexity of the algorithm. 
+
+
+7
+
+Conclusions
+
+We have presented a translation between proofs using well-founded induction and
+cyclic proofs based on a global well-foundedness condition. The proof systems
+use explicit ordinal approximations as suggested in [4]. Since our main interest in
+approximants is as a proof-theoretical mechanism to deal with ﬁxed points rather
+than proving theorems about them, it would be desirable to identify a fragment of
+the language which could be shown to conserve (not increase) the expressiveness
+of the basic µ-calculus (without explicit approximations). Simpson and Schöpp
+have proposed an alternative approach to approximants based directly on the
+second-order variables instead of ordinal variables [11] and they have proved a
+conservativity result for a variant of this language [12]. Their language lacks,
+however, the ability to “internalise” sequents into single formulas, required in
+our direct translation to local proofs. Thus, it seems that our approach can not
+readily be adapted to yield a similar translation in their framework.
+On a diﬀerent line of research, we would like to investigate whether the ideas
+of this paper can be transferred to the context of type theories with inductive
+deﬁnitions such as the Calculus of Inductive Constructions [9]. A useful starting
+point is the introduction of approximated inductive types along the lines of [2].
+Acknowledgements We would like to thank Alex Simpson and Uli Schöpp as
+well as the members of the FDT group at SICS for fruitful discussions on the
+topic. We are also grateful to Dilian Gurov, Marieke Huisman and the anonymous
+referees for their helpful suggestions.
+
+440
+
+Christoph Sprenger and Mads Dam
+
+References
+[1] T. Arts, G. Chuganov, M. Dam, L.-å. Fredlund, D. Gurov, and T. Noll. A tool for
+verifying software written in Erlang. Accepted for publication in STTT Journal,
+2001.
+[2] G. Barthe, M. J. Frade, E. Giménez, L. Pinto, and T. Uustalu. Type-based termination of recursive deﬁnitions. Mathematical Structures in Computer Science,
+2000. to appear.
+[3] H. Comon. Inductionless induction. In A. Robinson and A. Voronkov, editors,
+Handbook of Automated Reasoning, volume 1, chapter 14. Elsevier Science, 2001.
+[4] M. Dam and D. Gurov. µ-calculus with explicit points and approximations. Journal of Logic and Computation, 12(2):43–57, 2002. Previously appeared in Fixed
+Points in Computer Science, FICS ’02.
+[5] L. Fredlund. A Framework for Reasoning about Erlang Code. PhD thesis, Royal
+Institute of Technology, Stockholm, Sweden, 2001.
+[6] R. Goré. Tableau methods for modal and temporal logics. In Handbook of Tableau
+Methods. Kluwer, 1999.
+[7] D. Kozen. Results on the propositional µ-calculus. Theoretical Computer Science,
+27:333–354, 1983.
+[8] D. Park. Finiteness is mu-ineﬀable. Theoretical Computer Science, 3(2):173–181,
+1976.
+[9] C. Paulin-Mohring. Inductive deﬁnitions in the system Coq – rules and properties.
+Technical Report 92-49, Laboratoire de l’Informatique du Parallélisme, ENS Lyon,
+France, Dec. 1992.
+[10] U. Schöpp. Formal veriﬁcation of processes. Master’s thesis, University of Edinburgh, 2001.
+[11] U. Schöpp and A. Simpson. Verifying temporal properties using explicit approximants: Completeness for context-free processes. In FOSSACS ’02, Grenoble,
+France, volume 2303 of LNCS, pages 372–386. Springer-Verlag, 2002.
+[12] A. Simpson and U. Schöpp. Private communication.
+[13] C. Stirling and D. Walker. Local model checking in the modal µ-calculus. Theoretical Computer Science, 89:161–177, 1991.
+[14] W. Thomas. Automata on inﬁnite objects. In J. van Leeuwen, editor, Handbook of Theoretical Computer Science, volume B, pages 133–191. Elsevier Science
+Publishers, Amsterdam, 1990.
+[15] M. Vardi and P. Wolper. An automata-theoretic approach to automatic program
+veriﬁcation. In Logic in Computer Science, LICS ’86, pages 322–331, 1986.
+[16] I. Walukiewicz. Completeness of Kozen’s axiomatisation of the propositional µcalculus. In Logic in Computer Science, LICS ’95, pages 14–24, 1995.
+
+
