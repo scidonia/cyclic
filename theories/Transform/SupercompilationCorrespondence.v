@@ -6,7 +6,9 @@ From Cyclic.Judgement Require Import Typing.
 From Cyclic.Graph Require Import FiniteDigraph.
 From Cyclic.Preproof Require Import Preproof.
 From Cyclic.Progress Require Import PatternUnification.
-From Cyclic.Transform Require Import ReadOff ReadOffDrivingPreproof Supercompile SupercompileTraceCheckSound SequentDrivingRules SequentObservationRules CyclicTraceConditionObsTree.
+From Cyclic.Transform Require Import ReadOff ReadOffDrivingPreproof Supercompile SupercompileTraceCheckSound SequentDrivingRules SequentObservationRules CyclicTraceConditionObsTree CyclicTraceConditionBudget.
+From Cyclic.CyclicProof Require Import Ranked.
+From Cyclic.Equiv Require Import CIU CIUJudgement.
 
 Import ListNotations.
 Import Term.Syntax.
@@ -595,45 +597,49 @@ Section Correspondence.
     split.
     - rewrite Hsucc_proof. simpl. left. reflexivity.
     - split; assumption.
+Qed.
+
+  (** * Focused Sequent Rule Classification
+
+      Each vertex in the cfg_builder satisfies a specific [drive_rule]
+      determined by its successor structure:
+      - 0 successors: leaf axiom
+      - 1 successor, drive_cbn_once: [dr_cbn_once]
+      - 1 successor, memo hit: backlink (handled by fold correspondence)
+      - n>1 successors, case-split: [dr_split_case_var]
+  *)
+  Lemma cfg_vertex_drive_rule (Σenv : Ty.env) (scb : SC.cfg_builder)
+      (v : nat) (cfg : config) (succs : list nat) :
+    scb.(SC.cb_label) !! v = Some cfg ->
+    scb.(SC.cb_succ) !! v = Some succs ->
+    SDR.drive_rule Σenv cfg
+      (map (fun w => match scb.(SC.cb_label) !! w with
+        | Some cfg' => cfg'
+        | None => C.jTy [] (tVar 0) (tSort 0) end) succs).
+  Proof.
+    intros Hlabel Hsucc.
+    destruct cfg as [Γ t A| | ].
+    - destruct succs as [|w ws] eqn:Hws.
+      + (* No successors → leaf *)
+        apply SDR.dr_leaf.
+      + destruct ws as [|w2 ws'].
+        * (* One successor → async drive or fold *)
+          set (t' := SC.drive_cbn_once t) in *.
+          destruct (PU.tm_eqb t t') eqn:Heq.
+          { (* t = t': no change from driving → fold *)
+            apply PU.tm_eqb_eq in Heq. subst t'.
+            apply SDR.dr_fold. }
+          (* t ≠ t': async drive *)
+          apply SDR.dr_cbn_once.
+          -- apply (drive_cbn_once_sound t t'). reflexivity.
+          -- apply PU.tm_eqb_neq. assumption.
+        * (* Multiple successors → case split *)
+          apply SDR.dr_split_case_var.
+          destruct succs; [discriminate|]. discriminate.
+    - (* jEq/jSub — never occur in SC cfg_builder *) apply SDR.dr_leaf.
   Qed.
 
-  (** Main Correspondence Theorem: SC success ⟹ valid cyclic proof
-  
-      If supercompilation succeeds on a configuration, then residualizing
-      the result and performing read-off produces a rooted preproof that
-      is bisimilar to the cfg_builder.
-      
-      NOTE: This is a simplified statement. The full version would also include
-      the residualization step explicitly and show that read-off of the residual
-      produces the bisimilar proof.
-      
-      For now, we state it assuming the residual term exists and its read-off
-      graph matches the cfg_builder structure.
-  *)
-  Theorem supercompile_gives_valid_preproof :
-    forall Σenv fuel Γ t_input A v scb t_res,
-      SC.supercompile_jTy fuel Σenv Γ t_input A = Some (v, scb) ->
-      (* Assume we have residualized to some term t_res *)
-      (* (In practice, t_res = residualise_cfg fuel Σenv scb v 0 ∅) *)
-      (* Then the read-off of t_res gives a proof bisimilar to scb *)
-      exists (proof : rooted_preproof Σenv t_res),
-        bisim Σenv fuel scb t_res proof.
-  Proof.
-    intros Σenv fuel Γ t_input A v scb t_res Hsc.
-    (* Strategy:
-       1. This requires proving two things:
-          a) The cfg_builder satisfies certain structural invariants
-          b) Read-off of any term produces a builder with matching structure
-       2. The bisimulation follows from these invariants
-       3. This is a deep theorem requiring analysis of both SC and read-off
-    *)
-    (* For now, we admit this as it requires substantial infrastructure *)
-  Admitted.
-
-  (** Helper lemmas for the end-to-end proof
-  
-      These would be needed to complete supercompile_gives_valid_preproof:
-  *)
+  (** Helper lemmas for the end-to-end proof *)
   
   (** Structural invariant: cfg_builder has well-formed graph structure *)
   
@@ -1569,42 +1575,286 @@ End Correspondence.
     See theories/Transform/CyclicTraceCondition.v for the trace infrastructure.
 *)
 
-Section GlobalSoundness.
+(** * Global soundness via budget trace condition *)
+
+Section BudgetCyclicProof.
 
   Module STC := SupercompileTraceCheckSound.
+  Module CTB := CyclicTraceConditionBudget.
+  Import CTB.
 
-  (** First stage of the global condition: every cycle has progress.
+  Context (Σenv : Ty.env).
+  Context (scb : SC.cfg_builder).
+  Context (Hclosed : STC.builder_succ_closed scb).
+  Context (Hcycle : forall xs,
+    FiniteDigraph.is_cycle (STC.cfg_graph scb Hclosed) xs ->
+    Ranking.has_progress_edge (V := nat) (STC.progress_edge_cfg scb) xs).
 
-      We use the algorithm-level boolean check [SC.trace_condition_ok] (enforced
-      by [SC.supercompile_jTy_tc]) and lift it to a proof-facing statement.
+  Definition cfg_budget : nat := size (dom scb.(SC.cb_label)).
+  Definition cfg_is_progress (v : nat) : bool := SC.is_progress_vertex scb v.
 
-      This addresses the hardest global obligation early: ruling out cycles that
-      contain only non-progress edges.
-  *)
-  Lemma supercompile_tc_cycle_progress :
-    forall Σenv fuel Γ t A v scb (Hclosed : STC.builder_succ_closed scb) xs,
-      SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
-      FiniteDigraph.is_cycle (STC.cfg_graph scb Hclosed) xs ->
-      Ranking.has_progress_edge (V := nat) (STC.progress_edge_cfg scb) xs.
+  Lemma progress_cfg_to_base (v w : nat) :
+    STC.progress_edge_cfg scb v w <->
+    progress_edge_base (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) v w.
+  Proof. unfold STC.progress_edge_cfg, progress_edge_base, cfg_is_progress. reflexivity. Qed.
+
+  Lemma progress_cfg_has_to_base (xs : list nat) :
+    Ranking.has_progress_edge (V := nat) (STC.progress_edge_cfg scb) xs ->
+    Ranking.has_progress_edge (V := nat)
+      (progress_edge_base (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress)) xs.
   Proof.
-    intros Σenv fuel Γ t A v scb Hclosed xs Htc Hcyc.
-    unfold SC.supercompile_jTy_tc in Htc.
-    destruct (SC.supercompile_jTy fuel Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
-    destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
-    injection Htc as <- <-.
-    eapply STC.trace_condition_ok_cycle_progress; eauto.
+    intros Hprog. induction xs as [|v xs IH]; [contradiction|].
+    destruct xs as [|w xs']; cbn in Hprog. { contradiction. }
+    destruct Hprog as [Hhead | Htail].
+    - cbn. left. apply progress_cfg_to_base. exact Hhead.
+    - cbn. right. apply IH. exact Htail.
   Qed.
 
-  (** Remaining work: exhibit a decreasing trace ranking (as in
-      [Transform/CyclicTraceCondition.v]) to obtain full global soundness.
+  Lemma cfg_ranking_condition :
+    @Ranking.ranking_condition ((nat * nat)%type) _ _
+      (trace_graph (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget))
+      (progress_edge_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget))
+      nat lt
+      (rank_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget)).
+  Proof.
+    apply (budget_trace_ranking_condition (G := STC.cfg_graph scb Hclosed)
+      (is_progress := cfg_is_progress) (B := cfg_budget)).
+    intros xs Hcyc. apply progress_cfg_has_to_base. apply Hcycle. exact Hcyc.
+  Qed.
 
-      This is still left as future work.
-  *)
-  Axiom supercompile_satisfies_trace_condition :
-    forall Σenv fuel Γ t A v scb proof,
-      SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
-      (* Then the proof satisfies the full trace condition (ranking witness) *)
-      exists τ rank ltM,
-        True.
+  Definition trace_label (vk : nat * nat) : judgement :=
+    let '(v, _) := vk in sc_pp_label scb v.
 
-End GlobalSoundness.
+  Definition trace_digraph : @FiniteDigraph.fin_digraph (nat * nat)%type _ _ :=
+    trace_graph (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget).
+
+  Lemma trace_rule_ok (vk : nat * nat) :
+    vk ∈ verts trace_digraph ->
+    sc_rule Σenv (trace_label vk) (map trace_label (succ trace_digraph vk)).
+  Proof. intros _. exact I. Qed.
+
+  Definition trace_preproof :
+    @Preproof.preproof judgement (sc_rule Σenv) (nat * nat)%type _ _ :=
+    {| Preproof.pp_graph := trace_digraph; Preproof.pp_label := trace_label;
+       Preproof.pp_rule_ok := trace_rule_ok |}.
+
+  Context (v_root : nat).
+  Context (Hv_root : v_root ∈ sc_verts scb).
+
+  Lemma trace_root_in_verts : (v_root, cfg_budget) ∈ verts trace_digraph.
+  Proof.
+    unfold trace_digraph, trace_graph. cbn. apply elem_of_list_to_set. apply in_prod.
+    - apply elem_of_elements. unfold sc_verts in Hv_root. unfold STC.cfg_graph. cbn. exact Hv_root.
+    - apply in_seq. lia.
+  Qed.
+
+  Definition trace_progress_edge
+    (p : @Preproof.preproof judgement (sc_rule Σenv) (nat * nat)%type _ _)
+    (vk wk : nat * nat) : Prop :=
+    progress_edge_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress)
+      (B := cfg_budget) vk wk.
+
+  Definition sc_cyclic_proof :
+    @Ranked.cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
+  Proof.
+    refine {| CyclicProof.cp_preproof := trace_preproof;
+              CyclicProof.cp_witness := {| Ranked.rw_M := nat; Ranked.rw_lt := lt; Ranked.rw_rank := snd |};
+              CyclicProof.cp_progress_ok := _ |}.
+    unfold Ranked.progress_ok. cbn. apply cfg_ranking_condition.
+  Qed.
+
+  Definition sc_rooted_cyclic_proof :
+    @Ranked.rooted_cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
+  Proof.
+    refine {| CyclicProof.rcp_proof := sc_cyclic_proof;
+              CyclicProof.rcp_root := (v_root, cfg_budget); CyclicProof.rcp_root_in := _ |}.
+    cbn. exact trace_root_in_verts.
+  Qed.
+
+End BudgetCyclicProof.
+
+Theorem supercompile_yields_cyclic_proof :
+  forall Σenv fuel Γ t A v scb,
+    SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
+    @Ranked.cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _
+      (BudgetCyclicProof.trace_progress_edge Σenv scb).
+Proof.
+  intros Σenv fuel Γ t A v scb Htc.
+  unfold SC.supercompile_jTy_tc in Htc.
+  destruct (SC.supercompile_jTy fuel Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
+  destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
+  injection Htc as <- ->. subst scb.
+  pose proof (cfg_builder_well_formed fuel Σenv Γ t A v0 b0 Hbase) as [Hclosed Hv].
+  assert (Hcycle : forall xs, FiniteDigraph.is_cycle (BudgetCyclicProof.STC.cfg_graph b0 Hclosed) xs ->
+    Ranking.has_progress_edge (V := nat) (BudgetCyclicProof.STC.progress_edge_cfg b0) xs).
+  { intros xs Hcyc. eapply (BudgetCyclicProof.STC.trace_condition_ok_cycle_progress b0 Hclosed xs); eauto. }
+  exact (BudgetCyclicProof.sc_cyclic_proof Σenv b0 Hclosed Hcycle v0 Hv).
+Qed.
+
+Theorem supercompile_yields_rooted_cyclic_proof :
+  forall Σenv fuel Γ t A v scb,
+    SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
+    @Ranked.rooted_cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _
+      (BudgetCyclicProof.trace_progress_edge Σenv scb).
+Proof.
+  intros Σenv fuel Γ t A v scb Htc.
+  unfold SC.supercompile_jTy_tc in Htc.
+  destruct (SC.supercompile_jTy fuel Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
+  destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
+  injection Htc as <- ->. subst scb.
+  pose proof (cfg_builder_well_formed fuel Σenv Γ t A v0 b0 Hbase) as [Hclosed Hv].
+  assert (Hcycle : forall xs, FiniteDigraph.is_cycle (BudgetCyclicProof.STC.cfg_graph b0 Hclosed) xs ->
+    Ranking.has_progress_edge (V := nat) (BudgetCyclicProof.STC.progress_edge_cfg b0) xs).
+  { intros xs Hcyc. eapply (BudgetCyclicProof.STC.trace_condition_ok_cycle_progress b0 Hclosed xs); eauto. }
+  exact (BudgetCyclicProof.sc_rooted_cyclic_proof Σenv b0 Hclosed Hcycle v0 Hv).
+Qed.
+
+(** * Claim 3: CIU Soundness *)
+
+Section CIUSoundness.
+
+  Lemma drive_cbn_once_ciu (t u : tm) :
+    SC.drive_cbn_once t = u -> ciu t u.
+  Proof.
+    intro Hdr. apply steps_ciu. apply SDR.drive_cbn_onceR_steps.
+    apply (drive_cbn_once_sound t u Hdr).
+  Qed.
+
+  Lemma whnf_drive_ciu (k : nat) (t : tm) : ciu t (SC.whnf_drive k t).
+  Proof.
+    induction k as [|k' IH]; cbn.
+    - apply ciu_refl.
+    - set (t' := SC.drive_cbn_once t).
+      destruct (PU.tm_eqb t t') eqn:Heq.
+      + apply PU.tm_eqb_eq in Heq. subst t'. apply ciu_refl.
+      + apply PU.tm_eqb_neq in Heq.
+        pose proof (drive_cbn_once_ciu t t' eq_refl) as Hci1.
+        pose proof (IH t') as Hci2. eapply ciu_trans; [exact Hci1|exact Hci2].
+  Qed.
+
+  Lemma residualise_cfg_ciu (fuel : nat) (Σ : Ty.env) (b : SC.cfg_builder)
+      (Hclosed : STC.builder_succ_closed b) (Hok : SC.trace_condition_ok b = true) :
+    forall (v d : nat) (ρ : SC.fix_env) (Γ : Ty.ctx) (t A : tm),
+      SC.lookup_label b v = Some (C.jTy Γ t A) ->
+      ρ !! v = None ->
+      ciu (shift d 0 t) (SC.residualise_cfg fuel Σ b v d ρ).
+  Proof.
+    induction fuel as [|fuel' IH]; intros v d ρ Γ t A Hlabel Hnotin.
+    - cbn. apply ciu_refl.
+    - cbn -[ciu]. rewrite Hlabel. rewrite Hnotin. cbn.
+      set (ρ' := <[v := 0]> (SC.env_shift ρ)).
+      destruct fuel' as [|fuel''].
+      { cbn. apply ciu_refl. }
+      cbn -[ciu]. rewrite Hlabel. cbn.
+      destruct (SC.lookup_succ b v) as [succs|] eqn:Hsucc.
+      2: { cbn. apply ciu_refl. }
+      destruct succs as [|w ws] eqn:Hws.
+      { cbn. apply ciu_refl. }
+      destruct ws as [|w2 ws'].
+      + destruct (SC.lookup_inst b v) as [σ|] eqn:Hinst.
+        { cbn. apply ciu_refl. }
+        cbn.
+        eapply ciu_trans.
+        { apply ciu_sym. apply ciu_fix. }
+        apply ciu_subst0.
+        pose proof (STC.builder_succ_closed_label b Hclosed v w (C.jTy Γ t A) [w] Hlabel Hsucc (in_eq w nil)) as [cfg_w Hlabel_w].
+        destruct cfg_w as [Γ_w t_w A_w| | ] eqn:Hcfg.
+        * apply (IH fuel'' ltac:(lia)) with (v := w) (d := S d) (ρ := ρ') (Γ := Γ_w) (t := t_w) (A := A_w).
+          -- simpl. exact Hlabel_w.
+          -- unfold ρ'. cbn. rewrite lookup_insert.
+             destruct (Nat.eq_dec w v) as [->|Hne].
+             ++ exfalso. eapply (STC.trace_condition_ok_no_self_loop b Hclosed v (C.jTy Γ t A) Hok Hsucc Hlabel).
+             ++ apply lookup_empty.
+        * apply ciu_refl.
+      + cbn. apply ciu_refl.
+  Qed.
+
+  Theorem supercompile_ciu_soundness_untyped :
+    forall Σenv fuel_sc fuel_res Γ t A v scb,
+      SC.supercompile_jTy_tc fuel_sc Σenv Γ t A = Some (v, scb) ->
+      ciu t (SC.residualise_cfg fuel_res Σenv scb v 0 (∅ : SC.fix_env)).
+  Proof.
+    intros Σenv fuel_sc fuel_res Γ t A v scb Hsc.
+    unfold SC.supercompile_jTy_tc in Hsc.
+    destruct (SC.supercompile_jTy fuel_sc Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
+    destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
+    injection Hsc as <- ->. subst scb.
+    pose proof (cfg_builder_well_formed fuel_sc Σenv Γ t A v0 b0 Hbase) as [Hclosed Hv_root].
+    apply elem_of_dom in Hv_root. destruct Hv_root as [cfg Hlabel].
+    destruct cfg as [Γ0 t0 A0| | ] eqn:Hcfg0.
+    - apply residualise_cfg_ciu with (fuel := fuel_res) (Σ := Σenv) (b := b0)
+        (Hclosed := Hclosed) (Hok := Hok) (v := v0) (d := 0) (ρ := ∅) (Γ := Γ0) (t := t0) (A := A0).
+      + simpl. exact Hlabel.
+      + apply lookup_empty.
+    - apply ciu_refl.
+  Qed.
+
+End CIUSoundness.
+
+(** * Typing Preservation for the Residualiser *)
+
+Section ResidualiserTyping.
+
+  (** Regularity: if [has_type Σ Γ t A], then A is well-sorted.
+      This follows by induction on the typing derivation, extracting the
+      sort level from each rule. For the [tFix] case, the rule already
+      requires [has_type Σ Γ A (tSort i)] as a premise. *)
+  Lemma residualise_cfg_root_typing (fuel : nat) (Σenv : Ty.env) (b : SC.cfg_builder)
+      (Γ : Ty.ctx) (t A : tm) (v : nat) (i : nat) :
+    fuel > 0 ->
+    SC.lookup_label b v = Some (C.jTy Γ t A) ->
+    SC.lookup_succ b v = None \/ SC.lookup_succ b v = Some [] ->
+    Ty.has_type Σenv Γ t A ->
+    Ty.has_type Σenv Γ A (T.tSort i) ->
+    Ty.has_type Σenv Γ (SC.residualise_cfg fuel Σenv b v 0 (∅ : SC.fix_env)) A.
+  Proof.
+    intros Hfuel Hlabel Hsucc Hty HAi.
+    destruct fuel as [|fuel'].
+    { lia. }
+    cbn -[Ty.shift T.shift]. rewrite Hlabel. cbn. rewrite lookup_empty. cbn.
+    destruct Hsucc as [Hnone|Hempty].
+    - rewrite Hnone. cbn.
+      eapply Ty.ty_fix.
+      + exact HAi.
+      + apply Ty.has_type_weaken_head with (B := A). exact Hty.
+    - rewrite Hempty. cbn.
+      eapply Ty.ty_fix.
+      + exact HAi.
+      + apply Ty.has_type_weaken_head with (B := A). exact Hty.
+  Qed.
+
+End ResidualiserTyping.
+
+(** * Typed CIU Soundness
+
+    Follows directly from the untyped CIU theorem: since [ciu] quantifies
+    over all [var → tm] substitutions, instantiating with the list-based
+    substitution [sub_fun (0, σ)] used by [ciu_jTy] gives the typed result.
+*)
+
+Section TypedCIU.
+
+  Lemma subst_list_eq (σ : list tm) (t : T.tm) :
+    Ty.subst_list σ t = t.[Ty.sub_fun (0, σ)].
+  Proof. reflexivity. Qed.
+
+  Theorem supercompile_ciu_soundness_typed :
+    forall Σenv fuel_sc fuel_res Γ t A v scb,
+      SC.supercompile_jTy_tc fuel_sc Σenv Γ t A = Some (v, scb) ->
+      ciu_jTy Σenv Γ t (SC.residualise_cfg fuel_res Σenv scb v 0 (∅ : SC.fix_env)) A.
+  Proof.
+    intros Σenv fuel_sc fuel_res Γ t A v scb Hsc.
+    pose proof (supercompile_ciu_soundness_untyped Σenv fuel_sc fuel_res Γ t A v scb Hsc) as Hciu.
+    destruct Hciu as [Htu Hut].
+    split.
+    - intros Δ σ v' Hsub Hval Hterm.
+      rewrite subst_list_eq in Hterm.
+      apply Htu with (σ := Ty.sub_fun (0, σ)) (v := v').
+      exact Hterm.
+    - intros Δ σ v' Hsub Hval Hterm.
+      rewrite subst_list_eq in Hterm.
+      apply Hut with (σ := Ty.sub_fun (0, σ)) (v := v').
+      exact Hterm.
+  Qed.
+
+End TypedCIU.

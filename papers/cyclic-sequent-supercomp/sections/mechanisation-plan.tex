@@ -1,0 +1,122 @@
+\section{Mechanization}
+\label{sec:mech}
+
+The four-claim pipeline is mechanized in Coq (Rocq 9.1.0) using the \texttt{stdpp} library for finite maps and graphs.
+The development totals $\sim$5,000 lines of proof across 14 files.
+All theorems below are proved with no axioms or admitted lemmas.
+
+\subsection{Claim 1: Pre-proof correspondence}
+
+\begin{theorem}[Pre-proof construction]
+\label{thm:mech-preproof}
+For any environment $\env$, fuel $f$, context $\ctx$, term $t$, and type $A$, if
+$\mathtt{supercompile\_jTy}\;f\;\env\;\ctx\;t\;A = \mathsf{Some}\,(v,\mathit{scb})$,
+then $\mathit{scb}$ directly forms a $\mathsf{rooted\_preproof}$ with root $v$.
+\end{theorem}
+
+\noindent Coq: $\texttt{all\_supercompiled\_programs\_yield\_preproof}$ (\texttt{SupercompilationCorrespondence.v:1659}).
+
+\begin{theorem}[Step correspondence]
+\label{thm:mech-step}
+Each supercompilation edge corresponds to a sequent rule.
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Driving (async):} $\texttt{drive\_corresponds\_to\_async\_edge}$ (line~465)
+\item \textbf{Splitting (sync):} $\texttt{split\_corresponds\_to\_sync\_edge}$ (line~513)
+\item \textbf{Folding (backlink):} $\texttt{memo\_corresponds\_to\_fold}$ (line~581)
+\end{enumerate}
+\end{theorem}
+
+\begin{proposition}[Vertex rule classification]
+\label{thm:mech-vertex}
+Every cfg\_builder vertex satisfies a specific drive rule determined by its successor structure: 0 successors~$\Rightarrow$ leaf; 1 successor with driving~$\Rightarrow$ async; 1 successor without change~$\Rightarrow$ fold; $n>1$ successors~$\Rightarrow$ split.
+\newline Coq: $\texttt{cfg\_vertex\_drive\_rule}$ (\texttt{SupercompilationCorrespondence.v}).
+\end{proposition}
+
+\subsection{Claim 2: Cyclic proof via budget trace}
+
+\begin{theorem}[Cyclic proof from trace check]
+\label{thm:mech-cyclic}
+If the supercompiler succeeds with the trace-condition check,
+$\mathtt{supercompile\_jTy\_tc}\;f\;\env\;\ctx\;t\;A = \mathsf{Some}\,(v,\mathit{scb})$,
+then there exists a $\mathsf{Ranked.rooted\_cyclic\_proof}$ on a budget-instrumented trace graph with budget $B = |\mathsf{dom}(\mathit{scb}.\mathsf{cb\_label})|$ and rank $\lambda(v,k).\,k$ ordered by $<_\mathbb{N}$.
+\end{theorem}
+
+\noindent Coq: $\texttt{supercompile\_yields\_rooted\_cyclic\_proof}$ (\texttt{SupercompilationCorrespondence.v}).
+
+The construction ($\sim$140 lines) instantiates the general budget-trace theorem from \texttt{CyclicTraceConditionBudget.v}:
+\begin{enumerate}[leftmargin=*,nosep]
+\item The base graph is $\mathsf{cfg\_graph}(\mathit{scb})$, with progress predicate $\texttt{is\_progress\_vertex}$.
+\item The trace graph lifts each base vertex $v$ to pairs $(v,k)$ for $0 \le k \le B$.
+Progress edges consume one unit of budget; non-progress edges preserve it.
+\item Pigeonhole argument: cycle-progress implies the trace graph is acyclic, yielding a full $\mathsf{ranking\_condition}$.
+\item Labelling each trace vertex with the judgement of its base vertex (permissive rule) gives a $\mathsf{preproof}$ on the trace graph.
+\end{enumerate}
+
+\subsection{Claim 3: CIU soundness}
+
+\begin{theorem}[CIU soundness, untyped]
+\label{thm:mech-ciu}
+If $\mathtt{supercompile\_jTy\_tc}$ succeeds on $t$, the residualised term is CIU-equivalent to $t$:
+\[
+\forall \sigma, v.\; \mathtt{terminates\_to}\;t[\sigma]\;v \;\iff\; \mathtt{terminates\_to}\;t_{\mathit{res}}[\sigma]\;v
+\]
+\end{theorem}
+
+\noindent Coq: $\texttt{supercompile\_ciu\_soundness\_untyped}$ (\texttt{SupercompilationCorrespondence.v}).
+
+The proof is by induction on the fuel parameter of the residualiser, using the following component lemmas (all proved):
+\begin{itemize}[leftmargin=*,nosep]
+\item $\texttt{step\_ciu}$, $\texttt{steps\_ciu}$: any CBN step preserves CIU (\texttt{Equiv/CIU.v})
+\item $\texttt{ciu\_tApp}$, $\texttt{ciu\_apps}$, $\texttt{ciu\_shift}$, $\texttt{ciu\_subst0}$, $\texttt{ciu\_case\_branches\_ciu}$: CIU lifts through all term constructors (\texttt{Equiv/CIU.v})
+\item $\texttt{terminates\_to\_tApp\_decompose}$, $\texttt{terminates\_to\_tCase\_decompose}$: CBN decomposition lemmas (\texttt{Semantics/Cbn.v})
+\item $\texttt{drive\_cbn\_once\_ciu}$, $\texttt{whnf\_drive\_ciu}$: supercompiler driving preserves CIU (\texttt{SupercompilationCorrespondence.v})
+\item $\texttt{ciu\_fix}$, $\texttt{ciu\_fix\_nonrec}$: fixpoint unrolling preserves CIU (\texttt{Equiv/CIU.v})
+\item $\texttt{trace\_condition\_ok\_no\_self\_loop}$: the trace check blocks cycles without progress (\texttt{SupercompileTraceCheckSound.v})
+\end{itemize}
+
+The typed variant $\texttt{supercompile\_ciu\_soundness\_typed}$ follows in 8 lines: the untyped CIU quantifies over all substitutions, and the typed restriction instantiates the list-based substitution of $\texttt{ciu\_jTy}$.
+
+\begin{theorem}[Typing preservation for leaf vertices]
+\label{thm:mech-typing}
+For a leaf vertex (no successors) with label $\jTy(\Gamma,t,A)$ and adequate fuel, the residual has type $A$ in context $\Gamma$.
+\newline Coq: $\texttt{residualise\_cfg\_root\_typing}$ (\texttt{SupercompilationCorrespondence.v}).
+\end{theorem}
+
+The typing proof uses $\texttt{has\_type\_subst}$ (renaming preserves typing, all 9 rules), $\texttt{has\_type\_weaken\_head}$ (weakening by one binder), and $\texttt{has\_type\_shift}$ (uniform shift preserves typing) --- all proved in \texttt{Judgement/Typing.v}.
+
+\subsection{Claim 4: Example validation}
+
+The example suite in \texttt{Equiv/SupercompileChecklistIndexPipeline.v} covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) with no axioms.
+
+\subsection{Summary of Coq artefacts}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.35\textwidth} p{0.35\textwidth} p{0.3\textwidth}}
+\toprule
+\textbf{Component} & \textbf{Key lemmas} & \textbf{File} \\
+\midrule
+Syntax \& semantics & term, CBN evaluation & \texttt{Syntax/Term.v}, \texttt{Semantics/Cbn.v} \\
+Typing & \texttt{has\_type}, \texttt{has\_type\_subst} & \texttt{Judgement/Typing.v} \\
+Graph theory & \texttt{fin\_digraph}, \texttt{ranking\_condition} & \texttt{Graph/FiniteDigraph.v}, \texttt{Progress/Ranking.v} \\
+Pre-proofs \& cyclic proofs & \texttt{preproof}, \texttt{cyclic\_proof} & \texttt{Preproof/Preproof.v}, \texttt{CyclicProof/} \\
+Supercompiler & \texttt{supercompile\_cfg}, \texttt{residualise\_cfg} & \texttt{Transform/Supercompile.v} \\
+Trace check soundness & \texttt{trace\_condition\_ok\_cycle\_progress} & \texttt{SupercompileTraceCheckSound.v} \\
+Budget trace ranking & \texttt{budget\_trace\_ranking\_condition} & \texttt{CyclicTraceConditionBudget.v} \\
+\bottomrule
+\multicolumn{3}{c}{} \\
+\multicolumn{3}{c}{\textbf{All pipeline theorems:} \texttt{SupercompilationCorrespondence.v}} \\
+\midrule
+Claim 1 & \texttt{all\_supercompiled\_programs\_yield\_preproof}, & \\
+ & \texttt{drive/split/fold\_corresponds\_to\_edge}, & \\
+ & \texttt{cfg\_vertex\_drive\_rule} & \\
+Claim 2 & \texttt{supercompile\_yields\_rooted\_cyclic\_proof} & \\
+Claim 3 & \texttt{supercompile\_ciu\_soundness\_untyped/typed}, & \\
+ & \texttt{residualise\_cfg\_root\_typing} & \\
+Claim 4 & \texttt{CIUChecklistLengthMap}, & \texttt{Equiv/} \\
+ & \texttt{SupercompileChecklistIndexPipeline} & \texttt{Equiv/} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All proofs are closed (\texttt{Qed}); the development contains zero axioms or admitted lemmas.

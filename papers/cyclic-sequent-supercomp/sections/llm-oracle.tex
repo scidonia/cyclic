@@ -1,0 +1,58 @@
+\section{LLMs as a generalisation oracle (certifying heuristics)}
+\label{sec:llm-oracle}
+
+Generalisation is the main combinatorial source of nondeterminism in the correspondence: for a given pair of sequents, there is typically a large (often infinite) family of possible generalisations.
+Exhaustive enumeration is therefore a poor fit both for interactive proof search and for practical supercompilation.
+
+This section explores an alternative viewpoint: treat generalisation as an \emph{oracle problem}.
+An oracle proposes a candidate generalisation, and the kernel performs a deterministic check that the candidate is admissible.
+In particular, an LLM can be used as a heuristic oracle without compromising soundness, provided the checks are complete.
+
+\subsection{Oracle interface}
+A suitable oracle query includes:
+\begin{itemize}[leftmargin=*]
+\item the current sequent goal (and its local context),
+\item one or more potential companion/ancestor sequents we would like to fold against,
+\item a summary of the admissible generalisation language (e.g. holes/schematic variables, permitted structure, and typing constraints),
+\item optional search-control metadata (embedding/whistle state, fuel bounds, preferred invariants).
+\end{itemize}
+The oracle returns a proposed generalised sequent together with enough data to be checked (e.g. explicit instantiations).
+
+\subsection{Certificates and checks}
+To make oracle use compatible with formal verification, we want the oracle to return a \emph{certificate} that can be checked in Coq.
+A minimal certificate for generalising a current sequent \(S\) and a companion \(S_0\) is:
+\[
+  (S_{\mathsf{gen}},\,\sigma,\,\sigma_0)
+\]
+where \(\sigma\) and \(\sigma_0\) are explicit substitution/instantiation evidence such that:
+\begin{itemize}[leftmargin=*]
+\item \(S = \sigma(S_{\mathsf{gen}})\) and \(S_0 = \sigma_0(S_{\mathsf{gen}})\) (instance checking),
+\item \(S_{\mathsf{gen}}\) is well-formed and well-typed as a sequent,
+\item the global progress condition remains satisfiable after introducing the new node (or, equivalently, that the chosen generalisation is compatible with the termination control).
+\end{itemize}
+Optionally, the certificate can include a proof-irrelevant witness that a particular anti-unification procedure produced \(S_{\mathsf{gen}}\), but this is not required for soundness.
+
+\subsection{What the oracle is (and is not) trusted for}
+The oracle is \emph{not} trusted for soundness.
+It is only trusted as a source of candidate generalisations.
+All soundness-critical obligations are discharged by deterministic checks:
+\begin{itemize}[leftmargin=*]
+\item local rule checking for the cyclic sequent graph,
+\item typing of substitution evidence,
+\item validation of the global progress condition,
+\item CIU/observational meaning preservation of extraction.
+\end{itemize}
+
+\subsection{Why an LLM could help}
+LLMs are plausibly useful because the ``right'' generalisation is often guided by human-intelligible invariants (e.g. preserving the spine of a recursive call while abstracting an accumulator), and these invariants may be hard to recover by purely syntactic lattice exploration.
+From the proof-search perspective, the LLM is proposing a useful \emph{lemma schema}.
+
+\subsection{Risks and evaluation}
+Using an oracle shifts work from enumeration to validation.
+Key practical concerns include:
+\begin{itemize}[leftmargin=*]
+\item \textbf{Parsing/format:} translating the oracle response into the internal sequent/generalisation language.
+\item \textbf{Search bias:} avoiding degenerate proposals (too general to be useful, or too specific to enable folding).
+\item \textbf{Reproducibility:} recording oracle prompts/responses to make experiments repeatable.
+\end{itemize}
+A useful evaluation would compare: (i) exhaustive or bounded anti-unification, (ii) hand-written heuristics, and (iii) LLM-proposed generalisations, while keeping the kernel checks and global progress condition fixed.

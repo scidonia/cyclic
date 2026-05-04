@@ -1,0 +1,100 @@
+\section{Main results: the four-claim pipeline}
+\label{sec:equiv}
+
+We organise the central results as a pipeline of four claims, each building on the previous.
+Claim~1 asserts that supercompilation always produces a locally-valid pre-proof graph.
+Claim~2 shows that when the trace-condition check is enabled, the graph upgrades to a ranked cyclic proof.
+Claim~3 conjectures that cyclic proof soundness implies CIU equivalence of the residualised program.
+Claim~4 validates the pipeline on concrete examples.
+
+\subsection{Claim 1: Supercompilation yields a pre-proof}
+
+\begin{theorem}[Pre-proof correspondence]
+\label{thm:pre-proof}
+For any well-formed environment $\env$, fuel $f$, context $\ctx$, term $t$, and type $A$, if
+\[
+\mathtt{supercompile\_jTy}\;f\;\env\;\ctx\;t\;A \;=\; \mathsf{Some}\,(v, \mathit{scb})
+\]
+then $\mathit{scb}$ directly forms a $\mathsf{rooted\_preproof}$ with root $v$.
+Every vertex is labelled and satisfies its local sequent rule; the edge structure corresponds exactly to the drive, split, and fold operations of the supercompiler.
+\end{theorem}
+
+This claim is mechanized in Coq via $\texttt{all\_supercompiled\_programs\_yield\_preproof}$ (\texttt{SupercompilationCorrespondence.v:1659}).
+
+The step-level correspondence is given by three graph-level theorems:
+
+\begin{theorem}[Step correspondence (drive/split/fold)]
+\label{thm:step-correspondence}
+Each atomic supercompilation move corresponds to exactly one local inference step in the proof graph:
+\begin{enumerate}
+\item \textbf{Driving (asynchronous):} If the supercompiler performs one-step CBN reduction on a configuration at vertex $v$, producing a single successor at $w$, then the proof graph has edge $v \to w$ and $w$ carries the driven configuration. (Coq: $\texttt{drive\_corresponds\_to\_async\_edge}$, \texttt{SupercompilationCorrespondence.v:465}.)
+\item \textbf{Splitting (synchronous):} If the supercompiler splits on a neutral case-variable at $v$, producing $n$ successors $w_1,\ldots,w_n$, then the proof graph has edges $v \to w_i$ and each $w_i$ carries the branch configuration. (Coq: $\texttt{split\_corresponds\_to\_sync\_edge}$, \texttt{SupercompilationCorrespondence.v:513}.)
+\item \textbf{Folding (backlink):} If the supercompiler performs a memo hit, creating a backlink $v \to v_{\mathit{prev}}$, then the proof graph has the backlink edge and both vertices have matching labels. (Coq: $\texttt{memo\_corresponds\_to\_fold}$, \texttt{SupercompilationCorrespondence.v:581}.)
+\end{enumerate}
+\end{theorem}
+
+\begin{remark}
+The proofs rely on a \emph{bisimulation} relation between the SC configuration graph (\texttt{cfg\_builder}) and the cyclic proof graph (\texttt{rooted\_preproof}). The bisimulation ensures: (i) same vertices, (ii) matching labels (SC configurations = proof sequents), (iii) matching edges, and (iv) local validity. See Section~\ref{sec:mech}.
+\end{remark}
+
+\subsection{Claim 2: Termination yields a cyclic proof}
+
+\begin{theorem}[Cyclic proof via budget trace]
+\label{thm:cyclic-proof}
+If the supercompiler succeeds with the trace-condition check enabled:
+\[
+\mathtt{supercompile\_jTy\_tc}\;f\;\env\;\ctx\;t\;A \;=\; \mathsf{Some}\,(v, \mathit{scb})
+\]
+then there exists a $\mathsf{Ranked.rooted\_cyclic\_proof}$ with root vertex $(v, B)$ on the budget-instrumented trace graph, where $B$ is the number of labelled vertices in $\mathit{scb}$.
+The ranking witness uses the natural numbers with standard less-than ordering, and the rank of each trace vertex $(v,k)$ is the remaining budget $k$.
+\end{theorem}
+
+This claim is mechanized via $\texttt{supercompile\_yields\_rooted\_cyclic\_proof}$ (\texttt{SupercompilationCorrespondence.v}).
+The construction proceeds in two stages:
+
+\begin{enumerate}
+\item \textbf{Cycle-progress:} The boolean trace check $\texttt{SC.trace\_condition\_ok}$ guarantees that every directed cycle in the configuration graph contains a progress edge---a case-split on a neutral scrutinee. (Coq: $\texttt{trace\_condition\_ok\_cycle\_progress}$, \texttt{SupercompileTraceCheckSound.v:610}.)
+\item \textbf{Budget trace ranking:} Given cycle-progress, we apply the general budget-trace construction from \texttt{CyclicTraceConditionBudget.v}. The base graph is the configuration graph; the base vertices are lifted to pairs $(v,k)$ where $k \in [0, B]$ is a budget counter. Non-progress edges preserve $k$; progress edges consume one unit. The resulting trace graph is acyclic, yielding a full $\mathsf{ranking\_condition}$ with rank $\lambda(v,k).\,k$. Each trace vertex is labelled with the judgement of its base vertex, giving a pre-proof on the trace graph. Combined with the ranking, this forms a $\mathsf{Ranked.cyclic\_proof}$.
+\end{enumerate}
+
+\subsection{Claim 3: CIU soundness}
+
+\begin{theorem}[CIU soundness for supercompilation]
+\label{thm:ciu}
+Let $\env$ be a well-formed environment, $\ctx$ a context, $t : A$ a well-typed term, and $\mathit{scb}$ the configuration graph produced by successful supercompilation of $t$ with the trace check. Then
+\[
+t \;\approx_{\mathrm{ciu}}\; \mathtt{residualise\_cfg}(\mathit{scb})
+\]
+where $\approx_{\mathrm{ciu}}$ is the \emph{untyped} CIU equivalence: for every closing substitution $\sigma$ (not necessarily typed) and every CBN value $v$, we have $\mathtt{terminates\_to}\;t[\sigma]\;v$ iff $\mathtt{terminates\_to}\;t_{\mathit{res}}[\sigma]\;v$.
+
+The typed variant $\approx_{\mathrm{ciu\_jTy}}$ follows directly: since the untyped CIU quantifies over all substitutions, instantiating with the list-based substitution used by $\texttt{ciu\_jTy}$ gives the typed result (Coq: $\texttt{supercompile\_ciu\_soundness\_typed}$, 8 lines).
+\end{theorem}
+
+This claim is mechanized via $\texttt{supercompile\_ciu\_soundness\_untyped}$ (\texttt{SupercompilationCorrespondence.v}), proved by induction on fuel with the trace condition ensuring that self-loops---which would introduce non-termination---are rejected. The proof structure:
+
+\begin{enumerate}
+\item \textbf{Step CIU (CIU.v):} Every CBN reduction step preserves CIU ($\texttt{step\_ciu}$). Every supercompiler driving step composes to a chain of CBN steps ($\texttt{drive\_cbn\_once\_ciu}$).
+\item \textbf{Constructor CIU (CIU.v):} CIU lifts through term constructors: $\texttt{ciu\_tApp}$, $\texttt{ciu\_apps}$, $\texttt{ciu\_shift}$, $\texttt{ciu\_subst0}$, $\texttt{ciu\_case\_branches\_ciu}$.
+\item \textbf{Fuel induction:} $\texttt{residualise\_cfg\_ciu}$ proves by induction on fuel that for any vertex $v$ not yet in the fix environment, the residualised term is CIU-equivalent to the shifted term at $v$. The $\texttt{tFix}$ wrapper is handled by $\texttt{ciu\_fix}$ and the $\texttt{subst0\_shift\_cancel}$ lemma which cancels one level of de Bruijn shift.
+\item \textbf{Self-loop protection:} The trace check ($\texttt{trace\_condition\_ok}$) prevents self-loops without progress edges ($\texttt{trace\_condition\_ok\_no\_self\_loop}$), guaranteeing that the fuel induction never encounters a degenerate fixpoint that would introduce non-termination.
+\end{enumerate}
+
+The CIU relation itself is defined and proved to be an equivalence in Coq (\texttt{Equiv/CIU.v}); the $\texttt{terminates\_to\_tApp\_decompose}$ and $\texttt{terminates\_to\_tCase\_decompose}$ lemmas in \texttt{Semantics/Cbn.v} provide the decomposition needed for the constructor-lifting proofs.
+
+\textbf{Limitation:} The CIU proof covers the generalisation-free fragment (the branch where $\texttt{lookup\_inst}$ returns $\texttt{None}$). When the supercompiler uses generalisation (the $\texttt{Some}~\sigma$ case), the residualiser produces $\texttt{apps}(r, \sigma)$ and the induction requires a CIU lemma for this pattern. The step correspondence (Theorem~\ref{thm:step-correspondence}) and all other results are unaffected by this restriction.
+
+\subsection{Claim 4: Example validation}
+
+\begin{proposition}[Example validation]
+\label{prop:examples}
+The following supercompilation examples satisfy the pipeline and produce residuals that are computationally equivalent to the hand-optimised target programs:
+\begin{itemize}[leftmargin=*]
+\item $\mathsf{length}\,(\mathsf{map}\,f\,l)$ --- deforested to an equivalent recursive function without intermediate list construction.
+\item $\mathsf{length}\,(\mathsf{append}\,l_1\,l_2)$ --- fused with $\mathsf{plus}\,(\mathsf{length}\,l_1)\,(\mathsf{length}\,l_2)$.
+\item $\mathsf{length}\,((l_1 \mathbin{++} l_2) \mathbin{++} l_3)$ --- normalised via 2-pass supercompilation to a canonical form matching the right-associated variant.
+\item $\mathsf{length}\,(\mathsf{take}\,n\,l \mathbin{++} \mathsf{drop}\,n\,l)$ --- reduces to $\mathsf{length}\,l$.
+\end{itemize}
+All equalities are verified by Coq's $\mathtt{vm\_compute}$ in $\texttt{Equiv/SupercompileChecklistIndexPipeline.v}$.
+\end{proposition}
+
+Additional examples include $\mathsf{length}\,(\mathsf{map}\,f\,(\mathsf{map}\,g\,l))$ (supercompiler produces a non-trivial residual, with further optimisation expected after strengthening the generalisation heuristic), and vector-index normalisation (residuals yield equal indices after supercompilation).

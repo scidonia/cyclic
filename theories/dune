@@ -25,6 +25,7 @@
     Transform.CyclicVertexSpec
     Transform.ReadOffPreproof
     Transform.ReadOffSequentPreproof
+    Transform.ReadOffDrivingPreproofDefs
     Transform.ReadOffDrivingPreproof
      Transform.ProofGraphRewrite
       Transform.CyclicTraceCondition

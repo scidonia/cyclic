@@ -1,0 +1,121 @@
+\section{Related work}
+\label{sec:related}
+
+This section positions the present work relative to (i) supercompilation and program transformation, (ii) cyclic proof theory, (iii) sequent calculi for dependent types, and (iv) proof-theoretic treatments of induction.
+
+\subsection{Supercompilation}
+
+Supercompilation is a program transformation technique based on symbolic evaluation (driving), case analysis, generalization, and fold/refold steps \cite{turchin-1986-supercompiler,sorensen-gluck-1995-supercompilation}.
+The key operations are:
+\begin{itemize}
+\item \textbf{Driving}: unfolding function definitions and performing symbolic reduction
+\item \textbf{Splitting}: case analysis on unknown values (neutrals)
+\item \textbf{Generalization}: abstracting common patterns to enable folding
+\item \textbf{Folding}: recognizing repeated configurations and creating recursive calls
+\end{itemize}
+
+\paragraph{Termination control.}
+A central challenge in supercompilation is ensuring termination. 
+Classical approaches use \emph{whistles} based on homeomorphic embedding or well-quasi-orderings \cite{kruskal-1960-wqo,leuschel-2002-homeomorphic,sorensen-gluck-jones-1996-positive}.
+These approaches analyze configuration histories and force generalization when a dangerous pattern is detected.
+Our cyclic proof framework replaces the whistle with a \emph{global trace condition}: we allow arbitrary folding but require that every cycle passes through a progress event (a split on a structurally smaller inductive component).
+
+\paragraph{Supercompilation by evaluation.}
+Recent work connects supercompilation to normalization-by-evaluation and partial evaluation \cite{jonesbook-1996-partial-evaluation}.
+Our contribution extends this connection to dependent types: we show that supercompilation \emph{is} proof search in a typed setting, with configurations as sequents and the memo table as a cyclic proof graph.
+
+\paragraph{Prior work on dependent types.}
+To our knowledge, this is the first formulation of supercompilation for a dependently typed core language.
+Existing work on supercompilation focuses on first-order functional languages (Refal, Scheme, Haskell subsets) or simple typed settings \cite{sorensen-gluck-1995-supercompilation,jonesbook-1996-partial-evaluation}.
+The dependent type context introduces new challenges:
+\begin{itemize}
+\item Types depend on terms, so driving must respect typing constraints
+\item The context $\Gamma$ changes during proof search (extended in branches)
+\item Observational equivalence is more subtle (CIU for dependent types)
+\end{itemize}
+
+Our sequent calculus formulation addresses these challenges by making the typing context explicit in every sequent and using type-directed driving rules.
+
+\subsection{Cyclic proof theory}
+
+Cyclic proof systems represent potentially infinite derivations using finite directed graphs with back-edges, validated by a global soundness condition \cite{brotherston-2006-cyclic,brotherston-simpson-2011-sequent}.
+
+\paragraph{Concrete cyclic systems.}
+Brotherston and Simpson develop cyclic proofs for first-order logic with inductive definitions, using a global trace condition to ensure soundness.
+Their work establishes that cyclic proofs are as expressive as standard proofs with explicit induction rules, but offer computational advantages (the induction scheme emerges from the cycle structure).
+
+\paragraph{Abstract cyclic frameworks.}
+Afshari and Wehr develop a modern, highly abstract account of cyclic proof checking based on trace conditions, activation algebras, and categorical structure \cite{afshari-wehr-2024-abstract-cyclic}.
+Our work instantiates their abstract framework in a concrete setting: CoC with inductives, CBN operational semantics, and observational equivalence.
+
+\paragraph{Cyclic proofs as normal forms.}
+Our contribution extends cyclic proof theory in a new direction: we use cyclic proofs not just as proof objects, but as \emph{normal forms for program transformations}.
+The correspondence with supercompilation shows that cyclic proofs are stable under driving, splitting, and folding---operations that would be difficult to justify in a traditional natural deduction setting.
+
+\subsection{Sequent calculi for dependent types}
+
+\paragraph{Bidirectional type checking.}
+Bidirectional type systems \cite{pierce-turner-2000-local-type-inference} separate synthesis (inferring types) from checking (validating against known types).
+This discipline is standard in dependently typed proof assistants (Agda, Coq, Lean).
+Our sequent calculus uses a similar decomposition, but with a crucial difference: we use \emph{focused} sequents that separate asynchronous (deterministic) from synchronous (choice-bearing) phases.
+
+\paragraph{Focused sequent calculi.}
+Focusing \cite{andreoli-1992-logic-programming,miller-2004-forum} is a proof search discipline that reduces nondeterminism by eagerly applying invertible rules (asynchronous phase) and carefully controlling choice points (synchronous phase).
+Focusing has been applied to linear logic, classical logic, and intuitionistic logic, but \textbf{to our knowledge this is the first focused sequent calculus for CoC with inductives}.
+
+The key novelty is the connection to supercompilation: the asynchronous phase corresponds to driving (deterministic unfolding), and the synchronous phase corresponds to splitting and folding (the essential choice points).
+
+\paragraph{Sequent calculi for CIC.}
+Standard presentations of CIC use natural deduction \cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}.
+Herbelin develops a sequent calculus for the Calculus of Constructions \cite{herbelin-1995-sequent-calculus}, but without inductive types or cyclic backlinks.
+Our calculus extends Herbelin's work by adding:
+\begin{itemize}
+\item Inductive types and pattern matching
+\item Cyclic backlinks (folding)
+\item Focused phases (asynchronous vs synchronous)
+\item Connection to supercompilation
+\end{itemize}
+
+\subsection{Induction: local rules vs global discharge}
+
+\paragraph{Traditional induction principles.}
+In standard type theory, induction is a derived principle from the elimination rule for inductive types.
+To prove a property $P(x)$ for all $x : \mathsf{List}$, one applies the list eliminator (recursor) with a motive $P$ and proofs for the base and step cases.
+This requires \emph{choosing the induction principle upfront}---a significant practical burden.
+
+\paragraph{Cyclic induction as post-hoc discovery.}
+Sprenger and Dam compare local well-founded induction rules to cyclic systems with global discharge conditions \cite{sprenger-dam-2003-circular-tree}.
+They show these approaches are equivalent in expressive power but differ operationally: cyclic proofs discover the induction scheme during proof search rather than requiring it upfront.
+
+Our work extends this insight to dependent types and connects it to supercompilation:
+\begin{itemize}
+\item The backlink corresponds to recognizing a recursive configuration
+\item The trace condition corresponds to structural descent (termination)
+\item The cycle structure \emph{is} the induction principle, read off from the proof graph
+\end{itemize}
+
+This flexibility is essential for advanced optimizations (fusion, deforestation, tupling) where the appropriate induction principle is not obvious from the problem statement.
+
+\subsection{Proof-carrying code and certified compilation}
+
+\paragraph{Extracting programs from proofs.}
+The Curry-Howard correspondence shows that proofs are programs and vice versa.
+Proof assistants like Coq use extraction to produce executable programs from constructive proofs \cite{letouzey-2002-extraction}.
+Our work takes a different perspective: we view supercompilation as producing a \emph{proof} (the cyclic derivation) from which the optimized program is extracted.
+
+\paragraph{Translation validation vs proof transformation.}
+Traditional certified compilers use translation validation: compile the program, then prove the output equivalent to the input \cite{pnueli-siegel-singerman-1998-translation-validation}.
+Our approach is proof transformation: the supercompiler operates on proof graphs, and soundness follows from preservation of cyclic structure.
+This is similar in spirit to recent work on intrinsically typed compilation \cite{pickard-hutton-gibbons-2021-calculating-compilers}.
+
+\subsection{Summary}
+
+This work makes several novel contributions:
+\begin{enumerate}
+\item \textbf{First supercompilation for dependent types}, addressing challenges of dependent contexts and type-directed transformation
+\item \textbf{First focused sequent calculus for CoC + inductives}, cleanly separating deterministic driving from choice points
+\item \textbf{Exact operational correspondence} between supercompilation and cyclic proof search, established via bisimulation and mechanized in Coq
+\item \textbf{Post-hoc induction principle discovery}, showing how cyclic proofs enable flexible recursion schemes
+\end{enumerate}
+
+The framework provides a principled foundation for program optimization in dependently typed languages and opens new avenues for proof-directed compilation.

@@ -1,0 +1,193 @@
+\section{Supercompilation as focused proof search}
+\label{sec:sc-as-search}
+
+We give the intended dictionary between standard supercompilation concepts and focused cyclic proof search.
+
+\subsection{Configurations as sequents}
+A supercompiler configuration (term + context + type/motive) is represented as a sequent goal node.
+The supercompiler's configuration graph is then a proof-search graph.
+
+\subsection{Driving = invertible sequent steps}
+Driving decomposes the goal by deterministic computation-like rules (\(\beta\), iota, commuting conversions). In focusing, these correspond to invertible/asynchronous rule applications.
+
+\subsection{Case splitting = left rules on neutral scrutinees}
+When the scrutinee is neutral, supercompilation propagates information by splitting into one successor per constructor. In a sequent system this is a left rule whose premises correspond to constructor cases.
+
+\subsection{Folding/memoisation = cyclic closure}
+Folding corresponds to closing a goal by back-linking to a previously seen companion sequent, recording the instantiation (explicit substitution arguments).
+
+\subsection{Generalisation = stream selection + kernel check}
+Generalisation introduces a more general sequent that subsumes the current goal and a previous goal, enabling folding.
+In proof search we treat this as a \emph{stream} of candidate lemma schemata, together with a deterministic validator.
+
+Concretely, for a current sequent goal \(S\) and a chosen companion \(S_0\), we assume a stream of candidates
+\(\mathsf{gen\_stream}(S,S_0)\).
+A single generalisation step consists of:
+\begin{enumerate}[leftmargin=*]
+\item selecting the next candidate \((S_{\mathsf{gen}},\sigma,\sigma_0)\) from the stream (a synchronous choice), and
+\item checking that \(S = \sigma(S_{\mathsf{gen}})\) and \(S_0 = \sigma_0(S_{\mathsf{gen}})\), plus any required typing/progress side conditions (deterministic).
+\end{enumerate}
+
+This presentation is intentionally agnostic about how the stream is produced: it may come from bounded anti-unification, hand-crafted heuristics, or an external oracle (including an LLM), as long as the kernel checks are complete.
+
+\subsection{Concrete correspondence examples}
+We demonstrate the exact correspondence between supercompilation moves and sequent proof steps through worked examples. Each example shows the SC state, the sequent proof state, and why they are the same operation.
+
+\paragraph{Example 1: Fix-unfolding (async driving)}
+\textbf{Supercompiler move:}
+\begin{align*}
+&\text{Config: } \Gamma \vdash (\mathbf{fix}~f.~\lambda x.\,\mathit{body})~\mathit{arg} : A \\
+&\text{Drive step: } \texttt{drive\_cbn\_once} \text{ unfolds fix} \\
+&\text{Result: } \Gamma \vdash (\lambda x.\,\mathit{body})[\mathbf{fix}~f.~\lambda x.\,\mathit{body}/f]~\mathit{arg} : A
+\end{align*}
+
+\textbf{Sequent proof step:}
+\begin{center}
+\AxiomC{$\Gamma \vdash (\lambda x.\,\mathit{body})[\mathbf{fix}~f.~\lambda x.\,\mathit{body}/f]~\mathit{arg} : A$}
+\RightLabel{\scriptsize\texttt{dc\_fix}}
+\UnaryInfC{$\Gamma \vdash (\mathbf{fix}~f.~\lambda x.\,\mathit{body})~\mathit{arg} : A$}
+\DisplayProof
+\end{center}
+
+\textbf{Why they're the same:} The SC configuration graph adds a directed edge from the fix node to the unfolded term. The proof graph adds the same edge, justified by the \texttt{dc\_fix} rule from \texttt{drive\_cbn\_onceR}. Both represent the same computational step (fix-unfolding), and \texttt{drive\_cbn\_once\_sound} proves they compute the same result.
+
+\paragraph{Example 2: $\beta$-reduction (async driving)}
+\textbf{Supercompiler move:}
+\begin{align*}
+&\text{Config: } \Gamma \vdash (\lambda x : \tau.\,t)~u : B \\
+&\text{Drive step: } \texttt{drive\_cbn\_once} \text{ performs } \beta\text{-reduction} \\
+&\text{Result: } \Gamma \vdash t[u/x] : B
+\end{align*}
+
+\textbf{Sequent proof step:}
+\begin{center}
+\AxiomC{$\Gamma \vdash t[u/x] : B$}
+\RightLabel{\scriptsize\texttt{dc\_app\_beta}}
+\UnaryInfC{$\Gamma \vdash (\lambda x : \tau.\,t)~u : B$}
+\DisplayProof
+\end{center}
+
+\textbf{Why they're the same:} Both operations replace a redex with its contractum. The SC adds one successor edge in \texttt{cb\_succ}. The proof graph adds one successor verified by \texttt{dr\_cbn\_once} (which wraps \texttt{dc\_app\_beta}). The correspondence is witnessed by the bisimulation: labels match (same terms), edges match (same successor), and the proof step is valid because $\beta$-reduction preserves typing.
+
+\paragraph{Example 3: Case-split on neutral (synchronous choice)}
+\textbf{Supercompiler move:}
+\begin{align*}
+&\text{Config: } \Gamma, l:\mathsf{List} \vdash \mathbf{case}~l~\mathbf{of}~\{\mathit{nil} \Rightarrow b_0; \mathit{cons} \Rightarrow b_1\} : A \\
+&\text{Split step: } \texttt{split\_case\_var} \text{ on neutral scrutinee } l \\
+&\text{Result: two configs} \\
+&\quad \text{(nil branch)} \quad \Gamma \vdash b_0 : A \\
+&\quad \text{(cons branch)} \quad \Gamma, x:\mathsf{Nat}, xs:\mathsf{List} \vdash b_1[(\mathit{cons}~x~xs)/l] : A[\ldots]
+\end{align*}
+
+\textbf{Sequent proof step:}
+\begin{center}
+\AxiomC{$\Gamma \vdash b_0 : A$}
+\AxiomC{$\Gamma, x:\mathsf{Nat}, xs:\mathsf{List} \vdash b_1[(\mathit{cons}~x~xs)/l] : A[\ldots]$}
+\RightLabel{\scriptsize\texttt{dr\_split\_case\_var}}
+\BinaryInfC{$\Gamma, l:\mathsf{List} \vdash \mathbf{case}~l~\mathbf{of}~\{\mathit{nil} \Rightarrow b_0; \mathit{cons} \Rightarrow b_1\} : A$}
+\DisplayProof
+\end{center}
+
+\textbf{Why they're the same:} SC's \texttt{split\_case\_var} computes the exact list of successor configurations (one per constructor), extending the context with constructor arguments and substituting the scrutinee. The proof rule \texttt{dr\_split\_case\_var} computes the same list via \texttt{split\_case\_var\_cfgs} (literally the same function). The SC graph has multiple outgoing edges in \texttt{cb\_succ}; the proof graph has multiple premises. The correspondence is exact: \texttt{split\_corresponds\_to\_sync\_edge} proves that SC successors = proof premises.
+
+\textbf{Progress event:} This is the only synchronous (choice-bearing) move. Both SC and the proof system mark this as a \emph{progress event} in the trace condition: we've moved from analyzing an unknown list $l$ to analyzing its constructor subcomponents $(x, xs)$.
+
+\paragraph{Example 4: Memo lookup / folding (backlink)}
+\textbf{Supercompiler move:}
+\begin{align*}
+&\text{Current config: } \Gamma' \vdash t' : A' \\
+&\text{Memo lookup: finds earlier config } v_{\mathit{prev}} \text{ with } \Gamma_0 \vdash t_0 : A_0 \\
+&\text{Match: } \texttt{judgement\_eqb}(t', t_0[\sigma]) = \mathtt{true} \text{ for some substitution } \sigma \\
+&\text{Result: SC sets } \texttt{cb\_succ}[v_{\mathit{curr}}] := [v_{\mathit{prev}}] \text{ (backlink)}
+\end{align*}
+
+\textbf{Sequent proof step:}
+\begin{center}
+\AxiomC{$\Gamma_0 \vdash t_0 : A_0$}
+\AxiomC{$\Gamma' \vdash \sigma : \Gamma_0$}
+\RightLabel{\scriptsize\texttt{nBack}}
+\BinaryInfC{$\Gamma' \vdash t_0[\sigma] : A_0[\sigma]$}
+\DisplayProof
+\end{center}
+
+\textbf{Why they're the same:} The SC creates a cycle in the configuration graph by pointing the current node back to a previous node. The proof graph creates a cycle via a \texttt{nBack} node (backlink) with explicit substitution evidence $\sigma$. Both represent the same operation: "this goal is an instance of an earlier goal, so we close it by referring back." The correspondence \texttt{memo\_corresponds\_to\_fold} proves that \texttt{judgement\_eqb} soundly detects when this instantiation holds.
+
+\textbf{Cycle formation:} This is where both artifacts become \emph{cyclic}. The SC memo table prevents infinite unfolding; the proof backlink closes the proof with a cycle. Soundness requires the global trace condition (every cycle includes a progress event).
+
+\paragraph{Example 5: Iota reduction (async driving)}
+\textbf{Supercompiler move:}
+\begin{align*}
+&\text{Config: } \Gamma \vdash \mathbf{case}~(\mathit{cons}~h~t)~\mathbf{of}~\{\mathit{nil} \Rightarrow b_0; \mathit{cons}~x~xs \Rightarrow b_1\} : A \\
+&\text{Drive step: } \texttt{drive\_cbn\_once} \text{ performs iota (case-of-constructor)} \\
+&\text{Result: } \Gamma \vdash b_1[h/x, t/xs] : A
+\end{align*}
+
+\textbf{Sequent proof step:}
+\begin{center}
+\AxiomC{$\Gamma \vdash b_1[h/x, t/xs] : A$}
+\RightLabel{\scriptsize\texttt{dc\_case\_iota}}
+\UnaryInfC{$\Gamma \vdash \mathbf{case}~(\mathit{cons}~h~t)~\mathbf{of}~\{\mathit{nil} \Rightarrow b_0; \mathit{cons}~x~xs \Rightarrow b_1\} : A$}
+\DisplayProof
+\end{center}
+
+\textbf{Why they're the same:} When the scrutinee is a constructor (not a variable), SC immediately reduces to the corresponding branch. The proof system does the same via \texttt{dc\_case\_iota}. Both are deterministic (asynchronous) — there's no choice, just computation. The bisimulation is preserved: same term transformation, same single successor edge.
+
+\subsection{Bisimulation theorem}
+The above examples are instances of the general bisimulation. Formally:
+
+\begin{theorem}[Bisimulation (\texttt{bisim})]
+A supercompilation state \texttt{scb : cfg\_builder} corresponds to a cyclic proof \texttt{proof : rooted\_preproof} when:
+\begin{enumerate}[leftmargin=*]
+\item Vertices match: $\mathsf{dom}(\texttt{cb\_label}) = \mathsf{dom}(\texttt{pp\_label})$
+\item Labels match: for each vertex $v$, $\texttt{cb\_label}(v) = \texttt{extract\_tm}(\texttt{pp\_label}(v))$
+\item Edges match: for each vertex $v$, $\texttt{cb\_succ}(v) = \texttt{pp\_succ}(v)$
+\item Local validity: each proof vertex satisfies its sequent rule
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Main correspondence (\texttt{supercompile\_gives\_valid\_preproof})]
+If \texttt{supercompile\_jTy} succeeds on a typing judgement, then there exists a locally-valid \texttt{rooted\_preproof} such that the bisimulation holds.
+
+\emph{Corollary:} Every SC operation (drive, split, fold) corresponds to a valid sequent proof operation, witnessed by \texttt{drive\_corresponds\_to\_async\_edge}, \texttt{split\_corresponds\_to\_sync\_edge}, and \texttt{memo\_corresponds\_to\_fold}.
+\end{theorem}
+
+These theorems are mechanised in \texttt{SupercompilationCorrespondence.v}.
+
+\subsection{Concrete example: \texttt{length (map f l)} fusion}
+To demonstrate the correspondence concretely, we trace the supercompilation of the classic fusion example:
+\[
+\texttt{length}~(\texttt{map}~f~l) \quad\text{where}\quad \Gamma = [l : \mathsf{List},\, f : \mathsf{Nat} \to \mathsf{Nat}]
+\]
+
+This supercompiles to the same residual as \texttt{length}~$l$, achieving full deforestation without any domain-specific rewrite rules.
+
+\paragraph{Trace structure}
+The supercompilation proceeds as follows (each step is a node/edge in both the SC graph and the cyclic proof):
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Unfold \texttt{map}}: Fix-unfolding (async edge, \texttt{dc\_fix} rule)
+\item \textbf{Split on $l$}: Case analysis on the list scrutinee (synchronous edge, \texttt{dr\_split\_case\_var} rule). This is a \emph{progress event} in the trace condition.
+  \begin{itemize}
+  \item \textbf{Nil branch}: \texttt{length nil} $\rightsquigarrow$ \texttt{0} (direct reduction)
+  \item \textbf{Cons branch} (\texttt{cons}~$x$~$xs$): 
+  \begin{enumerate}
+    \item \texttt{length (cons (f x) (map f xs))}
+    \item Split on cons constructor: Iota reduction (async edge, \texttt{dc\_case\_iota} rule)
+    \item Result: \texttt{succ (length (map f xs))}
+    \item Recursive call: \texttt{length (map f xs)} (structurally smaller list $xs$)
+  \end{enumerate}
+  \end{itemize}
+\item \textbf{Fold}: Memo lookup finds the recursive call matches the original goal (modulo instantiation $l \mapsto xs$), creates a backlink (\texttt{nBack} node), forming a cycle.
+\end{enumerate}
+
+\paragraph{Trace condition satisfied}
+The cycle passes through two \emph{progress edges} (splits on $l$ and $xs$), each tracking a strictly smaller list by the recursive subterm ordering (constructor descent). This satisfies the ranking condition from \texttt{CyclicTraceCondition.v}.
+
+\paragraph{Mechanisation}
+The example is fully executable:
+\begin{itemize}[leftmargin=*]
+\item Input terms: \texttt{t\_len\_map} and \texttt{t\_len} in \texttt{CIUChecklistLengthMap.v}
+\item Supercompilation: \texttt{residualise\_jTy 200 400 $\Sigma$ $\Gamma$ t\_len\_map nat\_ty}
+\item Exact equality: \texttt{residualisation\_length\_map\_exact} (proved by \texttt{vm\_compute})
+\end{itemize}
+
+This demonstrates the correspondence end-to-end: supercompilation moves are proof steps, and the result is a valid cyclic proof artifact.

@@ -371,3 +371,54 @@ Proof.
   - eapply rt_trans; eauto.
 Qed.
 
+(** Decomposition: if [tCase I scrut C brs] steps to a value [v],
+    the scrutinee must step to a [tRoll], the branch must fire,
+    and the branch+args must step to [v]. *)
+Lemma steps_tCase_decompose (I : nat) (scrut C : tm) (brs : list tm) (v : tm) :
+  value v -> steps (tCase I scrut C brs) v ->
+  exists c args br,
+    steps scrut (tRoll I c args) /\
+    branch brs c = Some br /\
+    steps (apps br args) v.
+Proof.
+  intros Hval Hsteps.
+  (* Use [steps_decomp] to peel off [step_case_scrut] steps *)
+  revert scrut C brs Hsteps.
+  refine (clos_refl_trans_ind tm step _ (fun w =>
+    forall scrut0 C0 brs0, w = tCase I scrut0 C0 brs0 ->
+    value v -> exists c args br,
+      steps scrut0 (tRoll I c args) /\
+      branch brs0 c = Some br /\
+      steps (apps br args) v) _ _).
+  - (* rt_step: step (tCase I scrut0 C0 brs0) y, and steps y v *)
+    intros y Hstep IH scrut0 C0 brs0 Heq Hv.
+    subst. inversion Hstep; subst; clear Hstep.
+    + (* step_case_scrut: tCase scrut0 → tCase scrut' *)
+      apply (IH scrut' C0 brs0 eq_refl Hv).
+    + (* step_case_roll: tCase (tRoll I c args) → apps br args *)
+      exists c, args, br.
+      split; [apply rt_refl|split; [exact H|exact H0]].
+  - (* rt_refl: tCase ... = v, impossible since tCase is never a value *)
+    intros scrut0 C0 brs0 Heq Hv.
+    subst. inversion Hv.
+Qed.
+
+(** Corollary for [terminates_to]. *)
+Lemma terminates_to_tCase_decompose (I : nat) (scrut C : tm) (brs : list tm) (v : tm) :
+  terminates_to (tCase I scrut C brs) v ->
+  exists c args br,
+    terminates_to scrut (tRoll I c args) /\
+    branch brs c = Some br /\
+    terminates_to (apps br args) v.
+Proof.
+  intros [Hsteps Hval].
+  apply steps_tCase_decompose in Hsteps; [|exact Hval].
+  destruct Hsteps as [c [args [br [Hscrut [Hb Hbranch]]]]].
+  exists c, args, br. split; [split|split].
+  - exact Hscrut.
+  - apply v_roll.
+  - exact Hb.
+  - exact Hbranch.
+  - exact Hval.
+Qed.
+

@@ -1,0 +1,114 @@
+\begin{thebibliography}{10}
+
+\bibitem{afshari-wehr-2024-abstract-cyclic}
+Bahareh Afshari and Dominik Wehr.
+\newblock Abstract cyclic proofs.
+\newblock {\em Mathematical Structures in Computer Science}, 34:552--577, 2024.
+
+\bibitem{andreoli-1992-logic-programming}
+Jean-Marc Andreoli.
+\newblock Logic programming with focusing proofs in linear logic.
+\newblock {\em Journal of Logic and Computation}, 2(3):297--347, 1992.
+
+\bibitem{brotherston-2006-cyclic}
+James Brotherston.
+\newblock Cyclic proofs for first-order logic with inductive definitions.
+\newblock In {\em TABLEAUX}, 2006.
+
+\bibitem{brotherston-simpson-2011-sequent}
+James Brotherston and Alex Simpson.
+\newblock Sequent calculi for induction and infinite descent.
+\newblock In {\em LICS}, 2011.
+
+\bibitem{coquand-huet-1988-coc}
+Thierry Coquand and G{\'e}rard Huet.
+\newblock The calculus of constructions.
+\newblock {\em Information and Computation}, 76(2--3):95--120, 1988.
+
+\bibitem{herbelin-1995-sequent-calculus}
+Hugo Herbelin.
+\newblock {\em A Lambda-Calculus Structure Isomorphic to Gentzen-Style Sequent
+  Calculus Structure}.
+\newblock PhD thesis, University of Paris 7, 1995.
+
+\bibitem{jonesbook-1996-partial-evaluation}
+Neil~D. Jones, Carsten~K. Gomard, and Peter Sestoft.
+\newblock {\em Partial Evaluation and Automatic Program Generation}.
+\newblock Prentice Hall, 1993.
+\newblock Classic textbook on partial evaluation and metaprogramming.
+
+\bibitem{kruskal-1960-wqo}
+Joseph~B. Kruskal.
+\newblock Well-quasi-ordering, the tree theorem, and {V}azsonyi's conjecture.
+\newblock {\em Transactions of the American Mathematical Society}, 1960.
+
+\bibitem{letouzey-2002-extraction}
+Pierre Letouzey.
+\newblock A new extraction for {Coq}.
+\newblock In {\em Types for Proofs and Programs (TYPES 2002)}, pages 200--219.
+  Springer, 2003.
+
+\bibitem{leuschel-2002-homeomorphic}
+Michael Leuschel.
+\newblock Homeomorphic embedding for online termination of partial deduction.
+\newblock In {\em Logic-Based Program Synthesis and Transformation}, 2002.
+
+\bibitem{miller-2004-forum}
+Dale Miller and Alexis Saurin.
+\newblock From proofs to focused proofs: A modular proof of focalization in
+  linear logic.
+\newblock In {\em Computer Science Logic (CSL)}, pages 405--419. Springer,
+  2004.
+
+\bibitem{paulin-mohring-1993-inductive}
+Christine Paulin-Mohring.
+\newblock Inductive definitions in the system {Coq}: Rules and properties.
+\newblock In {\em Typed Lambda Calculi and Applications}, pages 328--345.
+  Springer, 1993.
+
+\bibitem{pickard-hutton-gibbons-2021-calculating-compilers}
+Patrick~Bahr Pickard, Graham Hutton, and Jeremy Gibbons.
+\newblock Calculating correct compilers.
+\newblock {\em Journal of Functional Programming}, 22:1--35, 2012.
+\newblock Presents calculation-based approach to compiler correctness.
+
+\bibitem{pierce-turner-2000-local-type-inference}
+Benjamin~C. Pierce and David~N. Turner.
+\newblock Local type inference.
+\newblock In {\em ACM Transactions on Programming Languages and Systems
+  (TOPLAS)}, volume~22, pages 1--44. ACM, 2000.
+
+\bibitem{pnueli-siegel-singerman-1998-translation-validation}
+Amir Pnueli, Michael Siegel, and Eli Singerman.
+\newblock Translation validation.
+\newblock In {\em Tools and Algorithms for the Construction and Analysis of
+  Systems (TACAS)}, pages 151--166. Springer, 1998.
+
+\bibitem{sorensen-gluck-1995-supercompilation}
+Morten~Heine S{\o}rensen and Robert Gl{\"u}ck.
+\newblock An introduction to supercompilation.
+\newblock In {\em Partial Evaluation and Semantics-Based Program Manipulation},
+  1995.
+\newblock Often cited introductory survey; venue details vary by edition.
+
+\bibitem{sorensen-gluck-jones-1996-positive}
+Morten~Heine S{\o}rensen, Robert Gl{\"u}ck, and Neil~D. Jones.
+\newblock A positive supercompiler.
+\newblock In {\em Journal of Functional Programming}, volume~6, pages 811--838.
+  Cambridge University Press, 1996.
+
+\bibitem{sprenger-dam-2003-circular-tree}
+Christoph Sprenger and Mads Dam.
+\newblock On the structure of inductive reasoning: Circular and tree-shaped
+  proofs in the $\mu$-calculus.
+\newblock In {\em Foundations of Software Science and Computation Structures
+  (FoSSaCS 2003)}, volume 2620 of {\em Lecture Notes in Computer Science},
+  pages 425--440. Springer, 2003.
+
+\bibitem{turchin-1986-supercompiler}
+Valentin~F. Turchin.
+\newblock {\em The Concept of a Supercompiler}.
+\newblock Springer, 1986.
+\newblock Classic reference introducing supercompilation.
+
+\end{thebibliography}

@@ -3,7 +3,7 @@ From stdpp Require Import prelude countable gmap fin_sets.
 
 From Cyclic.Graph Require Import FiniteDigraph.
 From Cyclic.Preproof Require Import Preproof.
-From Cyclic.Transform Require Import ReadOff CyclicSequentRules.
+From Cyclic.Transform Require Import ReadOff ReadOffPreproof CyclicSequentRules.
 
 Import ListNotations.
 
@@ -121,18 +121,34 @@ Section Packaging.
       apply elem_of_dom. rewrite lookup_insert_eq. eexists; reflexivity.
     - simpl in Hcomp.
       destruct t; try solve [
+        simpl in Hcomp;
+        repeat match goal with
+        | H : match ?t with _ => _ end = _ |- _ => destruct t eqn:? in H
+        end;
         repeat match goal with
         | H : (let '(_, _) := ?e in _) = _ |- _ => destruct e eqn:? in H
         end;
-        match goal with
+        repeat match goal with
         | H : (_, _) = (root, b') |- _ => injection H as <- <-
         end;
         unfold verts_of, RO.put; simpl;
         apply elem_of_union_l;
         apply elem_of_dom; rewrite lookup_insert_eq; eexists; reflexivity].
-      (* tFix: root v inserted into b_fix_ty by put_fix_ty. Needs freshness invariant. *)
-      + admit.
-  Admitted.
+      (* tFix case: root in b_fix_ty *)
+      + repeat match goal with
+        | H : (let '(_, _) := ?e in _) = _ |- _ => destruct e eqn:? in H
+        end.
+        repeat match goal with
+        | H : (_, _) = (root, b') |- _ => injection H as <- <-
+        end.
+        unfold verts_of, RO.put_fix_body. simpl.
+        apply elem_of_union_r.
+        apply (compile_tm_fix_ty_dom_mono fuel' (Some (RO.b_next b) :: ρ) t0
+                (RO.put_fix_ty (RO.b_next b) n b0) n0 b1 (RO.b_next b) Heqp0).
+        apply elem_of_dom.
+        unfold RO.put_fix_ty; simpl.
+        rewrite lookup_insert_eq. eexists; reflexivity.
+  Qed.
 
   Lemma read_off_root_in (t : Term.Syntax.tm) :
     let '(root, b) := RO.read_off_raw t in

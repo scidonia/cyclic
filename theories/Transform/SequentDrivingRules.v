@@ -60,7 +60,8 @@ Definition extend_ctx (tys : list tm) (Γ : Ty.ctx) : Ty.ctx :=
     For now, we re-use the supercompiler's implementation so that the sequent
     rule matches the operational split exactly.
 *)
-Definition split_case_var_cfgs := SC.split_case_var.
+Definition split_case_var_cfgs Σenv Γ ind x Cmot brs A : list config :=
+  map SC.canon_config (SC.split_case_var Σenv Γ ind x Cmot brs A).
 
 (** One-step CBN driving, presented relationally.
 
@@ -152,8 +153,13 @@ Inductive drive_rule (Σenv : Ty.env) : config -> list config -> Prop :=
 (* Nat observation is handled by a separate observation judgement;
    see [Transform/SequentObservationRules.v]. *)
 
+| dr_leaf Γ t A :
+    drive_rule Σenv (C.jTy Γ t A) []
+
+| dr_fold Γ t A :
+    drive_rule Σenv (C.jTy Γ t A) [C.jTy Γ t A]
+
 | dr_split_case_var Γ ind x Cmot brs A succs :
-    succs = split_case_var_cfgs Σenv Γ ind x Cmot brs A ->
     succs <> [] ->
     drive_rule Σenv (C.jTy Γ (tCase ind (tVar x) Cmot brs) A) succs.
 

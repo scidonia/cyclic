@@ -621,3 +621,43 @@ Section CycleProgress.
   Qed.
 
 End CycleProgress.
+
+(** Helpers for the CIU proof: label lookup for successors, and
+    self-loop detection via trace check. *)
+
+Lemma builder_succ_closed_label (b : SC.cfg_builder) (Hclosed : builder_succ_closed b)
+    (v w : nat) (cfg0 : SC.config) (succs : list nat) :
+  b.(SC.cb_label) !! v = Some cfg0 ->
+  b.(SC.cb_succ) !! v = Some succs ->
+  In w succs ->
+  exists cfg, b.(SC.cb_label) !! w = Some cfg.
+Proof.
+  intros Hlabel Hsucc Hin.
+  unfold builder_succ_closed in Hclosed.
+  pose proof (Hclosed v succs Hsucc) as Hfor.
+  apply Forall_forall with (x := w) in Hfor; [|exact Hin].
+  apply elem_of_dom in Hfor. exact Hfor.
+Qed.
+
+Lemma trace_condition_ok_no_self_loop (b : SC.cfg_builder)
+    (Hclosed : builder_succ_closed b) (v : nat) (cfg : SC.config) :
+  SC.trace_condition_ok b = true ->
+  b.(SC.cb_succ) !! v = Some [v] ->
+  b.(SC.cb_label) !! v = Some cfg ->
+  False.
+Proof.
+  intros Hok Hsucc Hlabel.
+  (* Self-loop [v;v;v] is a cycle with no progress edge *)
+  apply (trace_condition_ok_cycle_progress b Hclosed [v; v; v] Hok).
+  exists v, [v]. split; [reflexivity|split; [discriminate|]].
+  split.
+  - apply Forall_forall. intros x Hin.
+    repeat (match goal with H: In x [v;v;v] |- _ => destruct H as [->|[->|[->|[]]]] end).
+    all: apply elem_of_dom; exists cfg; exact Hlabel.
+  - cbn. split.
+    + unfold cfg_graph. cbn.
+      apply elem_of_list_filter. split.
+      * exact (in_eq v nil).
+      * apply bool_decide_true. apply elem_of_dom_2. exact Hlabel.
+    + exact I.
+Qed.

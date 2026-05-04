@@ -1,0 +1,103 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {paragraph}{Contributions.}{3}{section*.2}%
+\contentsline {paragraph}{Outline.}{4}{section*.3}%
+\contentsline {subsection}{\numberline {1.1}Main result pipeline}{4}{subsection.1.1}%
+\contentsline {paragraph}{Claim 1: Supercompilation yields a pre-proof.}{4}{section*.4}%
+\contentsline {paragraph}{Claim 2: Termination yields a cyclic proof.}{4}{section*.5}%
+\contentsline {paragraph}{Claim 3: Cyclic proofs imply CIU equivalence.}{4}{section*.6}%
+\contentsline {paragraph}{Claim 4: The pipeline obtains for our examples.}{5}{section*.7}%
+\contentsline {subsection}{\numberline {1.2}Why focusing matters}{5}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Why cyclic proofs matter: post-hoc induction principles}{5}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Term calculus (CoC + inductives)}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Syntax}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Natural deduction typing rules}{6}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Structural rules}{6}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Universe and conversion}{7}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Dependent functions ($\Pi $-types)}{7}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}Fixpoints (recursion)}{7}{subsubsection.2.2.4}%
+\contentsline {subsubsection}{\numberline {2.2.5}Inductive types}{7}{subsubsection.2.2.5}%
+\contentsline {subsubsection}{\numberline {2.2.6}Pattern matching (elimination)}{7}{subsubsection.2.2.6}%
+\contentsline {subsection}{\numberline {2.3}Operational semantics}{8}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Reduction rules}{8}{subsubsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.4}Observational equivalence}{8}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Focused cyclic sequent calculus}{8}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Sequents and judgements}{8}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Proof graphs}{9}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Asynchronous rules (driving)}{9}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}$\beta $-reduction}{9}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Fixpoint unfolding}{9}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Iota reduction (case-of-constructor)}{9}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Commuting conversions}{9}{subsubsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.4}Synchronous rules (splitting)}{9}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Case split on neutral variable}{10}{subsubsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.5}Observation rules}{10}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Observe zero}{10}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Observe successor}{10}{subsubsection.3.5.2}%
+\contentsline {subsubsection}{\numberline {3.5.3}Drive to observation}{10}{subsubsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.6}Backlink rules (folding)}{10}{subsection.3.6}%
+\contentsline {subsubsection}{\numberline {3.6.1}Exact match}{10}{subsubsection.3.6.1}%
+\contentsline {subsubsection}{\numberline {3.6.2}Instance match}{11}{subsubsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.7}Phases and focusing}{11}{subsection.3.7}%
+\contentsline {subsection}{\numberline {3.8}Global progress condition}{11}{subsection.3.8}%
+\contentsline {subsection}{\numberline {3.9}Relation to supercompilation}{12}{subsection.3.9}%
+\contentsline {subsection}{\numberline {3.10}Example: \texttt {length (map f l)}}{12}{subsection.3.10}%
+\contentsline {subsection}{\numberline {3.11}Vertex classification and correspondence}{13}{subsection.3.11}%
+\contentsline {section}{\numberline {4}Supercompilation as focused proof search}{13}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Configurations as sequents}{13}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Driving = invertible sequent steps}{13}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Case splitting = left rules on neutral scrutinees}{13}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Folding/memoisation = cyclic closure}{13}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Generalisation = stream selection + kernel check}{14}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Concrete correspondence examples}{14}{subsection.4.6}%
+\contentsline {paragraph}{Example 1: Fix-unfolding (async driving)}{14}{section*.8}%
+\contentsline {paragraph}{Example 2: $\beta $-reduction (async driving)}{14}{section*.9}%
+\contentsline {paragraph}{Example 3: Case-split on neutral (synchronous choice)}{15}{section*.10}%
+\contentsline {paragraph}{Example 4: Memo lookup / folding (backlink)}{15}{section*.11}%
+\contentsline {paragraph}{Example 5: Iota reduction (async driving)}{15}{section*.12}%
+\contentsline {subsection}{\numberline {4.7}Bisimulation theorem}{16}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Concrete example: \texttt {length (map f l)} fusion}{16}{subsection.4.8}%
+\contentsline {paragraph}{Trace structure}{16}{section*.13}%
+\contentsline {paragraph}{Trace condition satisfied}{17}{section*.14}%
+\contentsline {paragraph}{Mechanisation}{17}{section*.15}%
+\contentsline {section}{\numberline {5}Concrete Example: Length-Map Fusion}{17}{section.5}%
+\contentsline {subsection}{\numberline {5.1}The input term}{17}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Supercompilation trace}{17}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Corresponding cyclic proof}{18}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Graph structure}{18}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Mechanization and CIU validation}{18}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Additional examples and CIU equivalence}{19}{subsection.5.6}%
+\contentsline {section}{\numberline {6}Related work}{19}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Supercompilation}{20}{subsection.6.1}%
+\contentsline {paragraph}{Termination control.}{20}{section*.16}%
+\contentsline {paragraph}{Supercompilation by evaluation.}{20}{section*.17}%
+\contentsline {paragraph}{Prior work on dependent types.}{20}{section*.18}%
+\contentsline {subsection}{\numberline {6.2}Cyclic proof theory}{20}{subsection.6.2}%
+\contentsline {paragraph}{Concrete cyclic systems.}{20}{section*.19}%
+\contentsline {paragraph}{Abstract cyclic frameworks.}{21}{section*.20}%
+\contentsline {paragraph}{Cyclic proofs as normal forms.}{21}{section*.21}%
+\contentsline {subsection}{\numberline {6.3}Sequent calculi for dependent types}{21}{subsection.6.3}%
+\contentsline {paragraph}{Bidirectional type checking.}{21}{section*.22}%
+\contentsline {paragraph}{Focused sequent calculi.}{21}{section*.23}%
+\contentsline {paragraph}{Sequent calculi for CIC.}{21}{section*.24}%
+\contentsline {subsection}{\numberline {6.4}Induction: local rules vs global discharge}{21}{subsection.6.4}%
+\contentsline {paragraph}{Traditional induction principles.}{21}{section*.25}%
+\contentsline {paragraph}{Cyclic induction as post-hoc discovery.}{21}{section*.26}%
+\contentsline {subsection}{\numberline {6.5}Proof-carrying code and certified compilation}{22}{subsection.6.5}%
+\contentsline {paragraph}{Extracting programs from proofs.}{22}{section*.27}%
+\contentsline {paragraph}{Translation validation vs proof transformation.}{22}{section*.28}%
+\contentsline {subsection}{\numberline {6.6}Summary}{22}{subsection.6.6}%
+\contentsline {section}{\numberline {7}Main results: the four-claim pipeline}{22}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Claim 1: Supercompilation yields a pre-proof}{23}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Claim 2: Termination yields a cyclic proof}{23}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Claim 3: CIU soundness}{24}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Claim 4: Example validation}{25}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Mechanization}{25}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Claim 1: Pre-proof correspondence}{25}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Claim 2: Cyclic proof via budget trace}{25}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Claim 3: CIU soundness}{26}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Claim 4: Example validation}{26}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Summary of Coq artefacts}{27}{subsection.8.5}%
+\contentsline {section}{\numberline {9}Conclusion}{27}{section.9}%
+\contentsline {paragraph}{Contributions.}{27}{section*.29}%
+\contentsline {paragraph}{Limitations.}{28}{section*.30}%
+\contentsline {paragraph}{Future work.}{28}{section*.31}%
