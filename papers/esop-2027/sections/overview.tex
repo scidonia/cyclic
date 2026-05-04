@@ -1,0 +1,24 @@
+\section{Overview: SC \texorpdfstring{=}{=} cyclic proof search}
+\label{sec:overview}
+
+Before presenting formal definitions, we sketch the core idea informally.
+
+A supercompiler maintains a \emph{configuration graph} where each node is a typing judgement $\Gamma \vdash t : A$ and each edge represents an operational step. This graph \emph{is} a proof object in a cyclic sequent calculus:
+
+\begin{center}
+\small
+\begin{tabular}{c|c|c}
+\textbf{SC concept} & \textbf{Proof concept} & \textbf{Rule type} \\
+\hline
+Driving (unfolding, $\beta$, $\iota$) & Invertible sequent rule & Async (deterministic) \\
+Case-split on neutral variable & Synchronous choice rule & Sync (progress event) \\
+Memo table hit (folding) & Cyclic backlink & Cycle closure \\
+Generalisation + instantiation & Substitution lemma & Async (invertible) \\
+\end{tabular}
+\end{center}
+
+Cyclic proofs require a \textbf{global trace condition} for soundness: every cycle must contain a \emph{progress event}---a case-split on a neutral scrutinee. This matches the termination discipline used in supercompilation: a recursive call must descend on a structurally smaller component. The budget trace construction (Claim~2) enforces this by assigning a decreasing rank to each progress edge.
+
+A particularly striking consequence is that \textbf{induction principles are discovered post-hoc}. In traditional proofs, you must choose an induction scheme at the start. In cyclic proofs, the backlink itself \emph{is} the induction hypothesis, formed when search recognises that the current goal is an instance of a previous one. The cycle structure \emph{is} the induction principle, read off from the completed proof graph. This matches how supercompilation works: the residual program's recursive structure is discovered by the driving process, not prescribed in advance.
+
+The remainder of the paper formalises this intuition: Section~\ref{sec:calculus} defines the term calculus, Section~\ref{sec:focused} presents the sequent rules, Section~\ref{sec:sc-as-search} establishes the correspondence, and Section~\ref{sec:equiv} states the mechanised theorems.

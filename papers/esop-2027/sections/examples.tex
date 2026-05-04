@@ -76,36 +76,4 @@ The resulting proof graph has three nodes: the root (initial configuration), a n
 
 The cycle (from the cons branch back to root) represents the recursive structure. The \emph{trace condition} for this cycle is satisfied because the case-split is a \emph{progress point}: the recursive call is on $xs$, which is structurally smaller than $l$.
 
-\subsection{Mechanization and CIU validation}
-
-This example is mechanized in Coq in \texttt{theories/Transform/SupercompileTest.v}. We define the input term and run supercompilation with fuel parameter 20:
-
-\begin{verbatim}
-Definition length_map_input : tm :=
-  tLam nat2nat (
-    tLam list_ty (
-      tApp length (tApp (tApp map (tVar 1)) (tVar 0)))).
-
-Definition length_map_sc : option (nat * cfg_builder) :=
-  supercompile_jTy 20 empty_env [] 
-    length_map_input length_map_ty.
-\end{verbatim}
-
-The supercompiler successfully processes this input, producing a \texttt{cfg\_builder} with the structure described above. The correspondence theorems (Theorem~\ref{thm:step-correspondence}) ensure that this configuration graph has a matching cyclic sequent proof.
-
-\subsection{Additional examples and CIU equivalence}
-
-The example suite in \texttt{Equiv/SupercompileChecklistIndexPipeline.v} validates Claim~4 of the pipeline on a range of standard supercompilation benchmarks.
-Each example runs through the supercompiler, and the residual is checked by computational reflection ($\mathtt{vm\_compute}$) against the expected result:
-
-\begin{itemize}[leftmargin=*]
-\item \textbf{Length-map fusion:} $\mathtt{length}\,(\mathtt{map}\,f\,l)$ residualises to a recursive function without intermediate list allocation. The residual is computationally equal to the expected deforested version.
-\item \textbf{Length-append normalisation:} $\mathtt{length}\,(\mathtt{append}\,l_1\,l_2)$ produces a residual equal to $\mathtt{plus}\,(\mathtt{length}\,l_1)\,(\mathtt{length}\,l_2)$.
-\item \textbf{Append associativity:} $\mathtt{length}\,((l_1 \mathbin{++} l_2) \mathbin{++} l_3)$ normalises via 2-pass supercompilation to the same canonical form as the right-associated variant.
-\item \textbf{Take-drop fusion:} $\mathtt{length}\,(\mathtt{take}\,n\,l \mathbin{++} \mathtt{drop}\,n\,l)$ reduces to $\mathtt{length}\,l$.
-\item \textbf{Map-map composition:} $\mathtt{length}\,(\mathtt{map}\,f\,(\mathtt{map}\,g\,l))$ yields a non-trivial residual (further optimisation expected after strengthening the generalisation heuristic).
-\item \textbf{Vector index normalisation:} Residual indices from supercompiled vector expressions are equal by computation, demonstrating that the approach extends to dependent type indices.
-\end{itemize}
-
-All equalities are proved via $\mathtt{vm\_compute}$ (no axioms), confirming that the supercompiler's output is definitionally equivalent to the expected optimised program for these benchmarks.
-The CIU equivalence theorem (Theorem~\ref{thm:ciu}) would generalise these computational equalities to the full contextual equivalence relation.
+This example is mechanised in Rocq; the supercompiler successfully processes the input and the step correspondence theorems ensure a matching cyclic sequent proof. Additional benchmarks (append-length, append-associativity via 2-pass supercompilation, take-drop fusion, and vector-index normalisation) are validated by computational reflection.

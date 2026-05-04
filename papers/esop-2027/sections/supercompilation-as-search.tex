@@ -1,0 +1,79 @@
+\section{Supercompilation as focused proof search}
+\label{sec:sc-as-search}
+
+We give the intended dictionary between standard supercompilation concepts and focused cyclic proof search.
+
+\subsection{Configurations as sequents}
+A supercompiler configuration (term + context + type/motive) is represented as a sequent goal node.
+The supercompiler's configuration graph is then a proof-search graph.
+
+\subsection{Driving = invertible sequent steps}
+Driving decomposes the goal by deterministic computation-like rules (\(\beta\), iota, commuting conversions). In focusing, these correspond to invertible/asynchronous rule applications.
+
+\subsection{Case splitting = left rules on neutral scrutinees}
+When the scrutinee is neutral, supercompilation propagates information by splitting into one successor per constructor. In a sequent system this is a left rule whose premises correspond to constructor cases.
+
+\subsection{Folding/memoisation = cyclic closure}
+Folding corresponds to closing a goal by back-linking to a previously seen companion sequent, recording the instantiation (explicit substitution arguments).
+
+\subsection{Generalisation}
+Generalisation introduces a more general sequent that subsumes the current goal and a previous goal, enabling folding.
+In the current implementation, a \texttt{best\_generalize} heuristic selects a companion from the memo table and computes a generalised config via anti-unification. The anti-unification produces a generalised judgement $S_{\mathsf{gen}}$ together with explicit substitutions $\sigma, \sigma_0$ such that $S = \sigma(S_{\mathsf{gen}})$ and $S_0 = \sigma_0(S_{\mathsf{gen}})$.
+The stream-based oracle model described in the conclusion generalises this: the heuristic can be replaced by an external oracle producing candidates validated by deterministic kernel checks.
+
+\subsection{Concrete correspondence examples}
+\label{sec:sc-examples}
+
+We illustrate the correspondence using two representative cases: asynchronous driving (deterministic computation) and synchronous branching with folding (the source of recursion and cyclic structure). Other cases follow the same pattern.
+
+\paragraph{Example 1: $\beta$-reduction (asynchronous driving)}
+
+\[
+\begin{array}{ll}
+\text{Supercompiler:} & \Gamma \vdash (\lambda x.\,t)~u : B \;\leadsto\; \Gamma \vdash t[u/x] : B \\[1em]
+\text{Sequent:} &
+\AxiomC{$\Gamma \vdash t[u/x] : B$}
+\UnaryInfC{$\Gamma \vdash (\lambda x.\,t)~u : B$}
+\DisplayProof
+\end{array}
+\]
+
+Both represent a single deterministic computation step. The supercompiler produces one successor configuration, and the proof graph has a single premise. All asynchronous rules (fixpoint unfolding, iota reduction, commuting conversions) follow this same pattern.
+
+\paragraph{Example 2: Split + fold (synchronous + cyclic)}
+
+\[
+\begin{array}{ll}
+\text{Supercompiler:} &
+\begin{array}{l}
+\Gamma, l : \mathsf{List} \vdash \mathbf{case}~l~\mathbf{of}~\{ \mathit{nil} \to b_0; \mathit{cons} \to b_1\} : A \\
+\leadsto \Gamma \vdash b_0 : A \\
+\phantom{\leadsto}\;\; \Gamma, x, xs \vdash b_1[(\mathit{cons}~x~xs)/l] : A
+\end{array} \\[1em]
+\text{Sequent:} &
+\AxiomC{$\Gamma \vdash b_0 : A$}
+\AxiomC{$\Gamma, x, xs \vdash b_1[(\mathit{cons}~x~xs)/l] : A$}
+\BinaryInfC{$\Gamma, l : \mathsf{List} \vdash \mathbf{case}~l~\mathbf{of}~\{\ldots\} : A$}
+\DisplayProof
+\end{array}
+\]
+
+This is the only source of nondeterminism in both systems.
+
+In the recursive branch, further driving yields a goal of the form:
+\[
+\Gamma, xs \vdash \mathsf{length}\,(\mathsf{map}\,f\,xs)
+\]
+This matches a previously encountered goal under substitution $l \mapsto xs$.
+The supercompiler performs a memo hit (fold), and the proof graph closes
+via a cyclic backlink.
+
+This creates a cycle in both graphs. The cycle represents the recursive
+structure: the induction principle is discovered from the cycle itself.
+The trace condition ensures the cycle is well-founded by requiring that
+it passes through a progress point (the case split).
+
+These examples illustrate the general pattern: supercompilation constructs
+a graph whose structure coincides with a focused cyclic proof, with
+asynchronous steps for computation, synchronous branching at case splits,
+and cyclic closure via folding.

@@ -1,0 +1,21 @@
+\section{Conclusion}
+\label{sec:conc}
+
+This paper develops a focused cyclic sequent proof-search view of supercompilation for a dependently typed calculus (CoC with inductives).
+The central claim is operational: supercompilation moves (drive/split/fold) coincide with local inference steps in a cyclic proof graph, and the cyclic global progress condition matches the structural-descent termination discipline that justifies folding.
+
+\paragraph{Contributions.}
+We organise the results as a four-claim pipeline, each mechanized in Rocq:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Pre-proof construction (proved):} Supercompilation success always yields a locally-valid rooted pre-proof whose edge structure corresponds exactly to drive/split/fold operations.
+\item \textbf{Cyclic proof via budget trace (proved):} With the trace-condition check enabled, the pre-proof upgrades to a ranked cyclic proof on a budget-instrumented trace graph.
+\item \textbf{CIU soundness (proved):} The residualised program is CIU-equivalent to the source. The proof uses fuel induction with the trace condition preventing non-terminating self-loops. Component lemmas lift CIU through all term constructors.
+\item \textbf{Example validation (demonstrated):} Concrete supercompilation examples (length-map fusion, append length, take-drop, etc.) pass the pipeline with computational equivalence verified by Rocq's $\texttt{vm\_compute}$.
+\end{enumerate}
+
+\paragraph{Limitations.}
+The current presentation focuses on a sequent system tailored to the supercompilation correspondence rather than a full CIC sequent calculus; several CIC-specific features (conversion, universe cumulativity, dependent elimination obligations) are deferred.
+
+\paragraph{Future work.}
+Immediate next steps are: (i) extending the focused calculus to cover a fuller CIC sequent system (conversion, universe cumulativity, dependent elimination), and (ii) strengthening the generalisation heuristic (whistle) to optimise more complex patterns such as nested deforestation.
+We also view oracle-guided generalisation as promising future work. The current heuristic can be replaced by an external oracle proposing candidate substitutions, validated by the same deterministic kernel checks. The oracle is not trusted for soundness.

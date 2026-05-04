@@ -1,7 +1,7 @@
 \section{Mechanization}
 \label{sec:mech}
 
-The four-claim pipeline is mechanized in Coq (Rocq 9.1.0) using the \texttt{stdpp} library for finite maps and graphs.
+The four-claim pipeline is mechanized in Rocq 9.1.0 using the \texttt{stdpp} library for finite maps and graphs.
 The development totals $\sim$5,000 lines of proof across 14 files.
 All theorems below are proved with no axioms or admitted lemmas.
 
@@ -78,7 +78,7 @@ The typed variant $\texttt{supercompile\_ciu\_soundness\_typed}$ follows in 8 li
 
 \begin{theorem}[Typing preservation for leaf vertices]
 \label{thm:mech-typing}
-For a leaf vertex (no successors) with label $\jTy(\Gamma,t,A)$ and adequate fuel, the residual has type $A$ in context $\Gamma$.
+For a leaf vertex (no successors) labelled $\hastype{\Sigma}{\Gamma}{t}{A}$ and adequate fuel, the residual has type $A$ in context $\Gamma$.
 \newline Coq: $\texttt{residualise\_cfg\_root\_typing}$ (\texttt{SupercompilationCorrespondence.v}).
 \end{theorem}
 
@@ -86,9 +86,9 @@ The typing proof uses $\texttt{has\_type\_subst}$ (renaming preserves typing, al
 
 \subsection{Claim 4: Example validation}
 
-The example suite in \texttt{Equiv/SupercompileChecklistIndexPipeline.v} covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) with no axioms.
+The example suite in \texttt{Supercompile\-Checklist\-Index\-Pipeline.v} covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) with no axioms.
 
-\subsection{Summary of Coq artefacts}
+\subsection{Summary of Rocq artefacts}
 
 \begin{center}
 \small
@@ -114,7 +114,7 @@ Claim 2 & \texttt{supercompile\_yields\_rooted\_cyclic\_proof} & \\
 Claim 3 & \texttt{supercompile\_ciu\_soundness\_untyped/typed}, & \\
  & \texttt{residualise\_cfg\_root\_typing} & \\
 Claim 4 & \texttt{CIUChecklistLengthMap}, & \texttt{Equiv/} \\
- & \texttt{SupercompileChecklistIndexPipeline} & \texttt{Equiv/} \\
+ & \texttt{Supercompile\-Checklist\-Index\-Pipeline} & \texttt{Equiv/} \\
 \bottomrule
 \end{tabular}
 \end{center}

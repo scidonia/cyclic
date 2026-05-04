@@ -1,0 +1,38 @@
+\section{Main results}
+\label{sec:equiv}
+
+We organise the central results as a four-claim pipeline, each building on the previous. All results are fully mechanised in Rocq; a mapping from theorems to artefact names and file paths is provided as supplementary material.
+
+\subsection{Claim 1: Pre-proof correspondence}
+
+\begin{theorem}[Pre-proof]
+\label{thm:pre-proof}
+Successful supercompilation yields a rooted pre-proof whose edge structure corresponds to the drive, split, and fold operations.
+\end{theorem}
+
+The three step-level correspondences---driving, splitting, folding---are proved at the graph level via a bisimulation.
+
+\subsection{Claim 2: Cyclic proof via budget trace}
+
+\begin{theorem}[Cyclic proof]
+\label{thm:cyclic-proof}
+With the trace-condition check enabled, supercompilation yields a ranked cyclic proof on a budget-instrumented trace graph.
+\end{theorem}
+
+The boolean trace check guarantees cycle-progress. A budget construction lifts the base graph to pairs $(v,k)$ where progress edges consume budget. This yields a full ranking condition.
+
+\subsection{Claim 3: CIU soundness}
+
+\begin{theorem}[CIU soundness]
+\label{thm:ciu}
+The residualised program is CIU-equivalent to the source: for every closing substitution $\sigma$ and CBN value $v$, $t[\sigma]$ terminates to $v$ iff the residual does. The typed variant follows directly.
+\end{theorem}
+
+The proof uses fuel induction with the trace check preventing non-terminating self-loops; component lemmas lift CIU through all term constructors (appendix).
+
+\subsection{Claim 4: Example validation}
+
+\begin{proposition}[Examples]
+\label{prop:examples}
+Length-map fusion, append-length normalisation, append-associativity (2-pass), take-drop fusion, and vector-index normalisation are all validated by computational reflection.
+\end{proposition}

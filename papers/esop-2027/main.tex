@@ -1,0 +1,55 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,cd}
+\usepackage{bussproofs}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true}
+
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{Supercompilation as Cyclic Proof Search for the\\Calculus of Constructions}
+\author{Anonymous}
+\institute{}
+
+% Reuse paper macros to keep notation consistent.
+\input{../cyclic-cic/macros}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Supercompilation is a powerful program optimisation technique: it can deforest intermediate data structures, fuse composed functions, and discover recursive structure automatically. However, there is no proof-theoretic foundation for supercompilation in dependently typed languages, where types depend on terms and transformations must preserve both typing and observational equivalence.
+
+We give such a foundation by showing that supercompilation is focused cyclic sequent proof search. Driving corresponds to invertible (asynchronous) rules, case-splitting to synchronous choice rules, and folding to cyclic backlinks. A key consequence is that induction principles are not chosen upfront, but are discovered from the cycle structure of the proof graph.
+
+We formalise this correspondence as a mechanised pipeline establishing correctness and termination, with all results proved in Rocq without axioms. This yields a principled foundation for dependently typed supercompilation, connecting program transformation with proof theory and enabling reasoning about optimisation correctness.
+\end{abstract}
+
+\input{sections/thesis}
+\input{sections/overview}
+\input{sections/calculus}
+\input{sections/focused-cyclic-sequents}
+\input{sections/supercompilation-as-search}
+\input{sections/examples}
+\input{sections/related-work}
+\input{sections/equivalence}
+\input{sections/conclusion}
+
+\bibliographystyle{splncs04}
+\bibliography{../cyclic-cic/refs}
+
+\appendix
+\input{sections/mechanisation-plan}
+
+\end{document}

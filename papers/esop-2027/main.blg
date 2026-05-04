@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: splncs04.bst
+Database file #1: ../cyclic-cic/refs.bib
+Warning--can't use both volume and number fields in pierce-turner-2000-local-type-inference
+Warning--can't use both volume and number fields in sorensen-gluck-jones-1996-positive
+You've used 16 entries,
+            2850 wiz_defined-function locations,
+            694 strings with 7237 characters,
+and the built_in function-call counts, 8063 in all, are:
+= -- 685
+> -- 167
+< -- 14
++ -- 75
+- -- 54
+* -- 457
+:= -- 1018
+add.period$ -- 28
+call.type$ -- 16
+change.case$ -- 93
+chr.to.int$ -- 0
+cite$ -- 18
+duplicate$ -- 764
+empty$ -- 809
+format.name$ -- 63
+if$ -- 1802
+int.to.chr$ -- 0
+int.to.str$ -- 16
+missing$ -- 147
+newline$ -- 54
+num.names$ -- 32
+pop$ -- 292
+preamble$ -- 1
+purify$ -- 59
+quote$ -- 0
+skip$ -- 231
+stack$ -- 0
+substring$ -- 457
+swap$ -- 372
+text.length$ -- 14
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 60
+warning$ -- 2
+while$ -- 72
+width$ -- 18
+write$ -- 173
+(There were 2 warnings)

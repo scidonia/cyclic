@@ -1,0 +1,72 @@
+\section{Focused cyclic sequent calculus}
+\label{sec:focused}
+
+A sequent has the form $\Gamma \vdash t : A$, representing the goal of finding a term $t$ of type $A$ in context $\Gamma$. A \emph{cyclic proof} is a finite directed graph where each vertex $v$ is labelled with a sequent, has successors $\succof(v)$ (its premises), and satisfies a local rule. The graph may contain cycles. A proof is valid if every vertex's local rule holds and every infinite path contains infinitely many \emph{progress events} (splits).
+
+\subsection{Asynchronous rules (driving)}
+
+The asynchronous rules are deterministic and invertible. They correspond to CBN reduction: $\beta$-reduction, fixpoint unfolding, $\iota$-reduction (case-of-constructor), and commuting conversions. All have the same shape---a single premise that is the result of one computation step---and are applied eagerly without backtracking.
+
+\subsection{Synchronous rule: case split}
+
+The synchronous rule introduces choice by analyzing a neutral variable:
+
+\begin{center}
+\AxiomC{$\Gamma \vdash b_0 : C[\Roll{I}{0}{}/]$}
+\AxiomC{$\cdots$}
+\AxiomC{$\Gamma \vdash b_{n-1} : C[\Roll{I}{n-1}{}/]$}
+\TrinaryInfC{$\Gamma, x : \Ind{I}{\vec{a}} \vdash \Case{I}{x}{C}{\vec{b}} : C[x/]$}
+\DisplayProof
+\quad (\textsc{split-case-var})
+\end{center}
+
+Each premise corresponds to one constructor of the inductive type. \textbf{Key property:} this is a \emph{progress event}. Every cycle must pass through at least one split, ensuring structural descent.
+
+\subsection{Backlink rules (folding)}
+
+A backlink closes a goal by pointing to a previous vertex. This is the cyclic aspect: rather than choosing an induction scheme upfront, the backlink \emph{is} the induction hypothesis, discovered when a current goal is recognized as an instance of a previous one. The trace condition ensures the resulting recursion is well-founded.
+
+\begin{center}
+\AxiomC{}
+\UnaryInfC{$\Gamma \vdash t : A$}
+\DisplayProof
+\quad (\textsc{back-exact})
+\qquad
+\AxiomC{$\Delta \vdash \sigma :_s \Gamma$}
+\UnaryInfC{$\Gamma \vdash t[\sigma/] : A[\sigma/]$}
+\DisplayProof
+\quad (\textsc{back-inst})
+\end{center}
+
+\textsc{back-exact} applies when a prior vertex has a syntactically identical label. \textsc{back-inst} applies when a prior vertex matches under an explicit substitution $\sigma$. The judgement $\Delta \vdash \sigma :_s \Gamma$ states that $\sigma$ is an explicit substitution from context $\Gamma$ to $\Delta$, i.e., a list of terms in $\Delta$ that can replace the variables of $\Gamma$.
+
+\subsection{Phases and focusing}
+
+Rules are partitioned into two phases: an \textbf{asynchronous} phase (driving, deterministic) and a \textbf{synchronous} phase (split and backlink, requiring choice). This matches supercompilation: drive eagerly until stuck, then split or fold.
+
+\subsection{Global progress condition}
+\label{sec:global-condition}
+
+A cyclic proof is sound if every infinite path contains infinitely many progress events (splits). A \emph{trace state} tracks the inductive variable being analyzed; a well-founded order requires strict decrease on at least one back-edge per cycle. This is enforced by the budget trace construction (Claim~2).
+
+\subsection{Vertex classification}
+\label{sec:vertex-classification}
+
+Each vertex in the configuration graph is classified by its successor structure:
+
+\begin{center}
+\small
+\begin{tabular}{c|c|c|c}
+\textbf{Successors} & \textbf{Rule} & \textbf{SC operation} & \textbf{Phase} \\
+\hline
+$n = 0$ & \textsc{dr-leaf} & leaf (axiom) & — \\
+$n = 1$, $\mathsf{drive\_cbn\_once}(t) \neq t$ & \textsc{dr-cbn-once} & driving (async) & invertible \\
+$n = 1$, $\mathsf{drive\_cbn\_once}(t) = t$ & \textsc{dr-fold} & folding (memo hit) & cyclic closure \\
+$n > 1$ & \textsc{dr-split} & case-split (sync) & choice point \\
+\end{tabular}
+\end{center}
+
+\begin{proposition}[Vertex classification]
+\label{prop:vertex-class}
+Every vertex in the configuration graph produced by successful supercompilation satisfies exactly one of the four rules above.
+\end{proposition}
