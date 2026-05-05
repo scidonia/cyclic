@@ -12,6 +12,8 @@ The trace condition explains \emph{why} folding is sound (every cycle contains a
 the cyclic structure explains \emph{where} recursion comes from (backlinks are discovered during search);
 and the CIU equivalence theorem explains \emph{what} correctness means for the residual program (indistinguishable from the source under all observations).
 
+Beyond providing a correctness proof, this perspective reveals supercompilation as a point in a broader design space for proof-directed program transformation. The evaluation strategy determines which rules are invertible; generalisation and back-linking correspond to cut and identity in the sequent calculus; and the strength of the trace condition governs the class of recursive programs handled. Each dimension can be independently varied---call-by-value driving, richer generalisation heuristics, stronger trace conditions---while the core soundness argument remains modular.
+
 \paragraph{Contributions.}
 \begin{itemize}[leftmargin=*]
 \item A focused cyclic sequent calculus designed to mirror supercompilation operations (Section~\ref{sec:focused}).

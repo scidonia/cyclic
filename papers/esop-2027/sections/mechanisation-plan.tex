@@ -91,30 +91,28 @@ The example suite in \texttt{Supercompile\-Checklist\-Index\-Pipeline.v} covers 
 \subsection{Summary of Rocq artefacts}
 
 \begin{center}
-\small
-\begin{tabular}{p{0.35\textwidth} p{0.35\textwidth} p{0.3\textwidth}}
+\footnotesize
+\begin{tabular}{p{0.26\textwidth} >{\raggedright\arraybackslash}p{0.44\textwidth} p{0.28\textwidth}}
 \toprule
 \textbf{Component} & \textbf{Key lemmas} & \textbf{File} \\
 \midrule
-Syntax \& semantics & term, CBN evaluation & \texttt{Syntax/Term.v}, \texttt{Semantics/Cbn.v} \\
-Typing & \texttt{has\_type}, \texttt{has\_type\_subst} & \texttt{Judgement/Typing.v} \\
-Graph theory & \texttt{fin\_digraph}, \texttt{ranking\_condition} & \texttt{Graph/FiniteDigraph.v}, \texttt{Progress/Ranking.v} \\
-Pre-proofs \& cyclic proofs & \texttt{preproof}, \texttt{cyclic\_proof} & \texttt{Preproof/Preproof.v}, \texttt{CyclicProof/} \\
-Supercompiler & \texttt{supercompile\_cfg}, \texttt{residualise\_cfg} & \texttt{Transform/Supercompile.v} \\
-Trace check soundness & \texttt{trace\_condition\_ok\_cycle\_progress} & \texttt{SupercompileTraceCheckSound.v} \\
-Budget trace ranking & \texttt{budget\_trace\_ranking\_condition} & \texttt{CyclicTraceConditionBudget.v} \\
+Syntax \& semantics & term, CBN evaluation & Syntax, Semantics \\
+Typing & \texttt{has\_type}, \texttt{has\_type\_subst} & Judgement \\
+Graph theory & \texttt{fin\_digraph}, \texttt{ranking\_condition} & Graph, Progress \\
+Pre-proofs \& cyclic proofs & \texttt{preproof}, \texttt{cyclic\_proof} & Preproof, CyclicProof \\
+Supercompiler & \texttt{supercompile\_cfg}, \texttt{residualise\_cfg} & Transform \\
+Trace check & \texttt{trace\_condition\_ok\_cycle\_progress} & Transform \\
+Budget trace & \texttt{budget\_trace\_ranking\_condition} & Transform \\
 \bottomrule
 \multicolumn{3}{c}{} \\
-\multicolumn{3}{c}{\textbf{All pipeline theorems:} \texttt{SupercompilationCorrespondence.v}} \\
+\multicolumn{3}{c}{\textbf{Pipeline theorems:} \texttt{SupercompilationCorrespondence.v}} \\
 \midrule
 Claim 1 & \texttt{all\_supercompiled\_programs\_yield\_preproof}, & \\
- & \texttt{drive/split/fold\_corresponds\_to\_edge}, & \\
- & \texttt{cfg\_vertex\_drive\_rule} & \\
+ & \texttt{drive/split/fold\_corr\_to\_edge}, \texttt{cfg\_vertex\_drive\_rule} & \\
 Claim 2 & \texttt{supercompile\_yields\_rooted\_cyclic\_proof} & \\
-Claim 3 & \texttt{supercompile\_ciu\_soundness\_untyped/typed}, & \\
+Claim 3 & \texttt{supercompile\_ciu\_soundness\_untyped/typed} & \\
  & \texttt{residualise\_cfg\_root\_typing} & \\
-Claim 4 & \texttt{CIUChecklistLengthMap}, & \texttt{Equiv/} \\
- & \texttt{Supercompile\-Checklist\-Index\-Pipeline} & \texttt{Equiv/} \\
+Claim 4 & \texttt{CIUChecklistLengthMap}, \texttt{SupercompileChecklist} & Equiv \\
 \bottomrule
 \end{tabular}
 \end{center}

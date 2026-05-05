@@ -1,0 +1,30 @@
+\subsection{Cyclic proof structure (illustration)}
+\label{sec:cyclic-diagram}
+
+Figure~1 shows the cyclic proof for the length-map fusion example. The root goal (bottom) is $\mathsf{len}\,(\mathsf{map}\,f\,l) : \Nat$. Driving (rules \textsc{fix}, \textsc{$\iota$}, \textsc{comm}) reduces it to a case split on $l$. The nil branch trivially yields $0$. The cons branch reaches the recursive call $\mathsf{len}\,(\mathsf{map}\,f\,xs) : \Nat$, which is closed by a backlink to the root---the current goal is an instance of the root under the substitution $[l\mapsto xs]$, witnessed by the \textsc{back} rule. The split on $l$ ($\star$) is a progress event; the trace condition requires every cycle to contain one, ensuring structural descent.
+
+\begin{center}
+\footnotesize
+\[
+\AxiomC{}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{nil}}
+\UnaryInfC{$\Gamma \vdash 0 : \Nat$}
+\qquad
+\AxiomC{$\Gamma, xs \vdash [l\mapsto xs]:_s \Gamma$}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{back} \textcolor{red!70}{\textdagger}}
+\UnaryInfC{\textcolor{red!60}{$\Gamma, xs \vdash \mathsf{len}\,(\mathsf{map}\,f\,xs) : \Nat$ \textcolor{red!70}{\textdagger}}}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{cons}}
+\BinaryInfC{$\Gamma, l:\mathsf{List} \vdash \mathsf{case}~l~\mathsf{of}~\{\mathit{nil}\to 0; \mathit{cons}\to\ldots\} : \Nat$}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textcolor{red!70}{\textsc{split} $\star$}}
+\UnaryInfC{$\Gamma \vdash \mathsf{case}~l~\mathsf{of}~\{\mathit{nil}\to 0; \mathit{cons}\to\ldots\} : \Nat$}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{comm}}
+\UnaryInfC{$\Gamma \vdash \mathsf{len}\,(\mathsf{case}~l~\mathsf{of}\ldots) : \Nat$}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{$\iota$}}
+\UnaryInfC{$\Gamma \vdash \mathsf{len}\,(\mathsf{map}\,f\,l) : \Nat$ \textcolor{red!70}{\textdagger}}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{fix}}
+\DisplayProof
+\]
+
+\vspace{-4pt}
+{\fontsize{6}{7}\selectfont\textbf{Fig.\ 1.} Cyclic proof for length-map fusion. Red judgement = companion; $\dagger$ = backlink target; $\star$ = progress event.}
+\end{center}
