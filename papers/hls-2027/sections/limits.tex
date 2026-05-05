@@ -1,0 +1,40 @@
+\section{What Remains}
+\label{sec:limits}
+
+\subsection{The $\omega$-rule: proved, but the lemma is hand-supplied}
+
+The $\omega$-rule is demonstrated (Section~\ref{sec:reverse-append}): the LLM
+proposes the lemma, the sub-SC proves it, and the main SC uses it.
+In the current mechanisation the lemma statement is hand-provided in the
+Rocq tests; wiring the LLM proposal loop through the OCaml extraction shim
+remains the final engineering step (the same pattern as the existing
+generalisation oracle, just a different prompt).
+
+\subsection{Conditional lemmas}
+
+Some auxiliary lemmas are \emph{conditional} --- they require a hypothesis
+to hold before the rewrite applies.  The canonical example is
+$\mathsf{oddp}\ n = \mathsf{true} \to \mathsf{evenp}\ n = \mathsf{false}$,
+needed to prove $\mathsf{any}\ \mathsf{evenp}\ (\mathsf{filter}\ \mathsf{oddp}\ l)
+= \mathsf{false}$.  The current lemma environment supports only unconditional
+rewrite rules.
+
+The required extension is \textbf{hypothetical CIU}:
+$\Gamma \mid H \vdash t \approx_{\mathrm{CIU}} u$, where $H$ is a set of
+equations.  The lemma $\mathsf{oddp}\ n = \mathsf{true} \to
+\mathsf{evenp}\ n = \mathsf{false}$ would be proven as:
+\[
+  [\mathsf{oddp}\ n = \mathsf{true}] \vdash \mathsf{evenp}\ n
+  \approx_{\mathrm{CIU}} \mathsf{false}
+\]
+
+This is the final piece of the pipeline --- the $\omega$-rule with
+conditional cuts.  It is recorded in ${\tt LOGICAL\_RELATIONS\_PLAN.md}$
+as Phase~2.
+
+\subsection{Commutativity}
+
+$\mathsf{plus}\ m\ n = \mathsf{plus}\ n\ m$ remains unproved.  Both sides
+SC to different-shaped residuals.  This requires a \emph{lemma environment}
+with the inductive equations for $\mathsf{plus}$, which the SC can prove
+individually but cannot chain together without the lemma-driven loop.

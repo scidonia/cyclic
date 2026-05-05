@@ -1,0 +1,90 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,cd,fit,shapes.geometric}
+\usepackage{bussproofs}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,
+        keywordstyle=\bfseries,language=Haskell}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\usepackage{xcolor}
+
+% Notation macros
+\newcommand{\SC}{\textsc{SC}}
+\newcommand{\HLS}{\textsc{HLS}}
+\newcommand{\ciu}{\approx_{\mathrm{ciu}}}
+\newcommand{\jTy}[3]{#1 \vdash #2 : #3}
+\newcommand{\tc}{\mathsf{tc}}
+\newcommand{\fv}{\mathsf{fv}}
+\newcommand{\bind}{\mathbin{>\!\!>=}}
+\newcommand{\return}[1]{\mathsf{return}(#1)}
+\newcommand{\map}{\mathsf{map}}
+\newcommand{\length}{\mathsf{length}}
+\newcommand{\sort}{\mathsf{sort}}
+\newcommand{\ins}{\mathsf{insert}}
+\newcommand{\indep}[2]{\mathsf{indep}(#1,#2)}
+\newcommand{\Gen}{\mathsf{Gen}}
+\newcommand{\Drop}{\mathsf{dropped}}
+\newcommand{\subst}[2]{#1[#2]}
+\newcommand{\vmcompute}{\texttt{vm\_compute}}
+\newcommand{\keyword}[1]{\textbf{#1}}
+
+\title{Mechanisation Guides Design:\\
+       Higher-Level Supercompilation via\\
+       Sequent Calculus}
+
+\author{Anonymous}
+\institute{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present a mechanised account of \emph{higher-level supercompilation} (HLS)
+in which the sequent calculus perspective --- developed to understand the
+foundations of standard supercompilation --- directly suggested two productive
+extensions that would not have been apparent otherwise.
+
+Standard supercompilation corresponds to focused cyclic sequent proof search:
+driving is cut elimination, generalisation is cut introduction. Making this
+correspondence precise in Rocq revealed two gaps in the standard theory:
+(i)~the generalisation step corresponds to free cut introduction, which in
+proof theory is \emph{lemma synthesis}; (ii)~the termination argument for
+loop-invariant subterms corresponds to a form of \emph{speculation} (Eisner-Blatz),
+which requires a \emph{variable dependency analysis} absent from standard SC.
+
+We implement both extensions: an LLM oracle for cut introduction, validated by the
+existing proof kernel so soundness is unconditional; and a speculation
+generalisation pass backed by a mechanised roundtrip theorem proving its
+correctness.  The combined system, extracted to OCaml with a Python LLM bridge,
+proves a striking collection of results entirely automatically by \vmcompute:
+all three List monad laws, all three Maybe monad laws, the functor laws, plus
+correctness properties of insertion sort (\texttt{sum~(sort~l)~=~sum~l},
+\texttt{member~x~(insert~x~l)~=~true}) --- without any human-provided
+induction tactics or lemma hints.
+\end{abstract}
+
+\input{sections/intro}
+\input{sections/background}
+\input{sections/sequent-guided-design}
+\input{sections/llm-oracle}
+\input{sections/speculation}
+\input{sections/examples}
+\input{sections/proof-graph}
+\input{sections/limits}
+\input{sections/evaluation}
+\input{sections/related}
+\input{sections/conclusion}
+
+\bibliographystyle{splncs04}
+\bibliography{refs}
+
+\end{document}

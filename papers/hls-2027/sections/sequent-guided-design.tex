@@ -1,0 +1,102 @@
+\section{How the Sequent Calculus Guided Design}
+\label{sec:design}
+
+The two extensions did not arise from intuition about supercompilation.  They
+arose from asking a precise proof-theoretic question: \emph{what is
+generalisation, exactly?}
+
+\subsection{Generalisation is cut introduction}
+
+In the sequent calculus, cut elimination is mechanical (reduce until no more
+cuts remain).  Cut introduction is creative: it means inventing a formula $C$
+such that the proof splits into ``prove $C$'' and ``use $C$ to prove the goal.''
+Generalisation in SC is exactly this: invent a configuration $S_{\mathsf{gen}}$
+such that both the current and companion configurations are instances of it.
+
+Standard anti-unification is one algorithm for cut introduction, but it is
+\emph{purely syntactic}: it finds the most specific common generalisation of
+two terms as terms.  It cannot discover:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Fusion identities}: $\map\ f\ (\map\ g\ l)$ and $\map\ (f \circ g)\ l$
+  are syntactically unrelated, but semantically equal.  Anti-unification
+  produces $\map\ ?_0\ ?_1$ --- a trivial generalisation that enables no folding.
+\item \textbf{Accumulator patterns}: $\mathsf{sum}\ (\mathsf{rev}\ l)$ does not
+  share syntactic structure with $\mathsf{sum\_acc}\ l\ 0$, but the latter is
+  the accumulator form that enables a tail-recursive residual.
+\end{itemize}
+
+Once we identified generalisation as cut introduction, the solution became
+clear: replace the syntactic heuristic with an \emph{oracle} that can propose
+cuts with semantic content.  The oracle need not be trusted --- the kernel
+check (trace condition) is the soundness backstop.
+
+\subsection{Speculation is variable projection}
+
+The second gap emerged from a different question: \emph{why does anti-unification
+always preserve all free variables?}
+
+Anti-unification of $j_1$ and $j_2$ produces a $j_{\mathsf{gen}}$ such that
+$j_1 = \sigma_1(j_{\mathsf{gen}})$ and $j_2 = \sigma_2(j_{\mathsf{gen}})$.
+The free variables of $j_{\mathsf{gen}}$ are a \emph{subset} of those of $j_1$
+and $j_2$ (holes abstract over differing subterms, but shared subterms retain
+their variables).
+
+Speculation requires something different: $j_{\mathsf{gen}}$ should have
+\emph{strictly fewer} free variables than $j_1$ and $j_2$, having \emph{dropped}
+variables that do not appear in the hoisted subterm.
+
+\begin{example}[Eisner-Blatz]
+The rule $\mathsf{constit}(X, I, K) \mathbin{:-} \mathsf{rewrite}(X, Y),\,
+\mathsf{constit}(Y, I, K)$ has a subcomputation $\mathsf{rewrite}(X, Y)$
+that does not mention $I$ or $K$.  Speculation hoists it:
+\[
+  \mathsf{temp}(X, Y) \mathbin{:-} \mathsf{rewrite}(X, Y)
+  \qquad
+  \mathsf{constit}(X, I, K) \mathbin{:-} \mathsf{temp}(X, ?_0),\, \mathsf{constit}(?_0, I, K)
+\]
+The key: $\mathsf{temp}$ has free variables $\{X, Y\}$, not $\{X, Y, I, K\}$.
+\end{example}
+
+This is impossible for anti-unification because: given
+$j_1 = \jTy{\Gamma_1}{s_1}{A}$ and $j_2 = \jTy{\Gamma_2}{s_2}{A}$ where
+$s_1$ and $s_2$ share a subterm $s$ independent of some variable $v \in \fv(j_1)
+\setminus \fv(j_2)$, the required $j_{\mathsf{gen}}$ is a typing judgement
+for $s$ in the projected context $\Gamma\!\downarrow_{\fv(s)}$.  Anti-unification
+cannot produce this: it would need to invent a generalisation of $j_1$ and
+$j_2$ that involves only $\fv(s)$, which requires knowing that $v \notin \fv(s)$
+--- a \emph{dependency check}, not a structural operation.
+
+Once we saw this, the implementation was direct: add a pre-pass that checks
+$\indep{s}{v}$ (none of $v$'s indices appear free in $s$), and if so, project
+the context.  The correctness of this projection is a roundtrip property
+that we prove mechanically (Section~\ref{sec:speculation}).
+
+\subsection{The architecture that follows}
+
+Both gaps point to the same architectural pattern: extend the generalisation
+step with a new layer that runs \emph{after} anti-unification fails:
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={rectangle,draw,rounded corners,fill=blue!5,
+              text width=3.5cm,align=center,font=\small},
+  trybox/.style={box,fill=green!8},
+  arrow/.style={->,>=stealth,thick},
+  node distance=1.4cm and 0.3cm
+]
+\node[box]    (au)   {Anti-unification\\(standard SC)};
+\node[trybox] (spec) [right=of au] {Speculation\\(new, \S\ref{sec:speculation})};
+\node[trybox] (llm)  [right=of spec] {LLM oracle\\(new, \S\ref{sec:llm})};
+\node[box,draw=none,fill=none] (fail) [right=of llm] {drive forward};
+
+\draw[arrow] (au)   -- node[above,font=\scriptsize]{None} (spec);
+\draw[arrow] (spec) -- node[above,font=\scriptsize]{None} (llm);
+\draw[arrow] (llm)  -- node[above,font=\scriptsize]{None} (fail);
+\end{tikzpicture}
+\end{center}
+
+The CIU theorem is indifferent to which layer produced the generalisation:
+only the trace check matters.  This modularity is not an accident --- it is
+a consequence of the sequent formulation, where soundness is established
+at the level of the proof \emph{graph}, not the construction \emph{procedure}.

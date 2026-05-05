@@ -1,0 +1,119 @@
+\section{Speculation via Variable Dependency Analysis}
+\label{sec:speculation}
+
+\subsection{The key definition}
+
+\begin{definition}[Independent subterm]
+A term $s$ is \emph{independent of} a set of variables $V$ (written
+$\indep{s}{V}$) if $\fv(s) \cap V = \emptyset$.
+\end{definition}
+
+\noindent
+In Rocq:
+\begin{lstlisting}
+Definition vars_independent_of (t : tm) (vars : list nat) : bool :=
+  negb (existsb (fun v => var_in_list v vars) (fv_tm t)).
+\end{lstlisting}
+
+\noindent
+\texttt{fv\_tm} was already present in the SC; this is a two-line combinator.
+
+\subsection{Dropped variables}
+
+When the SC drives from configuration $j_{\mathsf{prev}}$ (companion) to
+$j$ (current), the contexts may differ: case-splitting on a list
+$\mathsf{cons}\ x\ \mathit{xs}$ introduces $x$ as a fresh variable.
+After canonicalisation, $x$ may be absent from $j$'s term even though it
+is present in $j_{\mathsf{prev}}$'s.
+
+\begin{definition}[Dropped variables]
+$\Drop(j_1, j_2) = \fv(j_2) \setminus \fv(j_1)$
+--- variables present in the current $j_2$ but absent from the companion $j_1$.
+\end{definition}
+
+\noindent
+These are the candidates to project away.
+
+\subsection{Speculation generalisation}
+
+\begin{definition}[Speculation generalisation]
+Given companion $j_1 = \jTy{\Gamma}{t}{A}$ and current $j_2$,
+let $V = \Drop(j_2, j_1)$ (variables in $j_1$ not in $j_2$).
+If $V \neq \emptyset$, find the first non-trivial subterm $s$ of $t$
+with $\indep{s}{V}$.  Define:
+\[
+  j_{\mathsf{gen}} = \mathsf{canon\_jTy}\ \Gamma\ s\ A
+  \qquad
+  \sigma = \mathsf{subterm\_sigma}\ s = \mathsf{map}\ \mathtt{tVar}\ (\mathsf{sort}(\fv(s)))
+\]
+Return $\mathsf{gen\_result}\{
+  \mathtt{gen\_j} = j_{\mathsf{gen}},\,
+  \mathtt{gen\_sub1} = \sigma,\,
+  \mathtt{gen\_sub2} = \sigma\}$.
+\end{definition}
+
+\noindent
+$\mathsf{canon\_jTy}$ (already in the SC) projects the context to exactly the
+free variables of $s$, producing a smaller typing judgement.
+
+\subsection{The roundtrip theorem}
+
+The correctness obligation is that $\sigma$ correctly reconstructs $s$ from
+$j_{\mathsf{gen}}$.
+
+\begin{theorem}[\texttt{canon\_subterm\_roundtrip}]
+\label{thm:roundtrip}
+For any $\Gamma, s, A$ with $\fv(A) \subseteq \fv(s)$,
+let $j' = \mathsf{canon\_jTy}\ \Gamma\ s\ A$ and $\sigma = \mathsf{subterm\_sigma}\ s$.
+Then the term component $t'$ of $j'$ satisfies:
+\[
+  \mathsf{subst\_list}\ \sigma\ t' = s
+\]
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+$t' = \mathsf{rename}\ \mathit{renfun}\ s$ where $\mathit{renfun}\ x =
+\mathsf{index\_of}\ x\ \mathit{keep}$ and $\mathit{keep} =
+\mathsf{sort}(\fv(s))$.  $\sigma = \mathsf{map}\ \mathtt{tVar}\ \mathit{keep}$.
+So $\mathsf{subst\_list}\ \sigma\ t'$ substitutes $\mathtt{tVar}\ i \mapsto
+\mathtt{tVar}\ (\mathit{keep}[i])$ in $t'$.  After the rename,
+variable $x$ becomes $\mathtt{tVar}\ (\mathit{renfun}\ x)$; substituting back
+gives $\mathtt{tVar}\ (\mathit{keep}[\mathit{renfun}\ x]) = \mathtt{tVar}\ x$
+(the key roundtrip, proved by \texttt{index\_of\_roundtrip}).  The inductive
+step through binders uses \texttt{up\_id\_on\_shifted\_fv}.  Full proof:
+\texttt{CanonRoundtrip.v}, 0 Admitted.
+\end{proof}
+
+\noindent
+The subsidiary lemma \texttt{nub\_nat\_app\_subset} ($\mathsf{nub}(xs \mathbin{++} ys) = \mathsf{nub}(xs)$
+when $ys \subseteq xs$) closes the $\fv(A) \subseteq \fv(s)$ condition.
+The companion direction (\texttt{gen\_sigma\_correct}) follows immediately:
+since both \texttt{gen\_sub1} and \texttt{gen\_sub2} equal $\sigma$, the same
+roundtrip covers both vertices.
+
+\subsection{Integration with the CIU pipeline}
+
+Theorem~\ref{thm:roundtrip} establishes that the $\mathsf{gen\_result}$
+produced by speculation has the same formal status as one produced by
+anti-unification.  Since \texttt{supercompile\_ciu\_soundness\_untyped}
+depends only on \texttt{trace\_condition\_ok} (not on which layer generated
+the $\mathsf{gen\_result}$), CIU is inherited unconditionally.
+
+\subsection{Verified speculation conjectures}
+
+We prove 11 theorems in \texttt{SpeculationConjectures.v}:
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Theorem} & \textbf{What it says} \\
+\midrule
+\texttt{dropped\_is\_2} & $\Drop(j_{\mathsf{curr}}, j_{\mathsf{comp}}) = [2]$ \\
+\texttt{speculation\_fires} & $\mathsf{generalize\_speculation}\ j_{\mathsf{comp}}\ j_{\mathsf{curr}} = \mathsf{Some}\ g$ \\
+\texttt{gen\_j\_has\_fewer\_vars} & $|\fv(g.\mathsf{gen\_j})| < |\fv(j_{\mathsf{comp}})|$ \\
+\texttt{speculation\_is\_conservative} & LLM SC $=$ standard SC on known examples \\
+\texttt{speculation\_achieves\_fusion} & $\length\ (\map\ f\ l)$ fuses to $\length\ l$ via LLM SC \\
+\bottomrule
+\end{tabular}
+\end{center}

@@ -336,16 +336,65 @@ Definition subst_one (k : nat) (u : tm) :=
 Definition extend_ctx (tys : list tm) (Γ : Ty.ctx) : Ty.ctx :=
   rev tys ++ Γ.
 
-(** Case-splitting / information propagation.
+(** Extract the index value from a dependent type annotation.
+    For Vec: tInd 2 [nat_ty; n] → Some n.
+    For List (non-dependent): tInd 1 [] → None. *)
+Definition scratch_type_index (ty : tm) : option tm :=
+  match ty with
+  | tInd _ (_ :: idx :: _) => Some idx
+  | _ => None
+  end.
 
-    If driving exposes a neutral case-scrutinee, we split into one successor per
-    constructor of the scrutinee inductive, introducing fresh variables for the
-    constructor arguments and substituting the scrutinee variable with a `roll`
-    built from those variables.
-*)
-Definition split_case_var
+(** Check whether a constructor's result index is compatible with the
+    scrutinee's type index.  Returns false if the indices are concretely
+    incompatible (e.g., zero vs succ n), true if the constructor index
+    contains free variables (symbolic — can't prune) or if neutral. *)
+
+Fixpoint contains_free_var (t : tm) : bool :=
+  match t with
+  | tVar _ => true
+  | tPi _ B => contains_free_var B
+  | tLam _ body => contains_free_var body
+  | tApp t1 t2 => contains_free_var t1 || contains_free_var t2
+  | tFix _ body => contains_free_var body
+  | tInd _ args => existsb contains_free_var args
+  | tRoll _ _ args => existsb contains_free_var args
+  | tCase _ s _ brs => contains_free_var s || existsb contains_free_var brs
+  | tSort _ => false
+  end.
+
+Definition ctor_index_compatible (Σenv : Ty.env) (ind : nat) (c : nat) (scrut_ty_idx : option tm) : bool :=
+  match scrut_ty_idx with
+  | None => true
+  | Some expected =>
+      match SP.lookup_ind Σenv ind with
+      | None => true
+      | Some ΣI =>
+          match SP.lookup_ctor ΣI c with
+          | None => true
+          | Some ctor_sig =>
+              match SP.ctor_indices ctor_sig with
+              | [] => true
+              | cidx :: _ =>
+                  if contains_free_var cidx then true  (* symbolic – can't prune *)
+                  else
+                    match expected with
+                    | tVar _ => true  (* scrutinee index is neutral *)
+                    | _ => tm_eqb expected cidx
+                    end
+              end
+          end
+      end
+  end.
+
+(** A version of [split_case_var] that prunes constructors whose
+    indices are incompatible with the scrutinee's type index. *)
+Definition split_case_var_dep
     (Σenv : Ty.env) (Γ : Ty.ctx) (ind : nat) (x : nat)
     (Cmot : tm) (brs : list tm) (A : tm) : list config :=
+  let scrut_pos := length Γ - 1 - x in
+  let scrut_ty := nth scrut_pos Γ (tVar 0) in
+  let scrut_idx := scratch_type_index scrut_ty in
   match SP.lookup_ind Σenv ind with
   | None => []
   | Some ΣI =>
@@ -354,24 +403,24 @@ Definition split_case_var
       concat
         (map
            (fun c =>
-              match CC.ctor_arg_tys Σenv ind c with
-              | None => []
-              | Some tys =>
-                  let n := length tys in
-                  let Γ' := extend_ctx tys Γ in
-                  let args := fresh_args n in
-                  let scrut := tRoll ind c args in
-                  let σ := subst_one (x + n) scrut in
-                  (* shift the whole judgement into the extended context *)
-                  let t0 := shift n 0 (tCase ind (tVar x) Cmot brs) in
-                  let A0 := shift n 0 A in
-                  (* propagate the constructor fact by substitution *)
-                  let t1 := t0.[σ] in
-                  let A1 := A0.[σ] in
-                  (* immediately drive once to perform the iota-step *)
-                  let t2 := whnf_drive 5 t1 in
-                  [C.jTy Γ' t2 A1]
-              end)
+              (* Prune: skip constructors with incompatible indices *)
+              if ctor_index_compatible Σenv ind c scrut_idx then
+                match CC.ctor_arg_tys Σenv ind c with
+                | None => []
+                | Some tys =>
+                    let n := length tys in
+                    let Γ' := extend_ctx tys Γ in
+                    let args := fresh_args n in
+                    let scrut := tRoll ind c args in
+                    let σ := subst_one (x + n) scrut in
+                    let t0 := shift n 0 (tCase ind (tVar x) Cmot brs) in
+                    let A0 := shift n 0 A in
+                    let t1 := t0.[σ] in
+                    let A1 := A0.[σ] in
+                    let t2 := whnf_drive 5 t1 in
+                    [C.jTy Γ' t2 A1]
+                end
+              else [])
            cs)
   end.
 
@@ -391,8 +440,8 @@ Definition drive_step (Σenv : Ty.env) (j : config) : list config :=
       | tInd 0 [], tRoll 0 1 [t'] => [canon_config (norm_config 6 Σenv (C.jTy Γ t' A))]
       | _, _ =>
           match t1 with
-          | tCase ind (tVar x) Cmot brs =>
-              let splits := split_case_var Σenv Γ ind x Cmot brs A in
+           | tCase ind (tVar x) Cmot brs =>
+               let splits := split_case_var_dep Σenv Γ ind x Cmot brs A in
           match splits with
           | [] =>
               let ds := drive_terms (default_rewrites Σenv) t1 in
@@ -1080,12 +1129,47 @@ Definition canon_cfg_builder_scc (b : cfg_builder) : cfg_builder :=
 
 (** * Global progress / trace-condition check (cfg graph) *)
 
+(** Structural ordering on natural number indices.
+    succ a > zero always, and succ a > succ b iff a > b. *)
+Fixpoint is_structurally_gt (a b : tm) : bool :=
+  match a, b with
+  | tRoll 0 1 [_], tRoll 0 0 [] => true          (* succ _ > zero *)
+  | tRoll 0 1 [a'], tRoll 0 1 [b'] => is_structurally_gt a' b'
+  | _, _ => false
+  end.
+
+(** A vertex is "type-index progress" if its type index strictly exceeds
+    some successor's index.  This means the type shrinks somewhere in the
+    cycle, providing a well-foundedness witness even without a case-split. *)
+Definition is_type_progress_vertex (b : cfg_builder) (v : nat) : bool :=
+  match lookup_label b v with
+  | Some (C.jTy _Γ _t A) =>
+      match scratch_type_index A with
+      | None => false
+      | Some a =>
+          let succs := succs_of b v in
+          existsb (fun w =>
+            match lookup_label b w with
+            | Some (C.jTy _ _ Aw) =>
+                match scratch_type_index Aw with
+                | None => false
+                | Some b_idx => is_structurally_gt a b_idx
+                end
+            | _ => false
+            end) succs
+      end
+  | _ => false
+  end.
+
 Definition is_progress_vertex (b : cfg_builder) (v : nat) : bool :=
+  (* Case-split on a neutral scrutinee: traditional progress *)
   match lookup_label b v, lookup_succ b v with
   | Some (C.jTy _Γ (tCase _I (tVar _x) _Cmot _brs) _A), Some succs =>
       Nat.ltb 1 (length succs)
   | _, _ => false
-  end.
+  end
+  (* OR: type-index decrease *)
+  || is_type_progress_vertex b v.
 
 Definition nonprogress_succs_of (b : cfg_builder) (v : nat) : list nat :=
   if is_progress_vertex b v then [] else succs_of b v.

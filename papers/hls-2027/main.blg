@@ -1,0 +1,53 @@
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: splncs04.bst
+Database file #1: refs.bib
+Warning--I didn't find a database entry for "TODO-prev-paper"
+Warning--I didn't find a database entry for "TODO"
+Warning--empty booktitle in brotherston-simpson-2011-sequent
+Warning--can't use both volume and number fields in brotherston-simpson-2011-sequent
+Warning--empty booktitle in sorensen-gluck-jones-1996-positive
+Warning--can't use both volume and number fields in sorensen-gluck-jones-1996-positive
+You've used 8 entries,
+            2850 wiz_defined-function locations,
+            650 strings with 5696 characters,
+and the built_in function-call counts, 4706 in all, are:
+= -- 424
+> -- 91
+< -- 11
++ -- 41
+- -- 30
+* -- 273
+:= -- 568
+add.period$ -- 14
+call.type$ -- 8
+change.case$ -- 44
+chr.to.int$ -- 0
+cite$ -- 12
+duplicate$ -- 422
+empty$ -- 443
+format.name$ -- 36
+if$ -- 1064
+int.to.chr$ -- 0
+int.to.str$ -- 8
+missing$ -- 78
+newline$ -- 30
+num.names$ -- 16
+pop$ -- 155
+preamble$ -- 1
+purify$ -- 31
+quote$ -- 0
+skip$ -- 157
+stack$ -- 0
+substring$ -- 331
+swap$ -- 229
+text.length$ -- 11
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 32
+warning$ -- 4
+while$ -- 45
+width$ -- 9
+write$ -- 88
+(There were 6 warnings)

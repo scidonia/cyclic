@@ -1,0 +1,39 @@
+\begin{thebibliography}{1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{afshari-wehr-2024-abstract-cyclic}
+Afshari, B., Wehr, D.: Abstract cyclic proofs. Mathematical Structures in
+  Computer Science  \textbf{34},  552--577 (2024)
+
+\bibitem{bolingbroke-2013-phd}
+Bolingbroke, M.: Call-by-Need Supercompilation. Ph.D. thesis, University of
+  Cambridge (2013)
+
+\bibitem{brotherston-simpson-2011-sequent}
+Brotherston, J., Simpson, A.: Sequent calculi for induction and infinite
+  descent. vol.~21, pp. 1177--1229 (2011)
+
+\bibitem{eisner-blatz-2007-parsing}
+Eisner, J., Blatz, J.: Program transformations for optimisation of parsing
+  algorithms and other weighted logic programs. In: Formal Grammar. pp. 45--85.
+  CSLI Publications (2006)
+
+\bibitem{gill-hutton-2009-worker-wrapper}
+Gill, A., Hutton, G.: The worker/wrapper transformation. In: International
+  Conference on Functional Programming (ICFP). pp. 251--262. ACM (2009)
+
+\bibitem{mitchell-runciman-2010-supercompilation}
+Mitchell, N., Runciman, C.: Rethinking supercompilation. In: International
+  Conference on Functional Programming (ICFP). pp. 309--320. ACM (2010)
+
+\bibitem{sorensen-gluck-jones-1996-positive}
+S{\o}rensen, M.H., Gl{\"u}ck, R., Jones, N.D.: A positive supercompiler.
+  vol.~6, pp. 811--838 (1996)
+
+\bibitem{turchin-1986-supercompiler}
+Turchin, V.F.: The concept of a supercompiler. ACM Transactions on Programming
+  Languages and Systems  \textbf{8}(3),  292--325 (1986)
+
+\end{thebibliography}

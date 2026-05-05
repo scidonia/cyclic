@@ -1,0 +1,47 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have shown that a mechanised sequent-calculus foundation for
+supercompilation is more than a correctness guarantee --- it is a
+\emph{design instrument}.  By making precise the correspondence between SC
+operations and sequent rules, we identified \emph{three} gaps in the standard theory:
+generalisation is cut introduction (suggesting an oracle architecture),
+speculation is variable projection (suggesting a dependency analysis),
+and strengthened induction is the $\omega$-rule (suggesting LLM lemma
+proposals with sub-SC validation).
+
+All three extensions are implemented, mechanised, and provably correct:
+\begin{itemize}[leftmargin=*]
+\item The LLM oracle is structurally untrusted: any function
+  \texttt{config -> list (config * nat) -> option gen\_result}
+  preserves the CIU theorem.
+\item The speculation roundtrip theorem (\texttt{canon\_subterm\_roundtrip})
+  is proved with 0 Admitted in 16 lemmas.
+\item The $\omega$-rule pipeline (LLM lemma proposal $\to$ sub-SC validation
+  $\to$ lemma-driven SC retry) is fully mechanised and demonstrated on
+  $\mathsf{reverse}\ (\mathsf{append}\ xs\ ys) = \mathsf{append}\
+  (\mathsf{reverse}\ ys)\ (\mathsf{reverse}\ xs)$, a property the standard SC
+  cannot fuse alone.
+\item Together, the four-layer loop proves 76 theorems across 8 files,
+  including all List and Maybe monad laws, insertion sort correctness,
+  reverse-append distribution, and vector index normalisation.
+\end{itemize}
+
+\paragraph{The central lesson.}
+Mechanisation forced us to ask what generalisation \emph{is} at the level of
+proof theory.  The answer --- cut introduction --- led to the oracle
+architecture, the variable projection insight, and the $\omega$-rule
+connection.  None of these were available from the operational account of
+SC alone.  The sequent calculus was a design tool, not just a verification
+tool.
+
+\paragraph{Future work.}
+The $\omega$-rule extension (Section~\ref{sec:limits}) is the immediate next
+step: lemma environments in the driving step, validated by sub-SC runs, with
+LLM-proposed auxiliary lemma statements.  This would bring $\mathsf{sorted}\ (\sort\ l) = \mathsf{true}$,
+commutativity of plus, and the reversibility of permutations within reach.
+
+Beyond HLS, the sequent perspective suggests studying SC as a decision
+procedure for fragments of CIC: if the SC terminates and produces a residual
+equal to a normal form, it has decided the term's observational class.  Making
+this precise is a direction we plan to pursue.

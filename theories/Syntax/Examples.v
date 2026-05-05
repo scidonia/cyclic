@@ -46,6 +46,9 @@ Definition nat_ty : tm := tInd 0 [].
 Definition zero : tm := tRoll 0 0 [].
 Definition succ (n : tm) : tm := tRoll 0 1 [n].
 
+(** succ as a first-class term of type Nat → Nat (for use with map). *)
+Definition succ_fn : tm := tLam nat_ty (succ (tVar 0)).
+
 (** plus : Nat -> Nat -> Nat *)
 Definition plus_ty : tm := tPi nat_ty (tPi nat_ty nat_ty).
 

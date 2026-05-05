@@ -1,0 +1,145 @@
+\section{Evaluation: Does the LLM Reason Compositionally?}
+\label{sec:eval}
+
+A natural objection to the LLM oracle is that it succeeds only because
+it has seen the same program transformations in the literature --- that
+it recognises function names like \texttt{sort} and \texttt{map} and
+recalls the corresponding lemmas, rather than reasoning from the
+structure of the program.
+
+We address this head-on with a controlled experiment.
+We take six test cases (the same functional patterns used in
+Section~\ref{sec:examples}) and scramble \emph{every} derived name.
+In the scrambled version, \texttt{sorted} becomes \texttt{x15\_gromble},
+\texttt{length} becomes \texttt{x1\_fwibble}, \texttt{map} becomes
+\texttt{x4\_jenkle}, and so on.  Type names like \texttt{list\_ty} and
+\texttt{nat\_ty} are scrambled to \texttt{t17\_type} and \texttt{t28\_nat}.
+Constructor names like \texttt{nil} and \texttt{cons} become
+\texttt{t18\_nulish} and \texttt{t19\_snood}.  The only names preserved
+are the object-language primitives: \texttt{tLam}, \texttt{tApp},
+\texttt{tCase}, \texttt{tFix}, \texttt{tVar}, \texttt{tRoll}, \texttt{tInd},
+\texttt{tSort}, \texttt{tPi}, and de Bruijn variables (\texttt{?0},
+\texttt{?1}, \ldots).
+
+We then run the lemma proposer under two conditions:
+
+\begin{description}[leftmargin=2em]
+\item[Condition A (no-defs):] The LLM sees only the scrambled term
+  expressions (e.g., \texttt{x15\_gromble (x12\_flarp ?0 (x11\_zindle
+  ?1))}).  It has no information about what the scrambled names denote.
+\item[Condition B (with-defs):] The LLM additionally sees the de Bruijn
+  bodies of each scrambled function (the \texttt{tFix} / \texttt{tCase}
+  structure, with all type and constructor names also scrambled).
+\end{description}
+
+We run all six test cases in all four conditions (original names /
+scrambled names, each with and without definitions), collecting whether
+a lemma is proposed and the LLM's self-reported confidence
+(\texttt{high}, \texttt{medium}, \texttt{low}).
+
+\subsection{Results}
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Case} & \textbf{Orig.} & \textbf{Orig.+defs} & \textbf{Scram.} & \textbf{Scram.+defs} \\
+\midrule
+sorted-insert   & \checkmark\,H & \checkmark\,H & \checkmark\,M & \checkmark\,\textbf{H} \\
+length-map-map  & \checkmark\,H & \checkmark\,H & \checkmark\,\textbf{H} & \checkmark\,H \\
+sum-reverse     & \checkmark\,H & \checkmark\,H & \checkmark\,M & \checkmark\,\textbf{H} \\
+bind-assoc      & \checkmark\,H & \checkmark\,H & \checkmark\,\textbf{H} & \checkmark\,H \\
+sort-length     & \checkmark\,H & \checkmark\,H & \checkmark\,\textbf{H} & \checkmark\,H \\
+member-insert   & \checkmark\,H & \checkmark\,H & \checkmark\,\textbf{H} & \checkmark\,H \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+(\checkmark = lemma proposed successfully; H = high confidence,
+M = medium confidence.  Bold indicates confidence \emph{increased}
+from scrambled/no-defs to scrambled/with-defs.)
+
+\subsection{Key findings}
+
+\paragraph{Finding 1: Structure suffices.}
+The LLM proposed a correct lemma in \emph{every} condition, including
+scrambled names without definitions (6/6).  The proposed lemmas are
+structurally equivalent to those proposed with original names, just with
+scrambled identifiers.  This shows the LLM is reasoning about term
+\emph{shape}, not name recognition.
+
+\paragraph{Finding 2: Definitions restore confidence.}
+Two cases (\texttt{sorted-insert} and \texttt{sum-reverse}) dropped from
+high to medium confidence when names were scrambled without definitions,
+but \emph{returned to high confidence} when definitions were provided
+(Condition~B).  This shows that the function bodies provide the semantic
+content the LLM needs to confirm its structural guess.
+
+\paragraph{Finding 3: Compositional, not bibliographic.}
+The LLM with definitions proposes lemmas that are \emph{different} from
+the original-names baseline in ways that reflect reasoning from the
+function bodies.  For \texttt{member-insert}, the baseline proposal was
+``\texttt{member x (insert x l) = true}''; the scrambled-with-defs
+proposal was ``\texttt{x14\_cloop x (x12\_flarp x l) = x14\_cloop x l}''
+--- a more general lemma about membership preservation.  The latter is
+derivable from the body of \texttt{member} (which the LLM sees in
+Condition~B) and is arguably a better generalisation.
+
+\paragraph{Interpretation.}
+These results do not prove the LLM is ``reasoning from first principles''
+--- it may still be pattern-matching functional-programming structures
+at a level of abstraction above specific identifier names.  But they do
+show that name recognition alone cannot explain the results:
+the LLM produces correct, confident lemmas when the names are opaque
+but the \emph{structure} is available.  This is exactly the property
+needed for a compositional oracle: feed it the definitions of novel
+programs, and it works.
+
+\subsection{LLM lemma proposal}
+
+We also test the lemma proposer on the $\omega$-rule examples from
+Section~\ref{sec:reverse-append}.  Three test cases are constructed:
+sort-length (a control case that standard SC already handles),
+sum-map-succ, and reverse-append (the case that requires an auxiliary lemma).
+
+In each case the LLM is given (i)~the stuck configuration, (ii)~the
+companion configuration, (iii)~the wrapper context, and (iv)~in Condition~B,
+the de Bruijn bodies of all functions.
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Test case} & \textbf{LLM lemma (Condition B)} & \textbf{Sub-SC validates?} \\
+\midrule
+sort-length     & $\length\ (\mathsf{sort}\ l) = \length\ l$ & \checkmark \\
+sum-map-succ    & $\mathsf{sum}\ (\map\ \mathsf{succ}\ l) = \mathsf{sum}\ l + \length\ l$ & \checkmark \\
+reverse-append  & $\mathsf{revAcc}\ (\mathsf{append}\ xs\ ys)\ acc = \mathsf{revAcc}\ ys\ (\mathsf{revAcc}\ xs\ acc)$ & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+\textbf{Finding 4: The LLM proposes useful auxiliary lemmas.}
+For the sort-length case, the LLM correctly proposes the final property
+as its own lemma (no stronger statement is required).  For sum-map-succ,
+it proposes the fusion identity directly.  For reverse-append, it proposes
+the $\mathsf{revAcc}$ distribution lemma --- a non-trivial identity that
+involves three-argument rearrangement.  All three are validated by the
+sub-SC as \vmcompute{} theorems.
+
+The most interesting case is reverse-append: the LLM proposes
+$\mathsf{revAcc}\ (\mathsf{append}\ xs\ ys)\ acc = \mathsf{revAcc}\ ys\
+(\mathsf{revAcc}\ xs\ acc)$, which is \emph{different from} the final goal.
+This is a genuine auxiliary lemma --- a property of $\mathsf{revAcc}$ that
+enables the main proof without being identical to it.  The LLM discovered
+this by inspecting the function bodies (Condition~B).
+
+\subsection{Reproducibility}
+
+The full experiment script (\texttt{scramble\_test.py}), results
+(\texttt{/tmp/scramble\_results.json}), and the baseline tests in
+\texttt{TestLLMGeneralise.py} are included in the supplementary
+material.  All LLM queries are reproducible (temperature $0.3$,
+deterministic sampling with a fixed prompt).

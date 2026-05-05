@@ -1,0 +1,123 @@
+\section{Proof Graph for Reverse-Append Fusion}
+\label{sec:proof-graph}
+
+Figure~\ref{fig:reverse-append-graph} shows the cyclic proof graph produced
+by the lemma-driven supercompiler for the reverse-append identity
+$\mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys}) =
+\mathsf{append}\;(\mathsf{reverse}\;\mathit{ys})\;(\mathsf{reverse}\;\mathit{xs})$.
+
+The standard SC gets stuck at node $v_3$: the configuration
+$\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil}$
+has a recursive call $\mathsf{revAcc}\;\mathit{xs}\;(\mathsf{cons}\;\mathit{x}\;\mathsf{nil})$
+that does not match the companion $\mathsf{revAcc}\;\mathit{xs}\;\mathsf{nil}$
+(the accumulator differs).  Anti-unification produces a trivial generalisation
+(just the function name), and no fold is possible.
+
+The LLM proposes the lemma
+$\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathit{acc}
+ = \mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;\mathit{xs}\;\mathit{acc})$
+by inspecting the body of $\mathsf{revAcc}$ (a structural induction on its
+list argument).  The sub-SC proves this lemma by induction on $\mathit{xs}$
+(the $L$ vertex in the graph).  The lemma is added to the driving environment
+as a rewrite rule.
+
+With the lemma, the main SC at $v_3$ rewrites:
+\begin{center}
+$\mathsf{revAcc}\;(\mathsf{append}\;(\mathsf{cons}\;\mathit{x}\;\mathit{xs})\;\mathit{ys})\;\mathsf{nil}
+ \longrightarrow \mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;(\mathsf{cons}\;\mathit{x}\;\mathit{xs})\;\mathsf{nil})$
+\end{center}
+The right-hand side is now an application of $\mathsf{revAcc}\;\mathit{ys}$
+to the companion $\mathsf{reverse}\;\mathit{xs}$, which is structurally
+smaller in $\mathit{xs}$.  The cyclic backlink at $v_4$ closes the proof.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=2.2cm and 3cm,
+  vtx/.style={rectangle,draw,rounded corners,font=\footnotesize,
+              minimum width=3cm,minimum height=0.7cm,align=center},
+  lemma/.style={vtx,fill=green!15,draw=green!50!black},
+  stuck/.style={vtx,fill=red!10,draw=red!50!black},
+  driveedge/.style={->,>=stealth,font=\scriptsize},
+  foldedge/.style={->,>=stealth,>=Stealth,bend right=40,
+                   draw=blue!60!black,thick,font=\scriptsize},
+  lemmaedge/.style={->,>=stealth,dashed,draw=green!50!black,font=\scriptsize}
+]
+
+\node[vtx] (root) {
+  $\mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})$
+};
+
+\node[vtx,below=of root] (v1) {
+  $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil}$
+};
+
+\node[stuck,below left=of v1] (v2) {
+  $\mathsf{revAcc}\;\mathit{ys}\;\mathsf{nil}$
+  \\
+  {\tiny(\texttt{append = nil})}
+};
+
+\node[stuck,below right=of v1] (v3) {
+  $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})$
+  \\
+  $(\mathsf{cons}\;\mathit{x}\;\mathsf{nil})$
+  \\
+  {\tiny(\texttt{append = cons})}
+};
+
+\node[vtx,below=of v3] (v3driven) {
+  $\mathsf{revAcc}\;\mathit{xs}\;(\mathsf{cons}\;\mathit{x}\;(\mathsf{revAcc}\;\mathit{ys}\;\mathsf{nil}))$
+  \\
+  {\tiny(stuck: accumulator differs from companion)}
+};
+
+\node[lemma,right=of v3driven,xshift=2cm] (lemma) {
+  \textbf{Lemma (LLM-proposed)} \\
+  $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathit{acc}$
+  \\
+  $=$ \\
+  $\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;\mathit{xs}\;\mathit{acc})$
+};
+
+\node[vtx,below=of v3driven] (v4) {
+  $\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;\mathit{xs}\;\mathsf{nil})$
+  \\
+  {\tiny(lemma rewrites, then fold to root)}
+};
+
+\draw[driveedge] (root)  -- node[right] {unfold reverse} (v1);
+\draw[driveedge] (v1)    -- node[left]  {split nil} (v2);
+\draw[driveedge] (v1)    -- node[right] {split cons} (v3);
+\draw[driveedge] (v3)    -- node[right] {drive revAcc} (v3driven);
+\draw[foldedge]  (v4)    to node[left]  {cyclic backlink} (root);
+
+\draw[lemmaedge,dashed] (v3driven) -- node[above] {LLM} (lemma);
+\draw[lemmaedge,dashed] (lemma.south) |- node[right,pos=0.7] {sub-SC proves} (v4);
+
+\node[draw,dashed,fit=(v3driven)(v3),inner sep=6pt,label={[font=\small\bfseries]above right:{stuck}}] {};
+
+\end{tikzpicture}
+\caption{
+  Cyclic proof graph for reverse-append fusion with lemma insertion.
+  Dashed edges show the LLM lemma proposal and sub-SC validation.
+  The stuck region (red) is where the standard SC fails; the lemma
+  (green) rewrites the intermediate configuration to enable the
+  cyclic backlink (blue) that closes the proof.
+}
+\label{fig:reverse-append-graph}
+\end{figure}
+
+The graph has three distinct edge types:
+\begin{description}[leftmargin=2em]
+\item[Driving edges (black):] Deterministic $\beta/\iota/\delta$ steps
+  corresponding to cut-elimination in the focused sequent calculus.
+\item[Lemma edges (green, dashed):] The LLM proposes a cut formula
+  (lemma); the sub-SC proves it; the main SC uses it as a rewrite rule.
+  This is cut \emph{introduction} --- the step that standard SC cannot
+  perform.
+\item[Cyclic backlink (blue):] The fold that closes the proof, with a
+  progress event (the case split on $\mathit{xs}$) satisfying the
+  trace condition.  The cycle structure \emph{is} the induction on
+  $\mathit{xs}$.
+\end{description}

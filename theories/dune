@@ -40,7 +40,31 @@
      Transform.SupercompilationCorrespondence
      Transform.SupercompileTrace
      Transform.SupercompileTraceCheckSound
-     Transform.SupercompileSCCCorrectness
+      Transform.SpeculationGen
+      Transform.CanonRoundtrip
+      Transform.LLMOracle
+      Transform.SpeculationConjectures
+      Transform.LemmaEnv
+      Transform.LemmaProposer
+      Transform.SortExamples
+      Transform.OmegaRule
+      Transform.OmegaExamples
+      Transform.LLMLemmaInAction
+      Transform.CompilerCorrectness
+      Transform.GradualCast
+      Transform.GradualCastExamples
+      Transform.GradualCastVars
+      Transform.SpeculationFires
+      Transform.DependentVec
+      Transform.DependentPruning
+      Transform.TypeIndexTrace
+      Transform.MonadLaws
+      Transform.IndexCalc
+      Transform.LLMDemo
+      Transform.HardTest
+      Transform.HardTestRun
+      Transform.LLMTest
+      Transform.HardExamples
       Transform.CaseCase
      Transform.SequentDrivingRules
      Transform.SequentObservationRules

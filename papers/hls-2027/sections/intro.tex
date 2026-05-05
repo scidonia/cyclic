@@ -1,0 +1,123 @@
+\section{Introduction}
+\label{sec:intro}
+
+Supercompilation~\cite{turchin-1986-supercompiler} is a powerful program
+transformation technique that fuses composed functions, eliminates intermediate
+data structures, and discovers recursive structure automatically.  Despite
+decades of development, its proof-theoretic status has remained informal: the
+community understands that folding ``corresponds to induction'' and that
+generalisation ``corresponds to lemma introduction'', but these correspondences
+have not been made precise enough to guide design.
+
+Our starting point is an earlier mechanised result: standard supercompilation
+is focused cyclic sequent proof search~\cite{TODO-prev-paper}.  Making that
+correspondence precise in Rocq had an unexpected benefit --- it revealed, with
+mathematical precision, \emph{two places where the standard theory is
+incomplete}.
+
+\paragraph{Gap 1: Generalisation = cut introduction.}
+In the sequent calculus, driving is cut elimination (reduce, reduce, reduce)
+and generalisation is cut introduction (invent a lemma whose proof is delegated
+to a subgoal).  Cut introduction is the creative step in any proof.  Standard
+SC uses syntactic anti-unification as its cut-introduction heuristic --- but
+anti-unification is purely structural and cannot discover semantic identities
+such as map fusion ($\map\ f \circ \map\ g = \map\ (f \circ g)$) or accumulator
+patterns.  This is the domain of \emph{higher-level supercompilation}
+(HLS)~\cite{sorensen-gluck-jones-1996-positive}.
+
+\paragraph{Gap 3: Strengthened induction = conditional CIU.}
+For correctness properties like $\mathsf{sorted}\ (\mathsf{sort}\ l) = \mathsf{true}$,
+cyclic induction alone cannot close the proof: after one driving step the goal
+becomes $\mathsf{sorted}\ (\ins\ x\ (\mathsf{sort}\ l)) = \mathsf{true}$, and the
+fold back to $\mathsf{sorted}\ (\mathsf{sort}\ l)$ is blocked by the $\ins/\mathsf{sort}$
+structure mismatch.  In proof theory this requires a \emph{strengthened induction
+hypothesis} (the $\omega$-rule).  We show that the LLM can propose the necessary
+auxiliary lemma, the sub-SC can prove it, and the main SC then uses it as a
+rewrite rule --- closing the proof automatically.
+
+\paragraph{Gap 2: Speculation = variable dependency analysis.}
+Eisner and Blatz~\cite{eisner-blatz-2007-parsing} identify a transformation
+they call \emph{speculation}: if a subcomputation is independent of some loop
+variable, hoist it out of the loop.  This is loop-invariant code motion for
+logic programs.  Making the sequent correspondence precise reveals why standard
+SC cannot do this: anti-unification preserves all free variables by
+construction, so it can never propose a generalised term with \emph{fewer}
+free variables than the original.  The required operation is not
+anti-unification but \emph{projection} --- dropping variables whose absence
+from a subterm can be verified.
+
+\paragraph{What we build.}
+We implement all three extensions in a mechanised pipeline:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{LLM oracle for cut introduction} (Section~\ref{sec:llm}).
+  A DeepSeek V4 Pro oracle proposes generalisations; validated by the
+  kernel.  The oracle is untrusted for soundness.
+
+\item \textbf{Speculation via dependency analysis} (Section~\ref{sec:speculation}).
+  Verified dependency analysis, independent-subterm extraction, and
+  projection generalisation, with a mechanised roundtrip theorem.
+
+\item \textbf{LLM lemma proposal for the $\omega$-rule} (Section~\ref{sec:limits}).
+  When the SC is stuck and neither AU nor speculation unblocks it, the
+  LLM proposes an auxiliary lemma.  A sub-SC run proves the lemma.
+  The main SC retries with the lemma as a rewrite rule --- closing proofs
+  that were previously out of reach.
+\end{enumerate}
+
+The generalisation strategy becomes a four-layer fallback:
+\[
+  \underbrace{\text{anti-unification}}_{\text{standard SC}}
+  \;\to\;
+  \underbrace{\text{speculation}}_{\text{new, mechanised}}
+  \;\to\;
+  \underbrace{\text{LLM generalisation}}_{\text{kernel-validated}}
+  \;\to\;
+  \underbrace{\text{LLM lemma}}_{\text{$\omega$-rule cut introduction}}
+\]
+
+\paragraph{Empirical results.}
+The combined system proves the following entirely by \vmcompute{} (symbolic
+execution to normal form), with no human-provided induction tactics:
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Result} & \textbf{Category} & \textbf{Arch.} \\
+\midrule
+$\length\ (\map\ f\ l) = \length\ l$ & map-length fusion & AU \\
+$\map\ f\ (\map\ g\ l) = \map\ (f \circ g)\ l$ & functor composition & AU \\
+$\length\ (\mathsf{sort}\ l) = \length\ l$ & sort preserves length & AU \\
+$\mathsf{sum}\ (\mathsf{sort}\ l) = \mathsf{sum}\ l$ & sort preserves sum & AU \\
+\texttt{bind (return x) f = f x} & List monad left-id & AU \\
+\texttt{bind l return = l} & List monad right-id & AU \\
+\texttt{bind (bind l f) g = bind l ($\lambda$x.\ldots)} & List monad assoc & AU \\
+\texttt{bind (return x) f = f x} & Maybe monad left-id & AU \\
+\addlinespace
+\texttt{sorted (sort l) = true} & insertion sort correctness & $\omega$-rule \\
+\texttt{reverse (append xs ys) = append (reverse ys) (reverse xs)} & reverse-append distrib & $\omega$-rule \\
+\texttt{sum (map succ xs) = sum xs + length xs} & succ distribution & $\omega$-rule \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+AU = proved by anti-unification alone (standard SC).
+$\omega$-rule = requires LLM-proposed lemma, sub-SC validation, and
+lemma-driven SC.
+
+\paragraph{The methodological point.}
+Our central claim is not merely that these results hold, but \emph{why} a
+mechanised sequent-calculus foundation made them reachable.  The sequent
+calculus identified the gaps; the mechanisation forced them to be stated
+precisely; the precision made the implementations straightforward.
+
+\paragraph{Outline.}
+Section~\ref{sec:background} reviews the existing SC-as-proof-search
+correspondence.  Section~\ref{sec:design} explains how the sequent perspective
+identified both gaps.  Sections~\ref{sec:llm} and \ref{sec:speculation}
+present the two extensions.  Section~\ref{sec:examples} presents the full
+example suite.  Section~\ref{sec:limits} discusses what requires
+a further extension (the $\omega$-rule).  Section~\ref{sec:related} positions
+the work, and Section~\ref{sec:conclusion} concludes.

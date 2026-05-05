@@ -1,0 +1,102 @@
+\section{LLM Oracle for Cut Introduction}
+\label{sec:llm}
+
+\subsection{Interface}
+
+The oracle is called when anti-unification and speculation both return
+\textsf{None}.  It receives:
+\begin{itemize}[leftmargin=*]
+\item the current stuck configuration $j$ (as a pretty-printed term),
+\item a list of candidate companion configurations from the memo table,
+\item a concrete worked example of the substitution format expected.
+\end{itemize}
+It returns a JSON object:
+\[
+  \{\ \mathtt{gen}\ :\ \langle\text{term}\rangle,\;
+      \mathtt{sigma\_current}\ :\ [\langle\text{term}\rangle,\ldots],\;
+      \mathtt{sigma\_companion}\ :\ [\langle\text{term}\rangle,\ldots]\ \}
+\]
+or \texttt{\{"gen": null\}} if no useful generalisation is found.
+
+\subsection{Soundness is unconditional}
+
+The oracle is \emph{not trusted for soundness}.  The Rocq side sees only:
+
+\begin{lstlisting}[language={}]
+Parameter llm_generalise :
+  config -> list (config * nat) -> option gen_result.
+\end{lstlisting}
+
+\noindent
+\texttt{Parameter} in Rocq is a free constant --- it introduces no axiom.
+The CIU theorem (\texttt{supercompile\_ciu\_soundness\_untyped}) requires only
+that the resulting graph passes \texttt{trace\_condition\_ok}.  If the oracle
+proposes nonsense, the graph fails the check; the SC returns \textsf{None}; no
+residual is emitted.  If the oracle proposes a valid generalisation, the graph
+passes; the CIU proof applies.  The oracle cannot make the system unsound.
+
+\subsection{Three-layer generalisation in Rocq}
+
+The SC driving loop calls \texttt{best\_generalize\_llm} instead of
+\texttt{best\_generalize}.  The definition:
+
+\begin{lstlisting}
+Definition best_generalize_llm j cands :=
+  match SC.best_generalize j cands with
+  | Some g => Some g
+  | None =>
+      match SpeculationGen.best_generalize_with_speculation j cands with
+      | Some g => Some g
+      | None =>
+          match llm_generalise j cands with
+          | None => None
+          | Some g =>
+              Some (g, match cands with [] => 0 | (_,v)::_ => v end)
+          end
+      end
+  end.
+\end{lstlisting}
+
+\noindent
+\texttt{supercompile\_cfg\_llm} is identical to \texttt{supercompile\_cfg}
+except for this single call site.  The CIU theorem extends immediately:
+\texttt{supercompile\_jTy\_tc\_llm} has the same statement as
+\texttt{supercompile\_jTy\_tc}, proved by the same argument.
+
+\subsection{Implementation}
+
+The Python script \texttt{llm\_generalise.py} runs in \emph{serve} mode:
+
+\begin{lstlisting}[language=bash]
+echo '<json>' | python3 llm_generalise.py --serve
+\end{lstlisting}
+
+\noindent
+The OCaml extraction shim (\texttt{llm\_oracle\_impl.ml}) calls this via
+\texttt{Unix.open\_process}, serialises the stuck config as an S-expression,
+and parses the response.  The round-trip from Rocq \texttt{tm} to string and
+back uses a $?n$-notation parser that maps \texttt{"?0"}, \texttt{"?1"}, \ldots
+to de Bruijn variables.
+
+\subsection{Oracle performance}
+
+With an explicit substitution example in the prompt, DeepSeek V4 Pro
+reliably proposes correct generalisations:
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Stuck configuration} & \textbf{LLM proposal} & \textbf{Kernel} \\
+\midrule
+$\length\ (\map\ f\ (\mathsf{cons}\ a\ l))$ & $\length\ (\map\ f\ ?_0)$ & \checkmark \\
+$\mathsf{sum}\ (\mathsf{rev}\ l)\ \mathit{acc}$ & $\mathsf{sum\_rev}\ ?_0\ ?_1$ & \checkmark \\
+$\mathsf{filter}\ p\ (\map\ f\ l)$ & $\mathsf{map\_filter}\ f\ p\ ?_0$ & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Proposals for structurally inductive properties (e.g.\ commutativity of plus)
+return \texttt{null} --- correctly, since these require a different mechanism
+(see Section~\ref{sec:limits}).

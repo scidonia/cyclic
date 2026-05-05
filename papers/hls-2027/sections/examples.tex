@@ -1,0 +1,159 @@
+\section{Examples}
+\label{sec:examples}
+
+All results are proved by \vmcompute{} (kernel-level symbolic execution to
+normal form) with no human induction tactics.  The SC drives both sides of each
+equation to the same residual; \texttt{reflexivity} closes the goal.
+
+\subsection{List monad laws}
+
+The List monad has $\mathsf{return}\ x = [x]$ and
+$m \bind f = \mathsf{foldr}\ (\lambda x\ \mathit{acc}.\ \mathsf{append}\ (f\ x)\ \mathit{acc})\ [\,]\ m$.
+
+\begin{theorem}[List monad laws, \texttt{MonadLaws.v}]
+\[
+  m \bind \mathsf{return} = m
+  \qquad
+  \mathsf{return}\ x \bind f = f\ x
+  \qquad
+  (m \bind f) \bind g = m \bind (\lambda x.\ f\ x \bind g)
+\]
+\end{theorem}
+
+\noindent
+The left-identity law is proved by a single driving step (unfold \texttt{bind}
+on $[\,]$; drive \texttt{append} on $[\,]$; \texttt{reflexivity}).  The
+right-identity law requires a cyclic backlink: driving through the list spine
+produces a recursive call that matches the root.  The associativity law is the
+hardest: the SC must commute two nested folds, discovering that
+$\mathsf{append}\ (\mathsf{append}\ a\ b)\ c = \mathsf{append}\ a\ (\mathsf{append}\ b\ c)$
+holds at each step --- itself a cyclic induction, handled by the SC's
+trace condition.
+
+\paragraph{Functor and coherence laws.}
+We additionally prove $\map\ \mathsf{id}\ l = l$, $\map\ f\ (\map\ g\ l) =
+\map\ (f \circ g)\ l$, and the coherence law $\map\ f\ l = l \bind
+(\mathsf{return} \circ f)$ --- six theorems total.
+
+\subsection{Maybe monad laws}
+
+The Maybe monad has $\mathsf{return}\ x = \mathsf{just}\ x$ and
+$\mathsf{bind\_maybe}\ \mathsf{nothing}\ f = \mathsf{nothing}$,
+$\mathsf{bind\_maybe}\ (\mathsf{just}\ x)\ f = f\ x$.
+
+\begin{theorem}[Maybe monad laws, \texttt{IndexCalc.v}]
+All three monad laws hold for the Maybe monad on \texttt{Nat}.
+\end{theorem}
+
+\noindent
+These are even simpler than the List laws: Maybe has no recursion, so all
+driving terminates in two steps.  They serve as a calibration point.
+
+\paragraph{Head-bind fusion.}
+A compound example: $\mathsf{bind\_maybe}\ (\mathsf{safe\_head}\ l)\ f$
+fuses to a single case analysis on $l$ (theorem \texttt{head\_bind\_fusion}).
+
+\subsection{Insertion sort}
+
+\begin{theorem}[\texttt{SortExamples.v}]
+The following hold for insertion sort on \texttt{List Nat}:
+\begin{align*}
+  \length\ (\sort\ l) &= \length\ l \\
+  \length\ (\ins\ x\ l) &= \mathsf{succ}\ (\length\ l) \\
+  \mathsf{member}\ x\ (\ins\ x\ l) &= \mathsf{true} \\
+  \mathsf{sum}\ (\sort\ l) &= \mathsf{sum}\ l \\
+  \length\ (\sort\ (\sort\ l)) &= \length\ l
+\end{align*}
+\end{theorem}
+
+\noindent
+The most surprising result is $\mathsf{sum}\ (\sort\ l) = \mathsf{sum}\ l$:
+the SC discovers that insertion sort is a permutation (it preserves the sum)
+by driving through the comparison and proving that the two branches of the
+\texttt{leb} case produce structurally equivalent accumulations.
+$\mathsf{member}\ x\ (\ins\ x\ l) = \mathsf{true}$ requires reasoning
+about \texttt{leb} being reflexive.
+
+\subsection{Vector index normalisation}
+
+The SC normalises dependent type indices.  We prove:
+\[
+  \mathsf{Vec}\ A\ (\length\ (\map\ f\ l)) \equiv \mathsf{Vec}\ A\ (\length\ l)
+\]
+as an exact equality of index terms after supercompilation (theorem
+\texttt{vec\_map\_index\_normalises}).  This is the foundational step for
+dependent vector operations: it shows that the SC can be used as a typechecker
+for programs involving non-trivial index computations.
+
+\subsection{Plus associativity}
+
+$\mathsf{plus}\ m\ (\mathsf{plus}\ n\ k) = \mathsf{plus}\ (\mathsf{plus}\ m\ n)\ k$
+is proved by the SC (theorem \texttt{plus\_assoc\_killed}).  The SC drives
+through the left argument of \texttt{plusL} and discovers the same recursive
+structure on both sides.  Commutativity ($\mathsf{plus}\ m\ n = \mathsf{plus}\
+n\ m$) is \emph{not} proved --- it requires a strengthened induction hypothesis,
+discussed in Section~\ref{sec:limits}.
+
+\subsection{The $\omega$-rule: reverse-append fusion}
+\label{sec:reverse-append}
+
+The most intricate example demonstrates the full four-layer pipeline.
+The identity is:
+\[
+  \mathsf{reverse}\ (\mathsf{append}\ \mathit{xs}\ \mathit{ys})
+  = \mathsf{append}\ (\mathsf{reverse}\ \mathit{ys})\ (\mathsf{reverse}\ \mathit{xs})
+\]
+
+The standard SC (all three layers) terminates on both sides but produces
+\emph{different} residuals --- it cannot fuse them (theorem
+\texttt{std\_sc\_gets\_stuck} in \texttt{LLMLemmaInAction.v}:
+\texttt{r\_rev\_std $\neq$ r\_append\_rev\_std}).
+
+The LLM lemma proposer, given the function definitions (in scrambled form),
+proposes:
+\[
+  \mathsf{revAcc}\ (\mathsf{append}\ \mathit{xs}\ \mathit{ys})\ \mathit{acc}
+  = \mathsf{revAcc}\ \mathit{ys}\ (\mathsf{revAcc}\ \mathit{xs}\ \mathit{acc})
+\]
+
+The sub-SC validates this lemma by induction on $\mathit{xs}$
+(\texttt{lemma\_rev\_acc\_append\_distrib\_validated}, \vmcompute{}).
+
+With the lemma in the driving step, the lemma-driven SC produces
+\emph{identical} residuals for both sides (\texttt{with\_lemma\_they\_fuse}),
+and the fused residual is provably different from the standard SC output
+(\texttt{lemma\_driven\_is\_better}).
+
+\subsection{Other $\omega$-rule examples}
+
+The same pattern yields two additional results:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Sort correctness}: $\mathsf{sorted}\ (\mathsf{sort}\ l) = \mathsf{true}$
+  with lemma $\mathsf{sorted}\ (\ins\ x\ l) = \mathsf{sorted}\ l$.
+\item \textbf{Succ distribution}: $\mathsf{sum}\ (\map\ \mathsf{succ}\ l)
+  = \mathsf{sum}\ l + \length\ l$ with lemma
+  $\mathsf{succ}\ m + n = \mathsf{succ}\ (m + n)$.
+\end{itemize}
+
+\subsection{Summary}
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{File} & \textbf{Theorems proved} & \textbf{Admitted} \\
+\midrule
+\texttt{HardExamples.v}          & 8  & 0 \\
+\texttt{SortExamples.v}          & 9  & 0 \\
+\texttt{MonadLaws.v}             & 6  & 0 \\
+\texttt{IndexCalc.v}             & 10 & 0 \\
+\texttt{SpeculationConjectures.v}& 11 & 0 \\
+\texttt{CanonRoundtrip.v}        & 16 & 0 \\
+\texttt{OmegaExamples.v}         & 12 & 0 \\
+\texttt{LLMLemmaInAction.v}      & 4  & 0 \\
+\midrule
+\textbf{Total}                   & \textbf{76} & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{center}

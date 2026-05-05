@@ -1,0 +1,48 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Higher-level supercompilation.}
+S{\o}rensen, Gl{\"u}ck, and Jones~\cite{sorensen-gluck-jones-1996-positive}
+introduce \emph{positive supercompilation}, which goes beyond standard SC by
+permitting generalisations that introduce new function symbols not present in
+the original program.  This is the first instance of HLS.  Mitchell and
+Runciman~\cite{mitchell-runciman-2010-supercompilation} implement HLS for
+Haskell (Supero), showing that accumulator patterns and fusion identities can
+be found automatically.  Bolingbroke~\cite{bolingbroke-2013-phd} develops
+call-by-need SC with a rich generalisation algorithm.
+
+Our contribution is orthogonal: we provide a \emph{proof-theoretic} account
+of what HLS is doing (cut introduction), which leads directly to the LLM
+oracle architecture.  Prior HLS work has not connected the generalisation
+step to cut introduction, nor has it given a mechanised correctness proof.
+
+\paragraph{Speculation.}
+Eisner and Blatz~\cite{eisner-blatz-2007-parsing} introduce speculation as
+a transformation of weighted logic programs.  They prove it correct by a
+semantic argument.  Our contribution is to (a)~identify speculation as a
+special case of the SC's generalisation step, (b)~give a mechanised roundtrip
+theorem (Theorem~\ref{thm:roundtrip}), and (c)~integrate it into the three-layer
+SC loop with proof-theoretic justification.
+
+\paragraph{Worker/wrapper.}
+The worker/wrapper transformation~\cite{gill-hutton-2009-worker-wrapper}
+is a structured form of accumulator introduction.  It can be seen as a special
+case of cut introduction: the wrapper is the main program, the worker is the
+cut formula.  HLS with LLM oracle can discover worker/wrapper transformations
+automatically; mechanising this connection is future work.
+
+\paragraph{Cyclic proofs.}
+Brotherston and Simpson~\cite{brotherston-simpson-2011-sequent} establish
+the sequent-calculus foundation for cyclic proofs.
+Afshari and Wehr~\cite{afshari-wehr-2024-abstract-cyclic} give an abstract
+categorical account.  Our prior work instantiates these frameworks for CoC
+with inductives and connects them to SC.  The present paper uses that
+connection as a design guide.
+
+\paragraph{LLMs in formal methods.}
+Recent work uses LLMs to suggest proof steps in Lean and Isabelle.
+Our usage is different: the LLM proposes \emph{program transformations}
+(generalisation candidates), not proof terms.  The kernel check
+(\texttt{trace\_condition\_ok}) plays the role of a type checker for
+transformation proposals.  This is closer to the ``draft-sketch-prove''
+paradigm~\cite{TODO} than to neural theorem proving.
