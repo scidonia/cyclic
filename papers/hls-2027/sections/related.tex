@@ -20,9 +20,11 @@ step to cut introduction, nor has it given a mechanised correctness proof.
 Eisner and Blatz~\cite{eisner-blatz-2007-parsing} introduce speculation as
 a transformation of weighted logic programs.  They prove it correct by a
 semantic argument.  Our contribution is to (a)~identify speculation as a
-special case of the SC's generalisation step, (b)~give a mechanised roundtrip
-theorem (Theorem~\ref{thm:roundtrip}), and (c)~integrate it into the three-layer
-SC loop with proof-theoretic justification.
+special case of the SC's generalisation step, (b)~prove that in canonical
+configurations it is either redundant or unsound (Section~\ref{sec:speculation}),
+characterising the boundary between anti-unification and projection, and
+(c)~show that this characterisation follows from the sequent-calculus
+formulation.
 
 \paragraph{Worker/wrapper.}
 The worker/wrapper transformation~\cite{gill-hutton-2009-worker-wrapper}
@@ -45,4 +47,4 @@ Our usage is different: the LLM proposes \emph{program transformations}
 (generalisation candidates), not proof terms.  The kernel check
 (\texttt{trace\_condition\_ok}) plays the role of a type checker for
 transformation proposals.  This is closer to the ``draft-sketch-prove''
-paradigm~\cite{TODO} than to neural theorem proving.
+paradigm than to neural theorem proving.
