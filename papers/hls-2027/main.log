@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 14:14
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 14:16
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1206,21 +1206,13 @@ Underfull \vbox (badness 2762) has occurred while \output is active []
  [9])
 (./sections/proof-graph.tex
 Package microtype Info: Character `029' is missing
-(microtype)             in font `T1/lmr/m/sc/10'.
-(microtype)             Ignoring protrusion settings for this character.
-
-Underfull \hbox (badness 1533) in paragraph at lines 4--9
-\T1/lmr/m/n/10 (+20) Figure [][]1[][] shows the cyclic proof. With-out the \T1/
-lmr/m/sc/10 (+20) lemma\T1/lmr/m/n/10 (+20) , the step from
- []
-
-Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/7'.
 (microtype)             Ignoring protrusion settings for this character.
+
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.19   }
+l.13   }
         
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
@@ -1228,7 +1220,7 @@ you left one out. Proceed, with fingers crossed.
 ! Extra }, or forgotten $.
 \@textcolor ...otect \leavevmode {\color #1{#2}#3}
                                                   
-l.19   }
+l.13   }
         
 I've deleted a group-closing symbol because it seems to be
 spurious, as in `$x}$'. But perhaps the } is legitimate and
@@ -1239,7 +1231,7 @@ deleted material, e.g., by typing `I$}'.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.19   }
+l.13   }
         
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1250,7 +1242,48 @@ my insertion and my current dilemma will both disappear.
 ! Missing } inserted.
 <inserted text> 
                 }
-l.19   }
+l.13   }
+        
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40   }
+        
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+\@textcolor ...otect \leavevmode {\color #1{#2}#3}
+                                                  
+l.40   }
+        
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40   }
+        
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.40   }
         
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1261,48 +1294,17 @@ my insertion and my current dilemma will both disappear.
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
 (microtype)             Ignoring protrusion settings for this character.
-! Missing $ inserted.
-<inserted text> 
-                $
-l.52   }
-        
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
+Package microtype Info: Character `029' is missing
+(microtype)             in font `T1/lmr/m/sc/10'.
+(microtype)             Ignoring protrusion settings for this character.
+) (./sections/limits.tex
+Underfull \hbox (badness 2626) in paragraph at lines 66--1
+\T1/lmr/m/n/10 (+20) Without the \T1/lmr/m/sc/10 (+20) lemma\T1/lmr/m/n/10 (+20
+) , the step from $[] \OT1/lmr/m/n/10 (+20) ([] \OML/lmm/m/it/10 xs ys\OT1/lmr/
+m/n/10 (+20) ) []$ \T1/lmr/m/n/10 (+20) to
+ []
 
-! Extra }, or forgotten $.
-\@textcolor ...otect \leavevmode {\color #1{#2}#3}
-                                                  
-l.52   }
-        
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.52   }
-        
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.52   }
-        
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-) (./sections/limits.tex [10]
+[10]
 Underfull \hbox (badness 1028) in paragraph at lines 13--19
 \T1/lmr/m/n/10 (+20) Some aux-il-iary lem-mas re-quire a hy-poth-e-sis. The can
 on-i-cal ex-am-ple is
@@ -1356,13 +1358,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 28099 strings out of 476106
- 519115 string characters out of 5793933
+ 28096 strings out of 476106
+ 519075 string characters out of 5793933
  1985975 words of memory out of 5000000
  49180 multiletter control sequences out of 15000+600000
- 694987 words of font info for 256 fonts, out of 8000000 for 9000
+ 694877 words of font info for 255 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,11n,107p,1380b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/p
@@ -1382,10 +1384,10 @@ pe1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></u
 sr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/pu
 blic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 524451 bytes).
+Output written on main.pdf (16 pages, 524418 bytes).
 PDF statistics:
- 405 PDF objects out of 1000 (max. 8388607)
- 308 compressed objects within 4 object streams
- 110 named destinations out of 1000 (max. 500000)
+ 395 PDF objects out of 1000 (max. 8388607)
+ 303 compressed objects within 4 object streams
+ 109 named destinations out of 1000 (max. 500000)
  77845 words of extra memory for PDF output out of 89155 (max. 10000000)
 

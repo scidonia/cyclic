@@ -1,12 +1,6 @@
 \subsection{Cyclic proof for reverse-append fusion}
 \label{sec:reverse-append-proof}
 
-Figure~\ref{fig:reverse-append-proof} shows the cyclic proof.
-Without the \textsc{lemma}, the step from
-$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
-to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
-the two terms do not anti-unify, and no fold is possible.
-
 \begin{figure}[t]
 \centering\scriptsize
 \begin{prooftree}
@@ -17,7 +11,9 @@ the two terms do not anti-unify, and no fold is possible.
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\text{(Fig.~\ref{fig:cons-branch})}}
+  \hypo{
+    \text{cons branch (below)}
+  }
   \infer2[\textsc{iota}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
@@ -29,51 +25,46 @@ the two terms do not anti-unify, and no fold is possible.
     \;\textcolor{red!70}{\dagger}
   }
 \end{prooftree}
-\caption{
-  Main proof.  $\dagger$ = backlink; red = companion.
-  \textsc{lemma}: LLM cut (sub-prover validates).
-  \textsc{back}: nil branch is an instance of the root under $ys\mapsto\mathsf{nil}$.
-  Cons branch: proved by the same proof with $ys\mapsto\mathsf{cons}\;y\;\mathsf{nil}$
-  (Fig.~\ref{fig:cons-branch}).
-}
-\label{fig:reverse-append-proof}
-\end{figure}
 
-\begin{figure}[t]
-\centering\scriptsize
+\bigskip
+
+%% Cons branch (nested within Fig 1)
 \begin{prooftree}
   \hypo{ys' \mapsto \mathsf{nil} \;:\; [ys'] \to_s [xs,ys]}
   \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
     \textcolor{red!60}{
-      xs,y,\mathsf{Nat},ys \vdash
-      \mathsf{reverse}\;(\mathsf{append}\;xs\;(\mathsf{cons}\;y\;\mathsf{nil})) : \mathsf{List}
+      xs,y{:}\mathsf{Nat},ys \vdash
+      \mathsf{reverse}\;xs : \mathsf{List}
       \;\textcolor{red!70}{\dagger}
     }
   }
   \hypo{\text{(induction on }ys''\text{)}}
   \infer2[\textsc{iota}]{
-    xs,y,\mathsf{Nat},ys',ys \vdash
+    xs,y{:}\mathsf{Nat},ys',ys \vdash
     \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
   }
-  \infer1[\textsc{lemma}]{
-    xs,y,\mathsf{Nat},ys',ys \vdash
-    \mathsf{revAcc}\;(\mathsf{append}\;xs\;(\mathsf{cons}\;y\;\mathsf{nil}))\;\mathsf{nil}
-    : \mathsf{List}
-  }
-  \infer1[\textsc{fix}]{
-    xs,y,\mathsf{Nat},ys \vdash
-    \mathsf{reverse}\;(\mathsf{append}\;xs\;(\mathsf{cons}\;y\;\mathsf{nil}))
-    : \mathsf{List}
-    \;\textcolor{red!70}{\dagger}
-  }
 \end{prooftree}
+
 \caption{
-  Cons branch proof (identical structure to Fig.~\ref{fig:reverse-append-proof}
-  with $ys \leftarrow \mathsf{cons}\;y\;\mathsf{nil}$).
-  \textsc{back}: nil branch ($ys'=\mathsf{nil}$) yields $\mathsf{reverse}\;xs$,
-  an instance of the root under $ys\mapsto\mathsf{nil}$.
-  The proof terminates by structural induction on the cons chain.
+  Cyclic proof for $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$
+  (two proof trees; both backlink to the same root $\dagger$ at bottom).
+  \textsc{lemma}: LLM cut
+  $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
+  = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
+  validated by sub-prover.
+  Top tree: case on $ys$. Nil branch closed by \textsc{back} ($ys\mapsto\mathsf{nil}$).
+  Bottom tree: cons branch, same structure on $ys'$.
+  Its nil branch $\mathsf{reverse}\;xs$ is an instance of the root
+  $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$ under $ys\mapsto\mathsf{nil}$
+  (the same backlink as above).
+  The cons branch ($ys''$) repeats the pattern; termination by structural
+  induction on the cons chain.
 }
-\label{fig:cons-branch}
+\label{fig:reverse-append-proof}
 \end{figure}
+
+Without the \textsc{lemma}, the step from
+$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
+to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
+the two terms do not anti-unify, and no fold is possible.
 \medskip
