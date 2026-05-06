@@ -3,6 +3,7 @@
 
 \begin{figure}[t]
 \centering\scriptsize
+%% --- TOP: main proof ---
 \begin{prooftree}
   \hypo{ys \mapsto \mathsf{nil} \;:\; [ys] \to_s [xs,ys]}
   \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
@@ -11,9 +12,7 @@
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{
-    \text{cons branch (below)}
-  }
+  \hypo{\textcolor{green!50!black}{\textsc{cons}}_{ys}}
   \infer2[\textsc{iota}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
@@ -26,9 +25,11 @@
   }
 \end{prooftree}
 
-\bigskip
+\medskip
 
-%% Cons branch (nested within Fig 1)
+%% --- BOTTOM: cons branch (identical structure on ys') ---
+$\textcolor{green!50!black}{\textsc{cons}_{ys}} \;=\;$
+
 \begin{prooftree}
   \hypo{ys' \mapsto \mathsf{nil} \;:\; [ys'] \to_s [xs,ys]}
   \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
@@ -38,28 +39,30 @@
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\text{(induction on }ys''\text{)}}
+  \hypo{\textsc{cons}_{ys'}\;\text{(same structure)}}
   \infer2[\textsc{iota}]{
     xs,y{:}\mathsf{Nat},ys',ys \vdash
     \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
   }
 \end{prooftree}
 
-\caption{
-  Cyclic proof for $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$
-  (two proof trees; both backlink to the same root $\dagger$ at bottom).
-  \textsc{lemma}: LLM cut
-  $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
-  = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
-  validated by sub-prover.
-  Top tree: case on $ys$. Nil branch closed by \textsc{back} ($ys\mapsto\mathsf{nil}$).
-  Bottom tree: cons branch, same structure on $ys'$.
-  Its nil branch $\mathsf{reverse}\;xs$ is an instance of the root
-  $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$ under $ys\mapsto\mathsf{nil}$
-  (the same backlink as above).
-  The cons branch ($ys''$) repeats the pattern; termination by structural
-  induction on the cons chain.
+\medskip
+
+{\footnotesize
+\textbf{Fig.~\ref{fig:reverse-append-proof}.}
+Cyclic proof for $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$.
+$\dagger$ = backlink to the root; red = companion.
+\textsc{lemma}: LLM cut (proved by sub-prover).
+Top: case on $ys$. Nil \textsc{back} with $ys\mapsto\mathsf{nil}$.
+Bottom (\textcolor{green!50!black}{green}): identical structure on $ys'$.
+The nil \textsc{back} ($ys'\mapsto\mathsf{nil}$) yields $\mathsf{reverse}\;xs$,
+which is an instance of the root under $ys\mapsto\mathsf{nil}$ --- the same
+backlink target.
+The cons branch $\textsc{cons}_{ys'}$ is proved via the cyclic structure:
+it is again an instance of $\textsc{cons}_{ys}$ under $ys'\mapsto\mathsf{cons}\;y'\;ys''$.
 }
+
+\caption{See caption text above.}
 \label{fig:reverse-append-proof}
 \end{figure}
 
