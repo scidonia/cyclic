@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 10:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 10:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1075,33 +1075,20 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: OT1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-
-
-LaTeX Warning: Reference `sec:limits' on page 2 undefined on input line 45.
-
-
-LaTeX Warning: Reference `sec:limits' on page 2 undefined on input line 60.
-
-[2{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dv
-ips/lm/lm-mathsy.enc}]
-
-LaTeX Warning: Reference `sec:limits' on page 3 undefined on input line 90.
-
-) (./sections/background.tex [3]
+ [2{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/d
+vips/lm/lm-mathsy.enc}])
+(./sections/background.tex [3]
 Overfull \hbox (55.29436pt too wide) detected at line 64
 [] [] \OML/lmm/m/it/10 ^^F ^^@ t A \OT1/lmr/m/n/10 = [] (\OML/lmm/m/it/10 v; b\
 OT1/lmr/m/n/10 )  \OMS/lmsy/m/n/10 )  \OML/lmm/m/it/10 t \OMS/lmsy/m/n/10 ^^Y[]
  [] [] \OML/lmm/m/it/10 ^^F b v \OT1/lmr/m/n/10 0 \OMS/lmsy/m/n/10 ;
  []
 
-) (./sections/sequent-guided-design.tex [4]
-
-LaTeX Warning: Reference `sec:limits' on page 5 undefined on input line 51.
-
-) (./sections/llm-oracle.tex
+) (./sections/sequent-guided-design.tex [4]) (./sections/llm-oracle.tex
 LaTeX Font Info:    Trying to load font information for T1+lmss on input line 8
 .
- (/usr/share/texmf/tex/latex/lm/t1lmss.fd
+
+(/usr/share/texmf/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
@@ -1141,11 +1128,7 @@ pl.ml\T1/lmr/m/n/10 (-20) ) calls this via \T1/lmtt/m/n/10 Unix.open_process\T1
 /lmr/m/n/10 (-20) ,
  []
 
-[6{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]
-
-LaTeX Warning: Reference `sec:limits' on page 7 undefined on input line 99.
-
-) (./sections/examples.tex
+[6{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]) (./sections/examples.tex
 Overfull \hbox (17.05486pt too wide) in paragraph at lines 10--12
 \T1/lmr/m/n/10 (-20) The List monad has $[] \OML/lmm/m/it/10 x \OT1/lmr/m/n/10 
 (-20) = [\OML/lmm/m/it/10 x\OT1/lmr/m/n/10 (-20) ]$ \T1/lmr/m/n/10 (-20) and $\
@@ -1178,9 +1161,6 @@ Overfull \hbox (68.46112pt too wide) in paragraph at lines 82--87
 i-la-tion (the-o-rem \T1/lmtt/m/n/10 vec_map_index_normalises\T1/lmr/m/n/10 (-2
 0) ).
  []
-
-
-LaTeX Warning: Reference `sec:limits' on page 8 undefined on input line 95.
 
 
 Overfull \hbox (25.89844pt too wide) in paragraph at lines 90--96
@@ -1233,53 +1213,45 @@ Overfull \hbox (26.28229pt too wide) in paragraph at lines 73--78
  and \T1/lmtt/m/n/10 sum-reverse\T1/lmr/m/n/10 (-20) )
  []
 
-
+[12]
 Overfull \hbox (25.34637pt too wide) in paragraph at lines 112--121
  [] 
  []
 
-[12]
+
 Overfull \hbox (52.243pt too wide) in paragraph at lines 132--138
 []\T1/lmr/m/n/10 (-20) The most in-ter-est-ing case is reverse-append: the LLM 
 pro-poses $[] \OT1/lmr/m/n/10 (-20) ([] \OML/lmm/m/it/10 xs ys\OT1/lmr/m/n/10 (
 -20) ) \OML/lmm/m/it/10 acc \OT1/lmr/m/n/10 (-20) =
  []
 
-) (./sections/related.tex
+[13]) (./sections/related.tex
 Overfull \hbox (36.01566pt too wide) in paragraph at lines 151--1
 \T1/lmr/m/n/10 (-20) The full ex-per-i-ment script (\T1/lmtt/m/n/10 scramble_te
 st.py\T1/lmr/m/n/10 (-20) ), re-sults (\T1/lmtt/m/n/10 /tmp/scramble_results.js
 on\T1/lmr/m/n/10 (-20) ),
  []
 
-[13]) (./sections/conclusion.tex
+) (./sections/conclusion.tex
 Overfull \hbox (13.79245pt too wide) in paragraph at lines 35--1
 \T1/lmr/m/n/10 (-20) (gen-er-al-i-sa-tion can-di-dates), not proof terms. The k
 er-nel check (\T1/lmtt/m/n/10 trace_condition_ok\T1/lmr/m/n/10 (-20) )
  []
 
-[14]
-
-LaTeX Warning: Reference `sec:limits' on page 15 undefined on input line 46.
-
-) (./main.bbl) [15] [16] (./main.aux)
+[14]) (./main.bbl [15]) [16] [17] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: E36E22062BC75D0F24FB37CF79275CDC;459.
  ) 
 Here is how much of TeX's memory you used:
- 28575 strings out of 476106
- 522522 string characters out of 5793933
+ 28584 strings out of 476106
+ 522635 string characters out of 5793933
  1999975 words of memory out of 5000000
  49672 multiletter control sequences out of 15000+600000
- 686090 words of font info for 248 fonts, out of 8000000 for 9000
+ 686267 words of font info for 250 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,11n,107p,1001b,1660s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1299,10 +1271,10 @@ nts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt8.pf
 b></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/typ
 e1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
 onts/symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 540077 bytes).
+Output written on main.pdf (17 pages, 545227 bytes).
 PDF statistics:
- 380 PDF objects out of 1000 (max. 8388607)
- 294 compressed objects within 3 object streams
- 106 named destinations out of 1000 (max. 500000)
+ 399 PDF objects out of 1000 (max. 8388607)
+ 311 compressed objects within 4 object streams
+ 111 named destinations out of 1000 (max. 500000)
  71701 words of extra memory for PDF output out of 74296 (max. 10000000)
 
