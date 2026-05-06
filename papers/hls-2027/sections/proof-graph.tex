@@ -27,9 +27,6 @@
 
 \medskip
 
-%% --- BOTTOM: cons branch (identical structure on ys') ---
-$\textcolor{green!50!black}{\textsc{cons}_{ys}} \;=\;$
-
 \begin{prooftree}
   \hypo{ys' \mapsto \mathsf{nil} \;:\; [ys'] \to_s [xs,ys]}
   \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
@@ -41,8 +38,10 @@ $\textcolor{green!50!black}{\textsc{cons}_{ys}} \;=\;$
   }
   \hypo{\textsc{cons}_{ys'}\;\text{(same structure)}}
   \infer2[\textsc{iota}]{
-    xs,y{:}\mathsf{Nat},ys',ys \vdash
-    \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+    \textcolor{green!50!black}{
+      xs,y{:}\mathsf{Nat},ys',ys \vdash
+      \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+    }
   }
 \end{prooftree}
 
