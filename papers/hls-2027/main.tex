@@ -54,6 +54,9 @@ is cut introduction, and the trace condition is the global progress check of
 cyclic proof theory.  This observation, made precise through mechanisation in
 Rocq, leads to an architecture where program optimisation is outsourced to an
 untrusted oracle and validated by a deterministic proof kernel.
+The architecture is a framework for safe heuristic extension:
+any oracle is admissible without affecting soundness, since the CIU
+theorem depends only on the kernel's trace-condition check.
 
 We implement this architecture with two oracle roles: (i)~an LLM proposes
 generalisation cuts, validated by the kernel, making any heuristic admissible

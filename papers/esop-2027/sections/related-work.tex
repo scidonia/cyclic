@@ -22,7 +22,10 @@ Our cyclic proof framework replaces the whistle with a \emph{global trace condit
 
 \paragraph{Supercompilation and partial evaluation.}
 Early work connects supercompilation to partial evaluation \cite{jonesbook-1996-partial-evaluation}.
-Our contribution extends this connection to dependent types: we show that supercompilation \emph{is} proof search in a typed setting, with configurations as sequents and the memo table as a cyclic proof graph.
+Our contribution extends this connection to dependent types: we show that supercompilation corresponds to proof search in a typed setting, with configurations as sequents and the memo table as a cyclic proof graph.
+
+\paragraph{Formally verified supercompilation.}
+Krustev~\cite{krustev-2014-simple-sc-coq,krustev-2018-sc-flia} gives the first mechanised correctness proof of a supercompiler in Coq, for a first-order language (Whistle) with homeomorphic embedding.  Our work extends this to CoC with inductives (dependent types) and proves CIU equivalence rather than observational equivalence at ground type.  Jones and Hamilton~\cite{jones-hamilton-2006-bisimulation} prove unfold/fold correctness via bisimulation; our CIU theorem yields the same guarantee but via cyclic proof theory, making the generalisation step explicit as cut introduction rather than an implicit bisimulation up-to technique.
 
 \paragraph{Prior work on dependent types.}
 To our knowledge, this is the first formulation of supercompilation for a dependently typed core language.

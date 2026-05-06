@@ -33,9 +33,23 @@ Jones, N.D., Gomard, C.K., Sestoft, P.: Partial Evaluation and Automatic
   Program Generation. Prentice Hall (1993), classic textbook on partial
   evaluation and metaprogramming
 
+\bibitem{jones-hamilton-2006-bisimulation}
+Jones, N.D., Hamilton, G.W.: Proving the correctness of {U}nfold/{F}old program
+  transformations using bisimulation. In: Essays in honour of {Z}ohar {M}anna.
+  pp. 341--358. Springer (2006)
+
 \bibitem{kruskal-1960-wqo}
 Kruskal, J.B.: Well-quasi-ordering, the tree theorem, and {V}azsonyi's
   conjecture. Transactions of the American Mathematical Society  (1960)
+
+\bibitem{krustev-2014-simple-sc-coq}
+Krustev, D.N.: A simple supercompiler formally verified in {Coq}. In: Fourth
+  International Valentin Turchin Workshop on Metacomputation (META 2014). pp.
+  102--127 (2014)
+
+\bibitem{krustev-2018-sc-flia}
+Krustev, D.N.: A supercompiler assisting its own formal verification. In: Fifth
+  International Valentin Turchin Workshop on Metacomputation (META 2018) (2018)
 
 \bibitem{leuschel-2002-homeomorphic}
 Leuschel, M.: Homeomorphic embedding for online termination of partial
