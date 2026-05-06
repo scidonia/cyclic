@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 14:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 14:04
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1208,14 +1208,26 @@ Underfull \vbox (badness 2762) has occurred while \output is active []
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
+
+Underfull \hbox (badness 10000) in paragraph at lines 4--12
+\T1/lmr/m/n/10 (+20) Figure [][]1[][] shows the cyclic proof. The root goal (bo
+t-tom) is
+ []
+
+
+Underfull \hbox (badness 1205) in paragraph at lines 13--17
+[]\T1/lmr/m/n/10 (+20) Without the \T1/lmr/m/sc/10 (+20) lemma\T1/lmr/m/n/10 (+
+20) , the step from $[] \OT1/lmr/m/n/10 (+20) ([] \OML/lmm/m/it/10 xs ys\OT1/lm
+r/m/n/10 (+20) ) []$ \T1/lmr/m/n/10 (+20) to
+ []
+
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/7'.
 (microtype)             Ignoring protrusion settings for this character.
-
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.22   }
+l.27   }
         
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
@@ -1223,7 +1235,7 @@ you left one out. Proceed, with fingers crossed.
 ! Extra }, or forgotten $.
 \@textcolor ...otect \leavevmode {\color #1{#2}#3}
                                                   
-l.22   }
+l.27   }
         
 I've deleted a group-closing symbol because it seems to be
 spurious, as in `$x}$'. But perhaps the } is legitimate and
@@ -1234,7 +1246,7 @@ deleted material, e.g., by typing `I$}'.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.22   }
+l.27   }
         
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1245,7 +1257,7 @@ my insertion and my current dilemma will both disappear.
 ! Missing } inserted.
 <inserted text> 
                 }
-l.22   }
+l.27   }
         
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1259,7 +1271,7 @@ Package microtype Info: Character `029' is missing
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.58   }
+l.61   }
         
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
@@ -1267,7 +1279,7 @@ you left one out. Proceed, with fingers crossed.
 ! Extra }, or forgotten $.
 \@textcolor ...otect \leavevmode {\color #1{#2}#3}
                                                   
-l.58   }
+l.61   }
         
 I've deleted a group-closing symbol because it seems to be
 spurious, as in `$x}$'. But perhaps the } is legitimate and
@@ -1278,7 +1290,7 @@ deleted material, e.g., by typing `I$}'.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.58   }
+l.61   }
         
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1289,7 +1301,7 @@ my insertion and my current dilemma will both disappear.
 ! Missing } inserted.
 <inserted text> 
                 }
-l.58   }
+l.61   }
         
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1297,8 +1309,13 @@ With luck, this will get me unwedged. But if you
 really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
+
+Overfull \hbox (1.62071pt too wide) in paragraph at lines 67--78
+ [][] 
+ []
+
 ) (./sections/limits.tex
-Underfull \vbox (badness 4927) has occurred while \output is active []
+Underfull \vbox (badness 2277) has occurred while \output is active []
 
  [10]
 Underfull \hbox (badness 1028) in paragraph at lines 13--19
@@ -1346,17 +1363,21 @@ sup-ple-men-tary ma-te-rial. All
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 28101 strings out of 476106
- 519154 string characters out of 5793933
+ 28105 strings out of 476106
+ 519196 string characters out of 5793933
  1985975 words of memory out of 5000000
  49182 multiletter control sequences out of 15000+600000
- 694981 words of font info for 256 fonts, out of 8000000 for 9000
+ 695174 words of font info for 258 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,11n,107p,1085b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/p
@@ -1376,9 +1397,9 @@ pe1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></u
 sr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/pu
 blic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 525848 bytes).
+Output written on main.pdf (16 pages, 526480 bytes).
 PDF statistics:
- 407 PDF objects out of 1000 (max. 8388607)
+ 406 PDF objects out of 1000 (max. 8388607)
  309 compressed objects within 4 object streams
  110 named destinations out of 1000 (max. 500000)
  77845 words of extra memory for PDF output out of 89155 (max. 10000000)
