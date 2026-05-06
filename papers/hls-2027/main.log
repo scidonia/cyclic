@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 12:32
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 12:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1211,17 +1211,13 @@ Underfull \vbox (badness 2762) has occurred while \output is active []
 \myCenter1=\dimen338
 \myScoreEnd1=\dimen339
 Package microtype Info: Character `029' is missing
-(microtype)             in font `T1/lmr/m/sc/7'.
+(microtype)             in font `T1/lmr/m/sc/5'.
 (microtype)             Ignoring protrusion settings for this character.
-
-Overfull \hbox (87.24747pt too wide) detected at line 38
-[]
- []
 
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.49 ...textsc{back}\;\textcolor{red!70}{\dagger}}
+l.43 ...textsc{back}\;\textcolor{red!70}{\dagger}}
                                                   
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
@@ -1229,7 +1225,7 @@ you left one out. Proceed, with fingers crossed.
 ! Extra }, or forgotten $.
 \@textcolor ...otect \leavevmode {\color #1{#2}#3}
                                                   
-l.49 ...textsc{back}\;\textcolor{red!70}{\dagger}}
+l.43 ...textsc{back}\;\textcolor{red!70}{\dagger}}
                                                   
 I've deleted a group-closing symbol because it seems to be
 spurious, as in `$x}$'. But perhaps the } is legitimate and
@@ -1240,7 +1236,7 @@ deleted material, e.g., by typing `I$}'.
 ! Extra }, or forgotten $.
 \RightLabel ...RL =\hbox {\hskip \labelSpacing #1}
                                                   \ignorespaces 
-l.49 ...textsc{back}\;\textcolor{red!70}{\dagger}}
+l.43 ...textsc{back}\;\textcolor{red!70}{\dagger}}
                                                   
 I've deleted a group-closing symbol because it seems to be
 spurious, as in `$x}$'. But perhaps the } is legitimate and
@@ -1255,7 +1251,7 @@ deleted material, e.g., by typing `I$}'.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.76 \]
+l.67 \]
        
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1266,7 +1262,7 @@ my insertion and my current dilemma will both disappear.
 ! Missing } inserted.
 <inserted text> 
                 }
-l.76 \]
+l.67 \]
        
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1277,7 +1273,7 @@ my insertion and my current dilemma will both disappear.
 ! Missing } inserted.
 <inserted text> 
                 }
-l.76 \]
+l.67 \]
        
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1288,7 +1284,7 @@ my insertion and my current dilemma will both disappear.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.76 \]
+l.67 \]
        
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -1299,25 +1295,21 @@ my insertion and my current dilemma will both disappear.
 ! Display math should end with $$.
 <to be read again> 
                    \endgroup 
-l.76 \]
+l.67 \]
        
 The `$' that I just saw supposedly matches a previous `$$'.
 So I shall assume that you typed `$$' both times.
 
 Package microtype Info: Character `029' is missing
-(microtype)             in font `T1/lmr/m/sc/9'.
-(microtype)             Ignoring protrusion settings for this character.
-Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
-) (./sections/limits.tex [10{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}
-]
+) (./sections/limits.tex
 Underfull \hbox (badness 1028) in paragraph at lines 13--19
 \T1/lmr/m/n/10 (+20) Some aux-il-iary lem-mas re-quire a hy-poth-e-sis. The can
 on-i-cal ex-am-ple is
  []
 
-
+[10]
 Underfull \hbox (badness 10000) in paragraph at lines 20--30
 []\T1/lmr/m/n/10 (+20) The in-fras-truc-ture for con-di-tional lem-mas is spec-
 i-fied
@@ -1352,43 +1344,49 @@ Underfull \hbox (badness 1248) in paragraph at lines 150--1
 sup-ple-men-tary ma-te-rial. All
  []
 
-) (./sections/conclusion.tex [14]) (./main.bbl [15]) [16] (./main.aux)
+) (./sections/conclusion.tex [14]) (./main.bbl) [15] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 27978 strings out of 476106
- 514353 string characters out of 5793933
+ 27968 strings out of 476106
+ 514222 string characters out of 5793933
  1984975 words of memory out of 5000000
- 49063 multiletter control sequences out of 15000+600000
- 697881 words of font info for 258 fonts, out of 8000000 for 9000
+ 49061 multiletter control sequences out of 15000+600000
+ 694939 words of font info for 254 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
-pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></us
-r/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/p
-ublic/lm/lmex10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/sh
-are/texmf/fonts/type1/public/lm/lmmi7.pfb></usr/share/texmf/fonts/type1/public/
-lm/lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmib10.pfb></usr/share/te
-xmf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr
-6.pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/
-type1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></u
-sr/share/texmf/fonts/type1/public/lm/lmri9.pfb></usr/share/texmf/fonts/type1/pu
-blic/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss9.pfb></usr/shar
-e/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/l
-m/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf
-/fonts/type1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10
-.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts
-/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 502109 bytes).
+pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx5.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/sha
+re/texmf/fonts/type1/public/lm/lmmi5.pfb></usr/share/texmf/fonts/type1/public/l
+m/lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmib10.pfb></usr/share/tex
+mf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr5
+.pfb></usr/share/texmf/fonts/type1/public/lm/lmr6.pfb></usr/share/texmf/fonts/t
+ype1/public/lm/lmr7.pfb></usr/share/texmf/fonts/type1/public/lm/lmr9.pfb></usr/
+share/texmf/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/type1/publ
+ic/lm/lmri9.pfb></usr/share/texmf/fonts/type1/public/lm/lmss10.pfb></usr/share/
+texmf/fonts/type1/public/lm/lmss8.pfb></usr/share/texmf/fonts/type1/public/lm/l
+mss9.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/f
+onts/type1/public/lm/lmsy5.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.pf
+b></usr/share/texmf/fonts/type1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/typ
+e1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/s
+ymbols/msam10.pfb>
+Output written on main.pdf (15 pages, 563511 bytes).
 PDF statistics:
- 386 PDF objects out of 1000 (max. 8388607)
- 298 compressed objects within 3 object streams
- 108 named destinations out of 1000 (max. 500000)
- 79893 words of extra memory for PDF output out of 89155 (max. 10000000)
+ 391 PDF objects out of 1000 (max. 8388607)
+ 300 compressed objects within 3 object streams
+ 107 named destinations out of 1000 (max. 500000)
+ 77845 words of extra memory for PDF output out of 89155 (max. 10000000)
 

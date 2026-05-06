@@ -3,95 +3,84 @@
 
 \begin{figure}[t]
 \centering
+\tiny
 \[
 \AxiomC{$
-  xs : \mathsf{List},\; ys : \mathsf{List}
-  \;\vdash\;
+  xs, ys : \mathsf{List}
+  \vdash
   \mathsf{reverse}\;(\mathsf{append}\;xs\;ys)
-  \;:\; \mathsf{List}
+  : \mathsf{List}
   \;\textcolor{red!70}{\dagger}
 $}
-\RightLabel{\;\scriptsize\textsc{fix}$+\beta$}
+\RightLabel{\;\textsc{fix}$+\beta$}
 \UnaryInfC{$
-  xs : \mathsf{List},\; ys : \mathsf{List}
-  \;\vdash\;
+  xs, ys : \mathsf{List}
+  \vdash
   \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}
-  \;:\; \mathsf{List}
+  : \mathsf{List}
 $}
-\RightLabel{\;\scriptsize\textsc{lemma}}
+\RightLabel{\;\textsc{lemma}}
 \UnaryInfC{$
-  xs : \mathsf{List},\; ys : \mathsf{List}
-  \;\vdash\;
+  xs, ys : \mathsf{List}
+  \vdash
   \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)
-  \;:\; \mathsf{List}
+  : \mathsf{List}
 $}
-\RightLabel{\;\scriptsize\textsc{fix}$+\beta$}
+\RightLabel{\;\textsc{fix}$+\beta$}
 \UnaryInfC{$
-  xs : \mathsf{List},\; ys : \mathsf{List}
-  \;\vdash\;
+  xs, ys : \mathsf{List}
+  \vdash
   \mathsf{case}\;ys\;\mathsf{of}\;
-  \bigl\{\mathsf{nil}{\to}\mathsf{reverse}\;xs\;;
-         \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))\bigr\}
-  \;:\; \mathsf{List}
+  \{\mathsf{nil}{\to}\mathsf{rev}\;xs\;;
+    \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{rev}\;xs))\}
+  : \mathsf{List}
 $}
 \DisplayProof
 \]
 
-\vspace{4pt}
-
 \[
-\AxiomC{$
-  xs,ys : \mathsf{List}
-  \;\vdash\;
-  \mathsf{reverse}\;xs
-  \;:\; \mathsf{List}
-$}
-\RightLabel{\;\scriptsize\textsc{back}\;\textcolor{red!70}{\dagger}}
+\AxiomC{$xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}$}
+\RightLabel{\;\textsc{back}\;\textcolor{red!70}{\dagger}}
 \UnaryInfC{\textcolor{red!60}{$
-  xs,ys : \mathsf{List}
-  \;\vdash\;
-  \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil})
-  \;:\; \mathsf{List}
+  xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) : \mathsf{List}
   \;\textcolor{red!70}{\dagger}
 $}}
-\RightLabel{\;\scriptsize\textsc{nil}}
+\RightLabel{\;\textsc{nil}}
 \quad
 \AxiomC{$
   xs,y:\mathsf{Nat},ys':\mathsf{List}
-  \;\vdash\;
+  \vdash
   \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))
-  \;:\; \mathsf{List}
+  : \mathsf{List}
 $}
-\RightLabel{\;\scriptsize\textsc{cons}}
+\RightLabel{\;\textsc{cons}}
 \BinaryInfC{$
-  xs : \mathsf{List},\; ys : \mathsf{List}
-  \;\vdash\;
+  xs,ys : \mathsf{List}
+  \vdash
   \mathsf{case}\;ys\;\mathsf{of}\;
-  \bigl\{\mathsf{nil}{\to}\mathsf{reverse}\;xs\;;
-         \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))\bigr\}
-  \;:\; \mathsf{List}
+  \{\mathsf{nil}{\to}\mathsf{rev}\;xs\;;
+    \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{rev}\;xs))\}
+  : \mathsf{List}
 $}
-\RightLabel{\;\scriptsize\textcolor{red!70}{\textsc{split}\;$\star$}}
+\RightLabel{\;\textcolor{red!70}{\textsc{split}\;$\star$}}
 \DisplayProof
 \]
 
-\vspace{2pt}
-{\footnotesize\textbf{Fig.~\ref{fig:reverse-append-proof}.}
-The proof is split into two parts for readability.  The top derivation
-drives the root goal down to the case expression (bottom-up: \textsc{fix}+$\beta$
-unfolds \textsf{reverse}; \textsc{lemma} rewrites using the LLM-proposed cut;
-\textsc{fix}+$\beta$ unfolds \textsf{revAcc}).  The bottom derivation
-closes the split: the nil branch provides \textsf{reverse}\,$xs$, whose
-equality with the root under $ys{\mapsto}\mathsf{nil}$ justifies the
-\textsc{back}\,$\dagger$ rule (red = backlink target).
-The cons branch drives further through $ys'$ by structural induction.
-$\star$ = progress event; \textsc{lemma} = LLM cut validated by sub-prover.
+{\tiny
+\textbf{Fig.~\ref{fig:reverse-append-proof}.}
+Two-part derivation (top = driving phase; bottom = split).
+$\mathsf{rev}\;xs = \mathsf{reverse}\;xs$ abbreviated.
+$\dagger$ = backlink target; red = companion; $\star$ = progress.
+\textsc{lemma}: LLM cut $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$.
+Nil branch closes via \textsc{back} ($ys{\mapsto}\mathsf{nil}$, hence
+$\mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) = \mathsf{reverse}\;xs$).
+Cons branch drives further through $ys'$ by structural induction.
 }
 \label{fig:reverse-append-proof}
 \end{figure}
 
 Without the \textsc{lemma} rule, the step from
 $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
-to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked: the two
-terms do not anti-unify, and no fold is possible.
+to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked:
+the two terms do not anti-unify, and no fold is possible.
 \medskip
