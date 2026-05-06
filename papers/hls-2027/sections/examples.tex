@@ -90,9 +90,8 @@ for programs involving non-trivial index computations.
 $\mathsf{plus}\ m\ (\mathsf{plus}\ n\ k) = \mathsf{plus}\ (\mathsf{plus}\ m\ n)\ k$
 is proved by the SC (theorem \texttt{plus\_assoc\_killed}).  The SC drives
 through the left argument of \texttt{plusL} and discovers the same recursive
-structure on both sides.  Commutativity ($\mathsf{plus}\ m\ n = \mathsf{plus}\
-n\ m$) is \emph{not} proved --- it requires a strengthened induction hypothesis,
-discussed in Section~\ref{sec:limits}.
+structure on both sides.  Commutativity requires a strengthened
+induction hypothesis, discussed in Section~\ref{sec:reverse-append}.
 
 \subsection{The $\omega$-rule: reverse-append fusion}
 \label{sec:reverse-append}
@@ -126,7 +125,7 @@ and the fused residual is provably different from the standard SC output
 
 \subsection{Other $\omega$-rule examples}
 
-The same pattern yields two additional results:
+The same pattern yields three additional results:
 
 \begin{itemize}[leftmargin=*]
 \item \textbf{Sort correctness}: $\mathsf{sorted}\ (\mathsf{sort}\ l) = \mathsf{true}$
@@ -134,7 +133,47 @@ The same pattern yields two additional results:
 \item \textbf{Succ distribution}: $\mathsf{sum}\ (\map\ \mathsf{succ}\ l)
   = \mathsf{sum}\ l + \length\ l$ with lemma
   $\mathsf{succ}\ m + n = \mathsf{succ}\ (m + n)$.
+\item \textbf{Compiler soundness}: $\mathsf{exec}\;(\mathsf{compile}\;e)\;[] =
+  [\mathsf{eval}\;e]$ with lemma $\mathsf{exec}\;(\mathsf{compile}\;e\;\mathit{code})\;\mathit{s}
+  = \mathsf{exec}\;\mathit{code}\;(\cons\;(\mathsf{eval}\;e)\;\mathit{s})$.
 \end{itemize}
+
+\subsection{Commutativity of addition}
+
+$\mathsf{plusL}\ m\ n = \mathsf{plusL}\ n\ m$ is the canonical ``SC cannot
+prove'' benchmark.  Standard SC produces different residuals for the two
+sides, each recursing on a different argument.  The LLM proposes two
+unconditional lemmas (tested with original and scrambled names,
+Section~\ref{sec:eval}):
+
+\[
+\mathsf{plusL}\ n\ 0 = n
+\qquad
+\mathsf{plusL}\ n\ (\mathsf{succ}\ m) = \mathsf{succ}\ (\mathsf{plusL}\ n\ m)
+\]
+
+The sub-prover validates both by induction on $n$.  With these lemmas as
+rewrite rules, the main proof produces identical residuals for both sides
+(\texttt{plus\_commutativity} in \texttt{Commutativity.v},
+\vmcompute{}).  Standard SC cannot prove it
+(\texttt{std\_sc\_cannot\_prove\_comm}).
+
+\subsection{Parity-filter interaction}
+
+$\mathsf{any}\ \mathsf{evenp}\ (\mathsf{filter}\ \mathsf{oddp}\ l)
+= \mathsf{false}$ requires discovering that $\mathsf{evenp}\ n =
+\mathsf{false}$ whenever $\mathsf{oddp}\ n = \mathsf{true}$.  The sub-prover
+discovers an unconditional version:
+
+\[
+\mathsf{any}\ \mathsf{evenp}\ (\cons\ n\ (\mathsf{filter}\ \mathsf{oddp}\ \mathit{xs}))
+= \mathsf{any}\ \mathsf{evenp}\ (\mathsf{filter}\ \mathsf{oddp}\ \mathit{xs})
+\]
+
+This lemma is validated by the sub-prover (identical residuals), and the
+main proof uses it to eliminate the $\mathsf{evenp}\ n$ check in the
+filter's ``keep'' branch (\texttt{filter\_odd\_any\_even\_is\_false} in
+\texttt{ParityLemma.v}).
 
 \subsection{Summary}
 
@@ -152,10 +191,12 @@ The same pattern yields two additional results:
 \texttt{LLMLemmaInAction.v}      & 4  & $\omega$-rule \\
 \texttt{CompilerCorrectness.v}   & 5  & $\omega$-rule \\
 \texttt{GradualCast.v}           & 5  & $\omega$-rule \\
+\texttt{Commutativity.v}        & 3  & $\omega$-rule \\
+\texttt{ParityLemma.v}          & 5  & $\omega$-rule \\
 \texttt{DependentVec.v}          & 2  & dep. pruning \\
 \texttt{DependentPruning.v}       & 2  & dep. pruning \\
 \midrule
-\textbf{Primary total}           & \textbf{63} & \\
+\textbf{Primary total}           & \textbf{71} & \\
 \addlinespace
 \textit{Infrastructure}          &     & \\
 \texttt{CanonRoundtrip.v}        & 16 & lemma proof \\
