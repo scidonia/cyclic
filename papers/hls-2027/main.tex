@@ -52,26 +52,21 @@
 Supercompilation is theorem proving.  Driving is cut elimination, generalisation
 is cut introduction, and the trace condition is the global progress check of
 cyclic proof theory.  This observation, made precise through mechanisation in
-Rocq, leads directly to an architecture where program optimisation is outsourced
-to an untrusted oracle and validated by a deterministic proof kernel.
+Rocq, leads to an architecture where program optimisation is outsourced to an
+untrusted oracle and validated by a deterministic proof kernel.
 
-We implement this architecture: an LLM (DeepSeek V4 Pro) proposes cut formulas
-(generalisations) and auxiliary lemmas, and the Rocq kernel validates every
-proposal through its existing trace-condition check.  Soundness is unconditional
---- the LLM can be replaced by any heuristic without affecting the CIU theorem.
-A controlled scrambling experiment shows the LLM succeeds on 6 programs even
-with all function and type names randomised, providing evidence of compositional
-reasoning from term structure rather than name recognition.
+We implement this architecture with two oracle roles: (i)~an LLM proposes
+generalisation cuts, validated by the kernel, making any heuristic admissible
+without affecting soundness; (ii)~the same LLM proposes auxiliary lemmas, which
+a sub-prover validates, enabling the $\omega$-rule --- strengthened induction
+hypotheses that standard supercompilation cannot discover.  A controlled
+scrambling experiment (6 programs, all function and type names randomised)
+shows the LLM succeeds from term structure rather than name recognition.
 
-The kernel validates lemmas by running a sub-supercompiler (the same proof
-engine) on each proposed statement.  This $\omega$-rule architecture enables
-proofs that standard supercompilation cannot achieve: commutativity of addition,
-compiler soundness, reverse-append distribution, and parity-filter interaction.
-Across 71 primary theorems (81 including infrastructure), 0 are admitted.
-
-A dependent-type extension prunes impossible constructors from type indices,
-making programs with different dead branches produce identical residuals ---
-a capability absent from all prior supercompilation systems.
+The system proves 70+ theorems with 0 admitted: monad laws, insertion sort
+correctness, compiler soundness, reverse-append distribution, and commutativity
+of addition.  Two dependent-type extensions prune impossible constructors
+from type indices and normalise vector length indices.
 \end{abstract}
 
 \input{sections/intro}
