@@ -13,7 +13,10 @@
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\textcolor{green!50!black}{\text{(split on }ys'\text{, below)}}}
+  \hypo{\textcolor{green!50!black}{
+    xs,y{:}\mathsf{Nat},ys',ys \vdash
+    \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+  }}
   \infer2[\textsc{iota}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
