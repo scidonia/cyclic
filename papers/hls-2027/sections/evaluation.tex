@@ -136,6 +136,16 @@ This is a genuine auxiliary lemma --- a property of $\mathsf{revAcc}$ that
 enables the main proof without being identical to it.  The LLM discovered
 this by inspecting the function bodies (Condition~B).
 
+\subsection{Limitations of the evaluation}
+
+The scrambling experiment uses 6 distinct programs (24 total tests).
+The 6/6 success rate refutes the hypothesis that name recognition
+\emph{alone} explains the results, but this is not a statistical
+evaluation.  A larger corpus, controlled failure cases, and comparison
+with prior HLS heuristics (Supero, Bolingbroke) would strengthen the
+evidence.  The LLM's self-reported confidence is not independently
+validated; the sub-SC pass/fail is the ground-truth signal.
+
 \subsection{Reproducibility}
 
 The full experiment script (\texttt{scramble\_test.py}), results

@@ -97,14 +97,14 @@ discussed in Section~\ref{sec:limits}.
 \subsection{The $\omega$-rule: reverse-append fusion}
 \label{sec:reverse-append}
 
-The most intricate example demonstrates the full four-layer pipeline.
+The most intricate example demonstrates the $\omega$-rule.
 The identity is:
 \[
   \mathsf{reverse}\ (\mathsf{append}\ \mathit{xs}\ \mathit{ys})
   = \mathsf{append}\ (\mathsf{reverse}\ \mathit{ys})\ (\mathsf{reverse}\ \mathit{xs})
 \]
 
-The standard SC (all three layers) terminates on both sides but produces
+The standard SC terminates on both sides but produces
 \emph{different} residuals --- it cannot fuse them (theorem
 \texttt{std\_sc\_gets\_stuck} in \texttt{LLMLemmaInAction.v}:
 \texttt{r\_rev\_std $\neq$ r\_append\_rev\_std}).
@@ -142,17 +142,24 @@ The same pattern yields two additional results:
 \small
 \begin{tabular}{lcc}
 \toprule
-\textbf{File} & \textbf{Theorems proved} & \textbf{Admitted} \\
+\textbf{File} & \textbf{Theorems} & \textbf{Mechanism} \\
 \midrule
-\texttt{HardExamples.v}          & 8  & 0 \\
-\texttt{SortExamples.v}          & 9  & 0 \\
-\texttt{MonadLaws.v}             & 6  & 0 \\
-\texttt{IndexCalc.v}             & 10 & 0 \\
-\texttt{CanonRoundtrip.v}        & 16 & 0 \\
-\texttt{OmegaExamples.v}         & 12 & 0 \\
-\texttt{LLMLemmaInAction.v}      & 4  & 0 \\
+\texttt{HardExamples.v}          & 8  & AU only \\
+\texttt{SortExamples.v}          & 9  & AU only \\
+\texttt{MonadLaws.v}             & 6  & AU only \\
+\texttt{IndexCalc.v}             & 10 & AU + $\omega$-rule \\
+\texttt{OmegaExamples.v}         & 12 & $\omega$-rule \\
+\texttt{LLMLemmaInAction.v}      & 4  & $\omega$-rule \\
+\texttt{CompilerCorrectness.v}   & 5  & $\omega$-rule \\
+\texttt{GradualCast.v}           & 5  & $\omega$-rule \\
+\texttt{DependentVec.v}          & 2  & dep. pruning \\
+\texttt{DependentPruning.v}       & 2  & dep. pruning \\
 \midrule
-\textbf{Total}                   & \textbf{65} & \textbf{0} \\
+\textbf{Primary total}           & \textbf{63} & \\
+\addlinespace
+\textit{Infrastructure}          &     & \\
+\texttt{CanonRoundtrip.v}        & 16 & lemma proof \\
+\texttt{TypeIndexTrace.v}        & 4  & unit tests \\
 \bottomrule
 \end{tabular}
 \end{center}

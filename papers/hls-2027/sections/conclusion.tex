@@ -3,35 +3,44 @@
 
 We have shown that a mechanised sequent-calculus foundation for
 supercompilation is more than a correctness guarantee --- it is a
-\emph{design instrument}.  By making precise the correspondence between SC
-operations and sequent rules, we identified \emph{two} gaps in the standard theory:
-generalisation is cut introduction (suggesting an oracle architecture),
-and strengthened induction is the $\omega$-rule (suggesting LLM lemma
-proposals with sub-SC validation).
+\emph{design instrument}.  The precise correspondence between SC
+operations and proof-theoretic concepts led to two productive extensions:
 
-Both extensions are implemented, mechanised, and provably correct:
 \begin{itemize}[leftmargin=*]
-\item The LLM oracle is structurally untrusted: any function
-  \texttt{config -> list (config * nat) -> option gen\_result}
-  preserves the CIU theorem.
-\item The $\omega$-rule pipeline (LLM lemma proposal $\to$ sub-SC validation
-  $\to$ lemma-driven SC retry) is fully mechanised and demonstrated on
-  $\mathsf{reverse}\ (\mathsf{append}\ xs\ ys) = \mathsf{append}\
-  (\mathsf{reverse}\ ys)\ (\mathsf{reverse}\ xs)$, a property the standard SC
-  cannot fuse alone.
-\item Together with dependent-type branch elimination,
-  the system proves 65 theorems across 8 files,
-  including all List and Maybe monad laws, insertion sort correctness,
-  reverse-append distribution, and vector index normalisation.
+\item \textbf{LLM oracle for generalisation:} The identification of
+  generalisation as cut introduction naturally suggests an oracle
+  architecture where the kernel validates all proposals.  The oracle
+  is untrusted; the CIU theorem is unconditional.  A scrambling
+  experiment provides evidence of compositional reasoning.
+
+\item \textbf{$\omega$-rule via lemma environment:} Strengthened induction
+  becomes automatic through LLM-proposed auxiliary lemmas, sub-SC
+  validation, and lemma-driven driving.  This enables compiler
+  soundness and reverse-append distribution --- properties standard SC
+  cannot prove.
+
+\item \textbf{Dependent-type branch elimination:} Type-index comparison
+  prunes impossible constructors, producing smaller residuals and
+  enabling more folding opportunities.
 \end{itemize}
 
-\paragraph{The central lesson.}
-Mechanisation forced us to ask what generalisation \emph{is} at the level of
-proof theory.  The answer --- cut introduction --- led to the oracle
-architecture, the variable projection insight, and the $\omega$-rule
-connection.  None of these were available from the operational account of
-SC alone.  The sequent calculus was a design tool, not just a verification
-tool.
+\paragraph{Limitations acknowledged.}
+The LLM lemma proposal loop is demonstrated with hand-supplied lemmas
+in the Rocq proofs; the OCaml extraction bridge between the Python LLM
+and the Rocq kernel is specified but not yet wired.  The scrambling
+experiment uses 6 programs --- sufficient to refute name-recognition
+as the sole explanation, but not a statistical evaluation.  The
+type-index trace condition is implemented but does not yet enable any
+theorem previously out of reach.  The companion mechanisation
+(under review) provides the CIU theorem on which the oracle architecture
+depends; this paper states the correspondence directly.
+
+\paragraph{Future work.}
+Conditional lemmas (logical relations) would bring $\mathsf{sorted}\
+(\mathsf{sort}\ l) = \mathsf{true}$ and commutativity within reach.
+A full statistical evaluation across a larger corpus would strengthen
+the scrambling experiment.  And the extraction bridge would make
+the $\omega$-rule fully automatic.
 
 \paragraph{Future work.}
 The $\omega$-rule extension (Section~\ref{sec:limits}) is the immediate next

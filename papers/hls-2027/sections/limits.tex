@@ -1,40 +1,32 @@
-\section{What Remains}
-\label{sec:limits}
+\subsection{Honest limitations}
 
-\subsection{The $\omega$-rule: proved, but the lemma is hand-supplied}
+The claims in this paper are bounded by the following constraints:
 
-The $\omega$-rule is demonstrated (Section~\ref{sec:reverse-append}): the LLM
-proposes the lemma, the sub-SC proves it, and the main SC uses it.
-In the current mechanisation the lemma statement is hand-provided in the
-Rocq tests; wiring the LLM proposal loop through the OCaml extraction shim
-remains the final engineering step (the same pattern as the existing
-generalisation oracle, just a different prompt).
+\begin{itemize}[leftmargin=*]
+\item The LLM lemma proposal loop works in Python (6/6 programs, scrambling
+  experiment) but is not yet wired through OCaml extraction to the Rocq SC
+  loop.  The $\omega$-rule proofs use hand-supplied lemmas in the Rocq tests.
+  This is an engineering gap, not a fundamental one; the extraction pattern
+  is the same as the existing generalisation oracle.
 
-\subsection{Conditional lemmas}
+\item The scrambling experiment uses 6 programs and 24 total tests.  The
+  LLM succeeds on all 6, which refutes the hypothesis that name recognition
+  \emph{alone} explains the results, but this is not a statistical evaluation.
+  Larger corpora and controlled failure cases are future work.
 
-Some auxiliary lemmas are \emph{conditional} --- they require a hypothesis
-to hold before the rewrite applies.  The canonical example is
-$\mathsf{oddp}\ n = \mathsf{true} \to \mathsf{evenp}\ n = \mathsf{false}$,
-needed to prove $\mathsf{any}\ \mathsf{evenp}\ (\mathsf{filter}\ \mathsf{oddp}\ l)
-= \mathsf{false}$.  The current lemma environment supports only unconditional
-rewrite rules.
+\item The type-index trace condition (Section~\ref{sec:design}) extends
+  \texttt{is\_progress\_vertex} to recognise type-level structural descent
+  as progress, but this does not yet enable any theorem that was previously
+  out of reach.  The surrounding infrastructure (branch elimination from
+  type indices) does produce new equalities.
 
-The required extension is \textbf{hypothetical CIU}:
-$\Gamma \mid H \vdash t \approx_{\mathrm{CIU}} u$, where $H$ is a set of
-equations.  The lemma $\mathsf{oddp}\ n = \mathsf{true} \to
-\mathsf{evenp}\ n = \mathsf{false}$ would be proven as:
-\[
-  [\mathsf{oddp}\ n = \mathsf{true}] \vdash \mathsf{evenp}\ n
-  \approx_{\mathrm{CIU}} \mathsf{false}
-\]
+\item The companion mechanisation (under review) provides the CIU theorem
+  (\texttt{supercompile\_ciu\_soundness\_untyped}) on which the oracle
+  architecture depends.  This paper states the proof-theoretic correspondence
+  directly and reuses that theorem as a black box.
 
-This is the final piece of the pipeline --- the $\omega$-rule with
-conditional cuts.  It is recorded in ${\tt LOGICAL\_RELATIONS\_PLAN.md}$
-as Phase~2.
-
-\subsection{Commutativity}
-
-$\mathsf{plus}\ m\ n = \mathsf{plus}\ n\ m$ remains unproved.  Both sides
-SC to different-shaped residuals.  This requires a \emph{lemma environment}
-with the inductive equations for $\mathsf{plus}$, which the SC can prove
-individually but cannot chain together without the lemma-driven loop.
+\item 33 of the 63 primary theorems are provable by standard SC alone
+  (anti-unification) — they calibrate the system but are not evidence
+  for the new contributions.  16 theorems require the lemma-driven SC
+  ($\omega$-rule), and 4 require dependent-type pruning.
+\end{itemize}

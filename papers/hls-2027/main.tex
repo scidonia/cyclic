@@ -48,28 +48,31 @@
 \maketitle
 
 \begin{abstract}
-A mechanised sequent-calculus foundation for supercompilation reveals three
-precise gaps in the standard theory and points directly to their solutions.
+A mechanised correspondence between supercompilation and cyclic sequent proof
+search (driving = cut elimination, generalisation = cut introduction) leads to
+two productive extensions.
 
-Standard supercompilation corresponds to focused cyclic sequent proof search:
-driving is cut elimination, generalisation is cut introduction.  Making this
-correspondence precise in Rocq identified: (i)~generalisation is free cut
-introduction --- suggesting an untrusted oracle validated by the kernel;
-(ii)~strengthened induction is the $\omega$-rule --- suggesting LLM-proposed
-auxiliary lemmas proved by a sub-supercompiler.
+First, identifying generalisation as cut introduction suggests an untrusted
+oracle architecture: an LLM proposes cut formulas, and the kernel's existing
+trace-condition check validates them.  Soundness is unconditional --- the
+oracle can be replaced by any heuristic without affecting the CIU theorem.
+A controlled scrambling experiment shows the LLM succeeds on 6 programs even
+with all function names randomised, providing evidence of compositional
+reasoning from definitions rather than name recognition.
 
-We implement both: an LLM oracle (DeepSeek V4 Pro) whose proposals are validated
-by the existing trace-condition check so soundness is unconditional; and a
-lemma environment where the LLM proposes cuts, a sub-SC proves them, and the
-main SC uses them as rewrite rules.  We also prove that a third candidate
-in canonical configurations, a characterisation of the boundary between
-anti-unification and projection.
+Second, strengthened induction (the $\omega$-rule) is implemented as a lemma
+environment: auxiliary lemmas are proved by a sub-supercompiler and used as
+rewrite rules in the main proof.  This enables compiler soundness and
+reverse-append distribution --- properties standard SC cannot prove automatically.
 
-The system, extracted to OCaml with a Python LLM bridge, proves 65 theorems
-automatically (\texttt{vm\_compute}) with no human induction tactics, including
-all List and Maybe monad laws, insertion sort correctness, a compiler
-soundness theorem, gradual cast safety, and dependent-type branch elimination
-that standard supercompilation cannot achieve.
+Third, type-index comparison prunes impossible branches from dependent-type
+case-splits, making programs with different dead branches produce identical
+residuals.
+
+The system proves 63 primary theorems (81 including infrastructure) with
+0 Admitted via \texttt{vm\_compute}.  We report honestly: the LLM lemma
+proposal loop works in Python but is not yet wired through OCaml extraction;
+the 6-program scrambling experiment is evidence, not a statistical evaluation.
 \end{abstract}
 
 \input{sections/intro}

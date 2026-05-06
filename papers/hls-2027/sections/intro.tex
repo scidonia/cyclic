@@ -3,72 +3,86 @@
 
 Supercompilation~\cite{turchin-1986-supercompiler} fuses composed functions,
 eliminates intermediate data structures, and discovers recursive structure
-automatically.  Despite decades of development, its proof-theoretic status
-has remained informal --- generalisation ``corresponds to lemma introduction''
-and folding ``corresponds to induction'', but without the precision to guide
-design.
+automatically.  Prior work established that standard supercompilation
+corresponds to focused cyclic sequent proof search: driving is cut
+elimination, generalisation is cut introduction, and the trace condition
+is the global progress check of cyclic proof theory.\footnote{A companion
+mechanisation (under review) formalises this correspondence in Rocq with
+0 axioms; the present paper uses the resulting infrastructure as its
+starting point.}  This paper shows that the correspondence is more than
+a correctness proof --- it is a \emph{design instrument} that identified
+two productive extensions to supercompilation.
 
-Our starting point is an earlier mechanised result: standard supercompilation
-is focused cyclic sequent proof search (companion paper, under review).  The sequent
-calculus reveals \emph{what} each SC operation is in proof-theoretic terms:
-driving is cut elimination, generalisation is cut introduction, the trace
-condition is the global progress check.  This paper shows that the
-precise correspondence is more than a correctness proof --- it is a
-\emph{design instrument} that identified three gaps in the standard theory
-and pointed directly to their solutions.
-
-\paragraph{Gap 1: Generalisation is cut introduction.}
+\paragraph{Extension 1: LLM oracle for cut introduction.}
 Syntactic anti-unification is a heuristic for cut introduction, but it is
 purely structural and cannot discover semantic identities (map fusion,
-accumulator introduction).  The sequent formulation immediately suggests
-an \emph{oracle architecture}: any function that proposes cut formulas is
+accumulator introduction).  The sequent formulation suggests an
+\emph{oracle architecture}: any function that proposes cut formulas is
 valid if the kernel accepts the resulting proof graph.  We instantiate
-this with an LLM (DeepSeek V4 Pro); the oracle is untrusted for soundness.
+this with an LLM (DeepSeek V4 Pro); the oracle is untrusted for soundness
+--- the CIU theorem requires only the trace condition check.
 
-\paragraph{Gap 2: Strengthened induction is the $\omega$-rule.}
-Correctness properties like $\mathsf{sorted}\ (\mathsf{sort}\ l) = \mathsf{true}$
-require auxiliary lemmas that neither driving nor cyclic induction can discover
-alone.  The sequent formulation identifies this as the $\omega$-rule:
-prove a lemma first, then use it as a rewrite rule.  We extend the LLM
-oracle to propose auxiliary lemmas, validated by a sub-SC run before the
-main proof uses them.
+\paragraph{Extension 2: LLM lemma proposal for the $\omega$-rule.}
+Properties like $\mathsf{sorted}\ (\mathsf{sort}\ l) = \mathsf{true}$
+require auxiliary lemmas.  The sequent formulation identifies this as
+the $\omega$-rule: prove a lemma first, then use it as a rewrite rule.
+We add a lemma environment to the SC: the LLM proposes auxiliary lemmas,
+a sub-SC run proves them, and the main SC uses them as rewrite rules.
+This enables compiler soundness and reverse-append distribution ---
+properties unreachable by standard SC.
 
-\paragraph{Gap 3: Dependent types need type-index reasoning.}
-Standard SC treats all types as simply-typed.  In a dependently-typed calculus,
-type annotations carry structural information that the SC can exploit.
-We implement branch elimination guided by type indices (e.g., pruning
-\texttt{vnil} from $\mathsf{Vec}\ (\mathsf{succ}\ n)$), and a type-index
-trace condition that recognises recursion on type-level measures as
-well-founded.  This enables equalities that standard SC cannot prove:
-two programs differing only in pruned dead branches produce identical residuals.
+\paragraph{Extension 3: Dependent-type branch elimination.}
+The SC's type annotations carry structural information.  We prune
+impossible constructors from case-splits using type-index comparison
+(e.g., \texttt{vnil} eliminated from $\mathsf{Vec}\ (\mathsf{succ}\ n)$).
+This makes two programs with different dead branches produce identical
+residuals, enabling more folding opportunities.
+
+\paragraph{What is and is not claimed.}
+The LLM lemma proposal loop is demonstrated with hand-supplied lemmas
+in Rocq; the LLM proposal step runs in Python and works correctly on
+all tested examples, but the OCaml extraction bridge between them is
+not yet wired (Section~\ref{sec:limits}).  The scrambling experiment
+(Section~\ref{sec:eval}) uses 6 programs and 24 tests --- enough to
+refute the hypothesis that the LLM relies solely on name recognition,
+but not a statistical evaluation.  The type-index trace condition
+extension (\S\ref{sec:design}) is specified and implemented but does
+not yet enable any theorem that was previously out of reach.
 
 \paragraph{Contributions.}
 \begin{enumerate}[leftmargin=*]
-\item \textbf{LLM oracle for cut introduction} (Section~\ref{sec:llm}).
-  A 3-layer generalisation strategy: anti-unification $\to$ LLM
-  generalisation $\to$ LLM lemma proposal.  All LLM proposals are
-  validated by the kernel (\texttt{trace\_condition\_ok}).  A controlled
-  scrambling experiment shows the LLM reasons from function \emph{structure},
-  not name recognition.
+\item \textbf{LLM oracle architecture} (Section~\ref{sec:llm}).
+  A 2-layer generalisation strategy: anti-unification $\to$ LLM oracle.
+  All LLM proposals are validated by the kernel.  The scrambling experiment
+  shows the LLM succeeds on 6 programs even with all names scrambled,
+  and with definitions provided, all 6 pass with high confidence.
 
 \item \textbf{Mechanised $\omega$-rule} (Section~\ref{sec:limits}).
-  A lemma environment with sub-SC validation: the LLM proposes lemmas,
-  the sub-SC proves them, and the main SC uses them as rewrite rules.
-  This enables compiler correctness and reverse-append distribution ---
-  properties unreachable by standard SC.
+  A lemma environment: lemmas are proved by sub-SC and used as rewrite
+  rules in the main SC.  This enables compiler correctness and
+  reverse-append distribution.  The lemmas are currently hand-supplied
+  in the Rocq tests; the LLM proposal step works in Python; wiring
+  them through the OCaml extraction is the remaining engineering step.
 
-\item \textbf{Dependent-type enhancements} (Section~\ref{sec:design}).
-  Type-index branch elimination and type-index trace condition.
-  The pruning result \texttt{pruning\_enables\_equality} proves two
-  programs with different dead branches produce identical residuals ---
-  a genuinely new equality enabled by the type system.
+\item \textbf{Dependent-type branch elimination} (Section~\ref{sec:design}).
+  Type-index comparison prunes impossible constructors during case-splitting.
+  The pruning result shows two programs with different dead branches produce
+  identical residuals --- a strictly smaller output than unpruned SC.
 \end{enumerate}
 
 \paragraph{Empirical results.}
-65 theorems proved by \vmcompute{} with no human induction tactics,
-including all List and Maybe monad laws, insertion sort correctness,
-compiler soundness, gradual cast safety, and dependent-type branch
-elimination.
+65 theorems proved by \vmcompute{}.  The breakdown:\footnote{Excludes
+infrastructure lemmas (CanonRoundtrip.v, 16 theorems) from the primary
+count.  Including them: 81 theorems.  All 0 Admitted.}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Standard SC} (AU only): 33 theorems --- monad laws, map fusion,
+  sort-length, sort-sum, insert-length, take-drop.
+\item \textbf{$\omega$-rule} (lemma-driven): 16 theorems --- reverse-append
+  distribution, sort correctness, compiler soundness, gradual cast safety.
+\item \textbf{Dependent-type pruning}: 4 theorems --- Vec index
+  normalisation, dead-branch elimination.
+\item \textbf{LLM evaluation}: 12 theorems --- scrambling experiment.
+\end{itemize}
 
 \paragraph{Outline.}
 Section~\ref{sec:background} reviews the SC-as-proof-search dictionary.
