@@ -56,6 +56,7 @@
     \textcolor{green!50!black}{
       xs,y{:}\mathsf{Nat},ys',ys \vdash
       \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+      \;\textcolor{green!50!black}{\S}
     }
   }
 \end{prooftree}
@@ -64,35 +65,10 @@
 
 {\footnotesize
 \textbf{Fig.~\ref{fig:reverse-append-proof}.}
-Cyclic proof for $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$.
-$\dagger$ = companion (all backlinks point here).
-\textsc{fix}: unfold $\mathsf{reverse}$.
-\textsc{lemma}: LLM cut
-$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
-= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
-validated by sub-prover.
-\textsc{iota}: case on $ys$ (top) or $ys'$ (bottom).
-\textsc{back}: the nil branch (at any depth) is an instance of the root
-companion under a suitable substitution:
-$ys\mapsto\mathsf{nil}$ (top), $ys\mapsto\mathsf{cons}\;y\;\mathsf{nil}$ (bottom).
-The cons branch repeats the pattern; termination by structural induction on
-the cons chain (every split removes one $\mathsf{cons}$).
+$\dagger$ (red) = root companion; $\S$ (green) = revAcc companion; $\star$ = progress.
+\textsc{lemma}: LLM cut (validated by sub-prover).
+\textsc{iota}: case split on $ys$ (top) / $ys'$ (bottom), each $\star$ a progress event.
+\textsc{back}: nil branches backlink to root $\dagger$; cons branch backlinks to $\S$
+(self, structural induction — list argument decreases, accumulator grows).
 }
 
-\caption{See caption text below.}
-\label{fig:reverse-append-proof}
-\end{figure}
-
-\medskip
-
-{\footnotesize
-\textbf{Fig.~\ref{fig:reverse-append-proof}.}
-Red (\textdagger) = root companion; green = cons branch; $\star$ = progress
-(split on $ys$/$ys'$ structurally decreases).
-\textsc{lemma}: LLM cut $ \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
-= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc) $.
-Top: split $ys$; nil backlinks to root via lemma; cons = bottom tree.
-Bottom: split $ys'$; nil backlinks to root (lemma with $ys\mapsto\mathsf{cons}\;y\;\mathsf{nil}$);
-cons backlinks to bottom tree's own conclusion (green, structural induction
-on the list argument — the accumulator changes but the proof structure is
-invariant).
