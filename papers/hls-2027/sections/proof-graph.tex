@@ -1,55 +1,38 @@
 \begin{figure}[t]
 \centering
-\resizebox{\textwidth}{!}{%
 \small
-\begin{tikzpicture}[
-  node distance=1.5cm and 1.2cm,
-  box/.style={rectangle,draw,rounded corners,font=\footnotesize,
-              minimum width=2.6cm,minimum height=0.45cm,align=center,inner sep=2pt},
-  stuck/.style={box,fill=red!10,draw=red!50!black},
-  good/.style={box,fill=green!10,draw=green!50!black},
-  drv/.style={->,>=stealth,font=\footnotesize},
-  fold/.style={->,>=stealth,>=Stealth,draw=blue!60!black,thick},
-  oracle/.style={->,>=stealth,dashed,draw=orange!70!black,font=\footnotesize}
-]
+\begin{prooftree}
+  \AxiomC{$
+    \mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathit{acc}
+    = \mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;\mathit{xs}\;\mathit{acc})
+  $}
+  \RightLabel{\footnotesize (LLM lemma)}
+  \UnaryInfC{$
+    \mathsf{revAcc}\;\mathit{ys}\;(\mathsf{reverse}\;\mathit{xs})
+    : \mathsf{List}
+  $}
 
-\node[box] (root) {
-  $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil}$
-  \;(root)
-};
+  \AxiomC{$\mathsf{ys}\mapsto\mathsf{nil}$}
+  \UnaryInfC{$
+    \mathsf{reverse}\;\mathit{xs} : \mathsf{List}
+  $}
 
-\node[stuck,below left=of root,xshift=-0.5cm] (nil) {
-  nil branch
-};
+  \BinaryInfC{$
+    \mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})
+    : \mathsf{List}
+  $}
+\end{prooftree}
 
-\node[stuck,below right=of root,xshift=0.5cm] (cons) {
-  cons branch \;(stuck)
-};
+\vspace{0.3cm}
+{\footnotesize The nil branch $\mathsf{reverse}\;\mathit{xs}$ is a substitution instance
+of the root goal $\mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})$
+under $\mathit{ys}\mapsto\mathsf{nil}$ --- cyclic backlink closes the proof.}
 
-\node[good,below=of cons,yshift=-0.2cm] (lemma) {
-  LLM lemma
-};
-
-\node[box,below=of lemma] (solved) {
-  rewritten \;(cons closes)
-};
-
-\draw[drv]    (root)  -- node[left]  {split} (nil);
-\draw[drv]    (root)  -- node[right] {split} (cons);
-\draw[oracle] (cons)  -- node[right] {proposes} (lemma);
-\draw[drv]    (lemma) -- node[right] {rewrites} (solved);
-\draw[fold]   (solved.east) -- ++(0.8,0) |- (root.east);
-
-\node[draw,dashed,fit=(cons),inner sep=4pt] {};
-
-\end{tikzpicture}%
-}
 \caption{
-  Cyclic proof graph for reverse-append fusion.  The standard SC splits the
-  root into nil (closes directly) and cons (stuck).  The LLM proposes a lemma
-  (dashed orange) that rewrites the stuck configuration, enabling the cyclic
-  backlink (blue).  Standard SC produces different residuals for the two sides
-  of the reverse-append identity; with the lemma, they are identical.
+  Cyclic proof for reverse-append fusion.  The LLM-proposed lemma rewrites
+  the root; splitting on $\mathit{ys}$ yields nil (closes via cyclic backlink)
+  and cons (drives further, folds to root).  Standard SC cannot fuse the two
+  sides of the reverse-append identity; the lemma is essential.
 }
-\label{fig:reverse-append-graph}
+\label{fig:reverse-append-proof}
 \end{figure}
