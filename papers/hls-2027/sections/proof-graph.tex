@@ -44,8 +44,8 @@
   \hypo{ys' \mapsto \mathsf{cons}\;y'\;ys'' \;:\; [ys'] \to_s [xs,ys]}
   \infer1[\textsc{back}]{
     \textcolor{green!50!black}{
-      xs,y{:}\mathsf{Nat},ys',ys \vdash
-      \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+      xs,\mathsf{Nat},ys \vdash
+      \mathsf{revAcc}\;ys''\;(\mathsf{cons}\;y'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))) : \mathsf{List}
     }
   }
   \infer2[\textsc{iota}\;\textcolor{red!70}{\star}]{
