@@ -32,29 +32,6 @@ clear: replace the syntactic heuristic with an \emph{oracle} that can propose
 cuts with semantic content.  The oracle need not be trusted --- the kernel
 check (trace condition) is the soundness backstop.
 
-\subsection{Speculation: a negative result}
-
-A third candidate extension was uncovered by the same methodology.  Eisner and
-Blatz describe \emph{speculation}: ``if a subcomputer of some rule is independent
-of certain variables, hoist it out.''  Could this be a generalisation step?
-The sequent calculus reveals the answer is no: speculation corresponds to
-\emph{projection} (dropping context variables), not \emph{abstraction}
-(extending context with fresh holes).  
-
-The proof (Section~\ref{sec:speculation}) proceeds by: (a)~implementing
-speculation as a generalisation step (\texttt{SpeculationGen.v}), (b)~proving
-a roundtrip theorem that the substitution reconstructs the subterm, and
-(c)~observing that for the fold to be CIU-correct, the subterm must be
-the \emph{whole} term --- making speculation redundant with anti-unification
-when it is sound.  The result is a precise characterisation: in canonical
-configurations, speculation as a generalisation step is either redundant or
-unsound.  Projection requires a \emph{splitting} step (different proof-theoretic
-operation), not a generalisation step.
-
-The negative result itself is a product of the sequent formalism.  Without
-the vocabulary of context morphisms and cut formulas, the boundary between
-anti-unification and projection would remain blurred.
-
 \subsection{The architecture that follows}
 
 Both productive gaps point to the same architectural pattern: extend the
@@ -83,7 +60,4 @@ fails:
 The CIU theorem is indifferent to which layer produced the generalisation:
 only the trace check matters.  This modularity is a consequence of the
 sequent formulation, where soundness is at the level of the proof
-\emph{graph}, not the construction \emph{procedure}.  The speculation
-negative result (Section~\ref{sec:speculation}) confirms that the
-design space is not arbitrary --- the proof theory distinguishes
-productive extensions from dead ends.
+\emph{graph}, not the construction \emph{procedure}.

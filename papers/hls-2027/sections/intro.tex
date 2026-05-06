@@ -42,13 +42,6 @@ trace condition that recognises recursion on type-level measures as
 well-founded.  This enables equalities that standard SC cannot prove:
 two programs differing only in pruned dead branches produce identical residuals.
 
-\paragraph{A negative result.}
-We also investigate speculation (Eisner-Blatz) as a generalisation step.
-We prove that in canonical configurations, speculation is either redundant
-(subsumed by anti-unification) or unsound (the fold loses information).
-This characterises the precise boundary between anti-unification and
-projection --- a result invisible without the sequent-calculus foundation.
-
 \paragraph{Contributions.}
 \begin{enumerate}[leftmargin=*]
 \item \textbf{LLM oracle for cut introduction} (Section~\ref{sec:llm}).
@@ -69,14 +62,10 @@ projection --- a result invisible without the sequent-calculus foundation.
   The pruning result \texttt{pruning\_enables\_equality} proves two
   programs with different dead branches produce identical residuals ---
   a genuinely new equality enabled by the type system.
-
-\item \textbf{Speculation characterisation}. A proof that speculation
-  as a generalisation step is either redundant or unsound in canonical
-  configurations, bounding the space of useful generalisation strategies.
 \end{enumerate}
 
 \paragraph{Empirical results.}
-76 theorems proved by \vmcompute{} with no human induction tactics,
+65 theorems proved by \vmcompute{} with no human induction tactics,
 including all List and Maybe monad laws, insertion sort correctness,
 compiler soundness, gradual cast safety, and dependent-type branch
 elimination.

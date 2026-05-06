@@ -16,16 +16,6 @@ of what HLS is doing (cut introduction), which leads directly to the LLM
 oracle architecture.  Prior HLS work has not connected the generalisation
 step to cut introduction, nor has it given a mechanised correctness proof.
 
-\paragraph{Speculation.}
-Eisner and Blatz~\cite{eisner-blatz-2007-parsing} introduce speculation as
-a transformation of weighted logic programs.  They prove it correct by a
-semantic argument.  Our contribution is to (a)~identify speculation as a
-special case of the SC's generalisation step, (b)~prove that in canonical
-configurations it is either redundant or unsound (Section~\ref{sec:speculation}),
-characterising the boundary between anti-unification and projection, and
-(c)~show that this characterisation follows from the sequent-calculus
-formulation.
-
 \paragraph{Worker/wrapper.}
 The worker/wrapper transformation~\cite{gill-hutton-2009-worker-wrapper}
 is a structured form of accumulator introduction.  It can be seen as a special

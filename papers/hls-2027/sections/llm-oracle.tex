@@ -3,7 +3,8 @@
 
 \subsection{Interface}
 
-The oracle is called when anti-unification and speculation both return
+The oracle is called when anti-unification and the LLM generalisation
+oracle both return
 \textsf{None}.  It receives:
 \begin{itemize}[leftmargin=*]
 \item the current stuck configuration $j$ (as a pretty-printed term),
@@ -45,14 +46,10 @@ Definition best_generalize_llm j cands :=
   match SC.best_generalize j cands with
   | Some g => Some g
   | None =>
-      match SpeculationGen.best_generalize_with_speculation j cands with
-      | Some g => Some g
-      | None =>
-          match llm_generalise j cands with
-          | None => None
-          | Some g =>
-              Some (g, match cands with [] => 0 | (_,v)::_ => v end)
-          end
+      match llm_generalise j cands with
+      | None => None
+      | Some g =>
+          Some (g, match cands with [] => 0 | (_,v)::_ => v end)
       end
   end.
 \end{lstlisting}

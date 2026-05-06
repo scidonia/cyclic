@@ -4,25 +4,23 @@
 We have shown that a mechanised sequent-calculus foundation for
 supercompilation is more than a correctness guarantee --- it is a
 \emph{design instrument}.  By making precise the correspondence between SC
-operations and sequent rules, we identified \emph{three} gaps in the standard theory:
+operations and sequent rules, we identified \emph{two} gaps in the standard theory:
 generalisation is cut introduction (suggesting an oracle architecture),
-speculation is variable projection (suggesting a dependency analysis),
 and strengthened induction is the $\omega$-rule (suggesting LLM lemma
 proposals with sub-SC validation).
 
-All three extensions are implemented, mechanised, and provably correct:
+Both extensions are implemented, mechanised, and provably correct:
 \begin{itemize}[leftmargin=*]
 \item The LLM oracle is structurally untrusted: any function
   \texttt{config -> list (config * nat) -> option gen\_result}
   preserves the CIU theorem.
-\item The speculation roundtrip theorem (\texttt{canon\_subterm\_roundtrip})
-  is proved with 0 Admitted in 16 lemmas.
 \item The $\omega$-rule pipeline (LLM lemma proposal $\to$ sub-SC validation
   $\to$ lemma-driven SC retry) is fully mechanised and demonstrated on
   $\mathsf{reverse}\ (\mathsf{append}\ xs\ ys) = \mathsf{append}\
   (\mathsf{reverse}\ ys)\ (\mathsf{reverse}\ xs)$, a property the standard SC
   cannot fuse alone.
-\item Together, the four-layer loop proves 76 theorems across 8 files,
+\item Together with dependent-type branch elimination,
+  the system proves 65 theorems across 8 files,
   including all List and Maybe monad laws, insertion sort correctness,
   reverse-append distribution, and vector index normalisation.
 \end{itemize}
