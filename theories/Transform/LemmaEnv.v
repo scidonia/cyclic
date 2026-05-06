@@ -53,9 +53,10 @@ Definition lemma_env_ok (Σ : Ty.env) (lemmas : lemma_env) : Prop :=
 Definition validate_lemma
     (fuel_sc fuel_res : nat)
     (Σ : Ty.env) (lhs rhs A : tm) : bool :=
-  match SC.residualise_jTy fuel_sc fuel_res Σ [] lhs A with
-  | None => false
-  | Some t => SC.tm_eqb t rhs
+  match SC.residualise_jTy fuel_sc fuel_res Σ [] lhs A,
+        SC.residualise_jTy fuel_sc fuel_res Σ [] rhs A with
+  | Some t1, Some t2 => SC.tm_eqb t1 t2
+  | _, _ => false
   end.
 
 (** [match_lemma lemma config]: does the lemma's lhs appear as a subterm
