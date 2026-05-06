@@ -3,41 +3,35 @@
 
 \begin{figure}[t]
 \centering
-\tiny
+\scriptsize
 \[
 \AxiomC{$
-  xs, ys : \mathsf{List}
-  \vdash
-  \mathsf{reverse}\;(\mathsf{append}\;xs\;ys)
-  : \mathsf{List}
+  xs, ys \vdash
+  \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
   \;\textcolor{red!70}{\dagger}
 $}
 \RightLabel{\;\textsc{fix}$+\beta$}
 \UnaryInfC{$
-  xs, ys : \mathsf{List}
-  \vdash
-  \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}
-  : \mathsf{List}
+  xs, ys \vdash
+  \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
 $}
 \RightLabel{\;\textsc{lemma}}
 \UnaryInfC{$
-  xs, ys : \mathsf{List}
-  \vdash
-  \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)
-  : \mathsf{List}
-$}
-\RightLabel{\;\textsc{fix}$+\beta$}
-\UnaryInfC{$
-  xs, ys : \mathsf{List}
-  \vdash
-  \mathsf{case}\;ys\;\mathsf{of}\;
-  \{\mathsf{nil}{\to}\mathsf{rev}\;xs\;;
-    \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{rev}\;xs))\}
-  : \mathsf{List}
+  xs, ys \vdash
+  \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
 $}
 \DisplayProof
 \]
+\caption{Part~1: driving phase. \textsc{lemma} = LLM cut
+$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
+= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$.
+See Fig.~\ref{fig:split-proof} for the split.}
+\label{fig:drive-proof}
+\end{figure}
 
+\begin{figure}[t]
+\centering
+\scriptsize
 \[
 \AxiomC{$xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}$}
 \RightLabel{\;\textsc{back}\;\textcolor{red!70}{\dagger}}
@@ -45,42 +39,25 @@ $}
   xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) : \mathsf{List}
   \;\textcolor{red!70}{\dagger}
 $}}
-\RightLabel{\;\textsc{nil}}
-\quad
-\AxiomC{$
-  xs,y:\mathsf{Nat},ys':\mathsf{List}
-  \vdash
-  \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))
-  : \mathsf{List}
-$}
-\RightLabel{\;\textsc{cons}}
-\BinaryInfC{$
-  xs,ys : \mathsf{List}
-  \vdash
-  \mathsf{case}\;ys\;\mathsf{of}\;
-  \{\mathsf{nil}{\to}\mathsf{rev}\;xs\;;
-    \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{rev}\;xs))\}
-  : \mathsf{List}
-$}
+\AxiomC{\textcolor{green!60!black}{$\vdots$}}
 \RightLabel{\;\textcolor{red!70}{\textsc{split}\;$\star$}}
+\BinaryInfC{$
+  xs, ys \vdash
+  \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
+$}
 \DisplayProof
 \]
-
-{\tiny
-\textbf{Fig.~\ref{fig:reverse-append-proof}.}
-Two-part derivation (top = driving phase; bottom = split).
-$\mathsf{rev}\;xs = \mathsf{reverse}\;xs$ abbreviated.
-$\dagger$ = backlink target; red = companion; $\star$ = progress.
-\textsc{lemma}: LLM cut $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$.
-Nil branch closes via \textsc{back} ($ys{\mapsto}\mathsf{nil}$, hence
-$\mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) = \mathsf{reverse}\;xs$).
-Cons branch drives further through $ys'$ by structural induction.
-}
-\label{fig:reverse-append-proof}
+\caption{Part~2: split on $ys$ (connects to Fig.~\ref{fig:drive-proof}).
+$\dagger$\,=\,backlink; red\,=\,companion; $\star$\,=\,progress; green $\vdots$\,=\,cons
+branch proved by structural induction on $ys'$ (same pattern).
+Nil closes via \textsc{back}: $\mathsf{reverse}\;xs
+= \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil})$
+under $ys{\mapsto}\mathsf{nil}$.}
+\label{fig:split-proof}
 \end{figure}
 
-Without the \textsc{lemma} rule, the step from
+Without the \textsc{lemma}, the step from
 $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
-to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked:
+to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
 the two terms do not anti-unify, and no fold is possible.
 \medskip
