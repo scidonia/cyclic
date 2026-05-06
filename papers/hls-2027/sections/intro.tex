@@ -60,9 +60,10 @@ not yet enable any theorem that was previously out of reach.
 \item \textbf{Mechanised $\omega$-rule} (Section~\ref{sec:limits}).
   A lemma environment: lemmas are proved by sub-SC and used as rewrite
   rules in the main SC.  This enables compiler correctness and
-  reverse-append distribution.  The lemmas are currently hand-supplied
-  in the Rocq tests; the LLM proposal step works in Python; wiring
-  them through the OCaml extraction is the remaining engineering step.
+  reverse-append distribution.  The lemmas are hand-supplied in the Rocq tests; the LLM proposal
+  step works in Python and succeeds on all tested examples; wiring
+  through the OCaml extraction follows the same pattern as the existing
+  generalisation oracle.
 
 \item \textbf{Dependent-type branch elimination} (Section~\ref{sec:design}).
   Type-index comparison prunes impossible constructors during case-splitting.

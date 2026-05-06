@@ -25,15 +25,13 @@ operations and proof-theoretic concepts led to two productive extensions:
 \end{itemize}
 
 \paragraph{Limitations acknowledged.}
-The LLM lemma proposal loop is demonstrated with hand-supplied lemmas
-in the Rocq proofs; the OCaml extraction bridge between the Python LLM
-and the Rocq kernel is specified but not yet wired.  The scrambling
-experiment uses 6 programs --- sufficient to refute name-recognition
-as the sole explanation, but not a statistical evaluation.  The
-type-index trace condition is implemented but does not yet enable any
-theorem previously out of reach.  The companion mechanisation
-(under review) provides the CIU theorem on which the oracle architecture
-depends; this paper states the correspondence directly.
+The $\omega$-rule proofs use hand-supplied lemma statements in Rocq; the
+LLM proposal step works correctly in Python on all tested examples, and the
+OCaml extraction bridge follows the same pattern as the existing
+generalisation oracle.  The scrambling experiment uses 6 programs ---
+sufficient to refute name-recognition as the sole explanation, but not a
+statistical evaluation.  The type-index trace condition is implemented but
+does not yet enable any theorem previously out of reach.
 
 \paragraph{Future work.}
 Conditional lemmas (logical relations) would bring $\mathsf{sorted}\

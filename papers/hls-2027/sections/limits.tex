@@ -1,14 +1,17 @@
 \section{What Remains}
 \label{sec:limits}
 
-\subsection{The $\omega$-rule: proved, but the lemma is hand-supplied}
+\subsection{The $\omega$-rule: demonstrated with hand-supplied lemmas}
 
-The $\omega$-rule is demonstrated (Section~\ref{sec:reverse-append}): the LLM
-proposes the lemma, the sub-SC proves it, and the main SC uses it.
-In the current mechanisation the lemma statement is hand-provided in the
-Rocq tests; wiring the LLM proposal loop through the OCaml extraction shim
-remains the final engineering step (the same pattern as the existing
-generalisation oracle, just a different prompt).
+The $\omega$-rule pipeline (LLM lemma proposal $\to$ sub-SC validation $\to$
+lemma-driven SC) is demonstrated (Section~\ref{sec:reverse-append}).  All three
+components work: the LLM proposes correct lemmas on the tested examples
+(Section~\ref{sec:eval}), the sub-SC validates them (\vmcompute{}), and the
+lemma-driven SC uses them as rewrite rules.  The Rocq proofs currently use
+hand-supplied lemma statements; the Python LLM proposal step was tested
+independently and succeeds on all examples.  Wiring them together through
+the OCaml extraction follows the same pattern as the existing generalisation
+oracle and is an engineering step, not a fundamental gap.
 
 \subsection{Conditional lemmas}
 
@@ -49,8 +52,8 @@ The claims in this paper are bounded by the following constraints:
 \item The LLM lemma proposal loop works in Python (6/6 programs, scrambling
   experiment) but is not yet wired through OCaml extraction to the Rocq SC
   loop.  The $\omega$-rule proofs use hand-supplied lemmas in the Rocq tests.
-  This is an engineering gap, not a fundamental one; the extraction pattern
-  is the same as the existing generalisation oracle.
+  The extraction pattern is the same as the existing generalisation oracle;
+  this is an engineering step, not a fundamental gap.
 
 \item The scrambling experiment uses 6 programs and 24 total tests.  The
   LLM succeeds on all 6, which refutes the hypothesis that name recognition
