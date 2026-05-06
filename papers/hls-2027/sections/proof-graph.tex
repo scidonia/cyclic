@@ -15,15 +15,13 @@ and a cons branch that drives further by structural induction on $\mathit{ys}$.
 \centering
 \footnotesize
 \[
-\AxiomC{$\mathsf{reverse}\;\mathit{xs} : \mathsf{List}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{nil}}
-\qquad
 \AxiomC{$\mathit{ys}\mapsto\mathsf{nil}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{back} \textcolor{red!70}{\textdagger}}
+\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{nil}\,/\,\textsc{back} \textcolor{red!70}{\textdagger}}
 \UnaryInfC{\textcolor{red!60}{$\mathsf{reverse}\;\mathit{xs} : \mathsf{List}$ \textcolor{red!70}{\textdagger}}}
+\qquad
+\AxiomC{$\mathsf{revAcc}\;\mathit{ys}'\;(\mathsf{cons}\;\mathit{y}\;(\mathsf{reverse}\;\mathit{xs})) : \mathsf{List}$}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{cons}}
-\AxiomC{$\cdots$}
-\TrinaryInfC{$\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{reverse}\;\mathit{xs}) : \mathsf{List}$}
+\BinaryInfC{$\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{reverse}\;\mathit{xs}) : \mathsf{List}$}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textcolor{red!70}{\textsc{split} $\star$}}
 \UnaryInfC{$\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil} : \mathsf{List}$}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{lemma}}
