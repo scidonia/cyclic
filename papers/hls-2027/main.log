@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 11:58
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 12:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -769,12 +769,6 @@ File: listings.cfg 2023/02/27 1.9 listings configuration
 ))
 Package: listings 2023/02/27 1.9 (Carsten Heinz)
 
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2023/02/27 1.9 listings language file
-)
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang2.sty
-File: lstlang2.sty 2023/02/27 1.9 listings language file
-)
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
 Package: hyperref 2024-01-20 v7.01h Hypertext links for LaTeX
 
@@ -992,35 +986,35 @@ Package hyperref Info: Link coloring ON on input line 46.
 \openout4 = `main.out'.
 
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 4
-8.
+9.
  (/usr/share/texmf/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 4
-8.
+9.
 
 (/usr/share/texmf/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-48.
+49.
 
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-48.
+49.
 
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 48.
+(Font)              <10> on input line 49.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 48.
+(Font)              <7> on input line 49.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 48.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 48.
+(Font)              <5> on input line 49.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 49.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
@@ -1029,7 +1023,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 48.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 49.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -1040,14 +1034,14 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\\' on input line 48.
+(hyperref)                removing `\\' on input line 49.
 
 Title too long for running head. Please supply
 a shorter form with \titlerunning prior to \maketitle
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 65.
+(Font)              <9> on input line 66.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 65.
+(Font)              <6> on input line 66.
 (./sections/intro.tex [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/enc/
@@ -1086,12 +1080,6 @@ OT1/lmr/m/n/10 )  \OMS/lmsy/m/n/10 )  \OML/lmm/m/it/10 t \OMS/lmsy/m/n/10 ^^Y[]
  [] [] \OML/lmm/m/it/10 ^^F b v \OT1/lmr/m/n/10 0 \OMS/lmsy/m/n/10 ;
  []
 
-
-Overfull \hbox (2.0553pt too wide) in paragraph at lines 38--42
-\T1/lmr/m/n/10 (-20) tions and eval-u-a-tion con-texts. The hy-poth-e-sis men-t
-ions only \T1/lmtt/m/n/10 trace_condition_ok
- []
-
 LaTeX Font Info:    Trying to load font information for T1+lmss on input line 5
 0.
 (/usr/share/texmf/tex/latex/lm/t1lmss.fd
@@ -1103,9 +1091,13 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             See the microtype manual for details.
 )
 (./sections/sequent-guided-design.tex [3]
-Overfull \hbox (3.79146pt too wide) in paragraph at lines 26--30
-\T1/lmr/m/n/10 (-20) The or-a-cle is a func-tion $[] \OMS/lmsy/m/n/10 ! [] ! []
-$
+Underfull \hbox (badness 10000) in paragraph at lines 26--30
+\T1/lmr/m/n/10 (+20) The or-a-cle is a func-tion $[] \OMS/lmsy/m/n/10 ! [] !
+ []
+
+
+Underfull \hbox (badness 1424) in paragraph at lines 26--30
+[]$ \T1/lmr/m/n/10 (+20) im-ple-mented by an LLM. Given the cur-rent stuck
  []
 
 [4]) (./sections/llm-oracle.tex
@@ -1127,28 +1119,31 @@ mm/m/it/10 ; []\OT1/lmr/m/n/10 ] \OMS/lmsy/m/n/10 g
  []
 
 [5{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2023/02/27 1.9 listings language file
+)
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2023/02/27 1.9 listings language file
+)
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <9> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 47.
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 68.
 
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2023/02/27 1.9 listings language file
-)
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2023/02/27 1.9 listings language file
-)
-Overfull \hbox (21.18535pt too wide) in paragraph at lines 71--77
-\T1/lmr/m/n/10 (-20) The OCaml ex-trac-tion shim (\T1/lmtt/m/n/10 llm_oracle_im
-pl.ml\T1/lmr/m/n/10 (-20) ) calls this via \T1/lmtt/m/n/10 Unix.open_process\T1
-/lmr/m/n/10 (-20) ,
+Underfull \hbox (badness 10000) in paragraph at lines 71--77
+\T1/lmr/m/n/10 (+20) The OCaml ex-trac-tion shim (\T1/lmtt/m/n/10 llm_oracle_im
+pl.ml\T1/lmr/m/n/10 (+20) ) calls this via
+ []
+
+
+Underfull \hbox (badness 1394) in paragraph at lines 71--77
+\T1/lmtt/m/n/10 Unix.open_process\T1/lmr/m/n/10 (+20) , se-ri-alises the stuck 
+con-fig as an S-expression, and
  []
 
 ) (./sections/examples.tex [6]
-Overfull \hbox (17.05486pt too wide) in paragraph at lines 10--12
-\T1/lmr/m/n/10 (-20) The List monad has $[] \OML/lmm/m/it/10 x \OT1/lmr/m/n/10 
-(-20) = [\OML/lmm/m/it/10 x\OT1/lmr/m/n/10 (-20) ]$ \T1/lmr/m/n/10 (-20) and $\
-OML/lmm/m/it/10 m [] f \OT1/lmr/m/n/10 (-20) = [] (\OML/lmm/m/it/10 ^^Ux []: []
- \OT1/lmr/m/n/10 (-20) (\OML/lmm/m/it/10 f x\OT1/lmr/m/n/10 (-20) ) []) [ ] \OM
-L/lmm/m/it/10 m$\T1/lmr/m/n/10 (-20) . 
+Underfull \hbox (badness 10000) in paragraph at lines 10--12
+\T1/lmr/m/n/10 (+20) The List monad has $[] \OML/lmm/m/it/10 x \OT1/lmr/m/n/10 
+(+20) = [\OML/lmm/m/it/10 x\OT1/lmr/m/n/10 (+20) ]$ \T1/lmr/m/n/10 (+20) and $\
+OML/lmm/m/it/10 m [] f \OT1/lmr/m/n/10 (+20) =
  []
 
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
@@ -1162,32 +1157,22 @@ mr/m/n/10 (\OML/lmm/m/it/10 ^^Ux: f x [] g\OT1/lmr/m/n/10 )
  []
 
 
-Overfull \hbox (0.8264pt too wide) in paragraph at lines 34--37
- []\T1/lmr/m/it/10 (-20) Functor and co-her-ence laws.[] \T1/lmr/m/n/10 (-20) W
-e ad-di-tion-ally prove $[] [] \OML/lmm/m/it/10 l \OT1/lmr/m/n/10 (-20) = \OML/
-lmm/m/it/10 l$\T1/lmr/m/n/10 (-20) , $[] \OML/lmm/m/it/10 f \OT1/lmr/m/n/10 (-2
-0) ([] \OML/lmm/m/it/10 g l\OT1/lmr/m/n/10 (-20) ) =
+Underfull \hbox (badness 2626) in paragraph at lines 34--37
+ []\T1/lmr/m/it/10 (+20) Functor and co-her-ence laws.[] \T1/lmr/m/n/10 (+20) W
+e ad-di-tion-ally prove $[] [] \OML/lmm/m/it/10 l \OT1/lmr/m/n/10 (+20) = \OML/
+lmm/m/it/10 l$\T1/lmr/m/n/10 (+20) ,
  []
 
 [7]
-Overfull \hbox (68.46112pt too wide) in paragraph at lines 82--87
-\T1/lmr/m/n/10 (-20) as an ex-act equal-ity of in-dex terms af-ter su-per-com-p
-i-la-tion (the-o-rem \T1/lmtt/m/n/10 vec_map_index_normalises\T1/lmr/m/n/10 (-2
-0) ).
+Underfull \hbox (badness 2469) in paragraph at lines 82--87
+\T1/lmr/m/n/10 (+20) as an ex-act equal-ity of in-dex terms af-ter su-per-com-p
+i-la-tion (the-o-rem
  []
 
 
-Overfull \hbox (25.89844pt too wide) in paragraph at lines 90--95
-$[] \OML/lmm/m/it/10 m \OT1/lmr/m/n/10 (-20) ([] \OML/lmm/m/it/10 n k\OT1/lmr/m
-/n/10 (-20) ) = [] ([] \OML/lmm/m/it/10 m n\OT1/lmr/m/n/10 (-20) ) \OML/lmm/m/i
-t/10 k$ \T1/lmr/m/n/10 (-20) is proved by the SC (the-o-rem \T1/lmtt/m/n/10 plu
-s_assoc_killed\T1/lmr/m/n/10 (-20) ).
- []
+Underfull \hbox (badness 10000) in paragraph at lines 118--120
+[]\T1/lmr/m/n/10 (+20) The sub-SC val-i-dates this lemma by in-duc-tion on $[]$
 
-
-Overfull \hbox (91.51024pt too wide) in paragraph at lines 118--120
-[]\T1/lmr/m/n/10 (-20) The sub-SC val-i-dates this lemma by in-duc-tion on $[]$
- (\T1/lmtt/m/n/10 lemma_rev_acc_append_distrib_validated\T1/lmr/m/n/10 (-20) ,
  []
 
 ! Undefined control sequence.
@@ -1200,27 +1185,13 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-Overfull \hbox (44.67737pt too wide) in paragraph at lines 136--139
-[]\T1/lmr/bx/n/10 (-20) Compiler sound-ness\T1/lmr/m/n/10 (-20) : $[] \OT1/lmr/
-m/n/10 (-20) ([] \OML/lmm/m/it/10 e\OT1/lmr/m/n/10 (-20) ) [] = [[] \OML/lmm/m/
-it/10 e\OT1/lmr/m/n/10 (-20) ]$ \T1/lmr/m/n/10 (-20) with lemma $[] \OT1/lmr/m/
-n/10 (-20) ([] \OML/lmm/m/it/10 e []\OT1/lmr/m/n/10 (-20) ) \OT1/lmr/m/it/10 (-
-20) s \OT1/lmr/m/n/10 (-20) =
+Underfull \hbox (badness 1107) in paragraph at lines 136--139
+[]\T1/lmr/bx/n/10 (+20) Compiler sound-ness\T1/lmr/m/n/10 (+20) : $[] \OT1/lmr/
+m/n/10 (+20) ([] \OML/lmm/m/it/10 e\OT1/lmr/m/n/10 (+20) ) [] = [[] \OML/lmm/m/
+it/10 e\OT1/lmr/m/n/10 (+20) ]$ \T1/lmr/m/n/10 (+20) with lemma
  []
 
 [8]
-Overfull \hbox (16.44276pt too wide) in paragraph at lines 155--160
-\T1/lmr/m/n/10 (-20) rules, the main proof pro-duces iden-ti-cal resid-u-als fo
-r both sides (\T1/lmtt/m/n/10 plus_commutativity
- []
-
-
-Overfull \hbox (64.09467pt too wide) in paragraph at lines 155--160
-\T1/lmr/m/n/10 (-20) in \T1/lmtt/m/n/10 Commutativity.v\T1/lmr/m/n/10 (-20) , \
-T1/lmtt/m/n/10 vm_compute\T1/lmr/m/n/10 (-20) ). Stan-dard SC can-not prove it 
-(\T1/lmtt/m/n/10 std_sc_cannot_prove_comm\T1/lmr/m/n/10 (-20) ). 
- []
-
 ! Undefined control sequence.
 l.169 \mathsf{any}\ \mathsf{evenp}\ (\cons
                                           \ n\ (\mathsf{filter}\ \mathsf{odd...
@@ -1231,77 +1202,69 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-Underfull \vbox (badness 3503) has occurred while \output is active []
+Underfull \vbox (badness 2762) has occurred while \output is active []
 
  [9])
 (./sections/proof-graph.tex) (./sections/limits.tex
-Underfull \vbox (badness 1902) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [10]
-Overfull \hbox (3.9201pt too wide) in paragraph at lines 13--19
-[]$ \T1/lmr/m/n/10 (-20) un-der the hy-poth-e-sis $[] \OML/lmm/m/it/10 n \OT1/l
-mr/m/n/10 (-20) = []$\T1/lmr/m/n/10 (-20) , needed to prove $[] [] \OT1/lmr/m/n
-/10 (-20) ([] [] \OML/lmm/m/it/10 l\OT1/lmr/m/n/10 (-20) ) =
+Underfull \hbox (badness 1028) in paragraph at lines 13--19
+\T1/lmr/m/n/10 (+20) Some aux-il-iary lem-mas re-quire a hy-poth-e-sis. The can
+on-i-cal ex-am-ple is
  []
 
 
-Overfull \hbox (1.8067pt too wide) in paragraph at lines 20--30
-[]\T1/lmr/m/n/10 (-20) The in-fras-truc-ture for con-di-tional lem-mas is spec-
-i-fied (\T1/lmtt/m/n/10 ConditionalLemmas.v\T1/lmr/m/n/10 (-20) ):
+Underfull \hbox (badness 10000) in paragraph at lines 20--30
+[]\T1/lmr/m/n/10 (+20) The in-fras-truc-ture for con-di-tional lem-mas is spec-
+i-fied
  []
 
-) (./sections/evaluation.tex [11]
-Overfull \hbox (26.28229pt too wide) in paragraph at lines 73--78
- []\T1/lmr/m/it/10 (-20) Finding 2: Def-i-ni-tions re-store con-fi-dence.[] \T1
-/lmr/m/n/10 (-20) Two cases (\T1/lmtt/m/n/10 sorted-insert \T1/lmr/m/n/10 (-20)
- and \T1/lmtt/m/n/10 sum-reverse\T1/lmr/m/n/10 (-20) )
- []
-
-[12]
+) (./sections/evaluation.tex [11] [12]
 Overfull \hbox (25.34637pt too wide) in paragraph at lines 112--121
  [] 
  []
 
 
-Overfull \hbox (52.243pt too wide) in paragraph at lines 132--138
-[]\T1/lmr/m/n/10 (-20) The most in-ter-est-ing case is reverse-append: the LLM 
-pro-poses $[] \OT1/lmr/m/n/10 (-20) ([] \OML/lmm/m/it/10 xs ys\OT1/lmr/m/n/10 (
--20) ) \OML/lmm/m/it/10 acc \OT1/lmr/m/n/10 (-20) =
+Underfull \hbox (badness 5345) in paragraph at lines 132--138
+[]\T1/lmr/m/n/10 (+20) The most in-ter-est-ing case is reverse-append: the LLM 
+pro-poses
  []
 
 [13]) (./sections/related.tex
-Overfull \hbox (36.01566pt too wide) in paragraph at lines 150--1
-\T1/lmr/m/n/10 (-20) The full ex-per-i-ment script (\T1/lmtt/m/n/10 scramble_te
-st.py\T1/lmr/m/n/10 (-20) ), re-sults (\T1/lmtt/m/n/10 /tmp/scramble_results.js
-on\T1/lmr/m/n/10 (-20) ),
+Underfull \hbox (badness 10000) in paragraph at lines 150--1
+\T1/lmr/m/n/10 (+20) The full ex-per-i-ment script (\T1/lmtt/m/n/10 scramble_te
+st.py\T1/lmr/m/n/10 (+20) ), re-sults
  []
 
-) (./sections/conclusion.tex
-Overfull \hbox (13.79245pt too wide) in paragraph at lines 35--1
-\T1/lmr/m/n/10 (-20) (gen-er-al-i-sa-tion can-di-dates), not proof terms. The k
-er-nel check (\T1/lmtt/m/n/10 trace_condition_ok\T1/lmr/m/n/10 (-20) )
+
+Underfull \hbox (badness 10000) in paragraph at lines 150--1
+\T1/lmr/m/n/10 (+20) (\T1/lmtt/m/n/10 /tmp/scramble_results.json\T1/lmr/m/n/10 
+(+20) ), and the base-line tests in
  []
 
-[14]) (./main.bbl [15]) [16] (./main.aux)
+
+Underfull \hbox (badness 1248) in paragraph at lines 150--1
+\T1/lmtt/m/n/10 TestLLMGeneralise.py \T1/lmr/m/n/10 (+20) are in-cluded in the 
+sup-ple-men-tary ma-te-rial. All
+ []
+
+) (./sections/conclusion.tex [14]) (./main.bbl [15]) [16] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 28529 strings out of 476106
- 521729 string characters out of 5793933
- 1988975 words of memory out of 5000000
- 49628 multiletter control sequences out of 15000+600000
- 685924 words of font info for 246 fonts, out of 8000000 for 9000
+ 28030 strings out of 476106
+ 515458 string characters out of 5793933
+ 1984975 words of memory out of 5000000
+ 49130 multiletter control sequences out of 15000+600000
+ 686073 words of font info for 248 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 102i,11n,107p,1001b,1660s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf/fonts/type1/pu
@@ -1310,18 +1273,17 @@ re/texmf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/l
 m/lmr6.pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/f
 onts/type1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pf
 b></usr/share/texmf/fonts/type1/public/lm/lmri9.pfb></usr/share/texmf/fonts/typ
-e1/public/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss8.pfb></usr
-/share/texmf/fonts/type1/public/lm/lmss9.pfb></usr/share/texmf/fonts/type1/publ
-ic/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy6.pfb></usr/share/
-texmf/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/l
-msy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></usr/share/texmf/f
-onts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.p
-fb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 486581 bytes).
+e1/public/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss9.pfb></usr
+/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy9.pfb></usr/share/
+texmf/fonts/type1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/
+fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
+blic/amsfonts/symbols/msam10.pfb>
+Output written on main.pdf (16 pages, 467516 bytes).
 PDF statistics:
- 371 PDF objects out of 1000 (max. 8388607)
- 288 compressed objects within 3 object streams
+ 361 PDF objects out of 1000 (max. 8388607)
+ 282 compressed objects within 3 object streams
  108 named destinations out of 1000 (max. 500000)
  71701 words of extra memory for PDF output out of 74296 (max. 10000000)
 
