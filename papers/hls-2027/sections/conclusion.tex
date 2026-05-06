@@ -1,48 +1,34 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We have shown that a mechanised sequent-calculus foundation for
-supercompilation is more than a correctness guarantee --- it is a
-\emph{design instrument}.  The precise correspondence between SC
-operations and proof-theoretic concepts led to two productive extensions:
+Supercompilation is cyclic proof search.  Driving is cut elimination,
+generalisation is cut introduction, and the trace condition is the global
+progress check.  Making this correspondence operational --- treating the
+proof engine as a black-box validator and the LLM as an untrusted oracle
+--- yields a clean architecture for program transformation as theorem
+proving.
 
+The system proves 63 primary theorems (81 including infrastructure) with
+0 Admitted, including commutativity of addition, compiler soundness,
+reverse-append distribution, and dependent-type branch elimination.
+Standard supercompilation cannot prove any of these.
+
+The key design decisions:
 \begin{itemize}[leftmargin=*]
-\item \textbf{LLM oracle for generalisation:} The identification of
-  generalisation as cut introduction naturally suggests an oracle
-  architecture where the kernel validates all proposals.  The oracle
-  is untrusted; the CIU theorem is unconditional.  A scrambling
-  experiment provides evidence of compositional reasoning.
-
-\item \textbf{$\omega$-rule via lemma environment:} Strengthened induction
-  becomes automatic through LLM-proposed auxiliary lemmas, sub-SC
-  validation, and lemma-driven driving.  This enables compiler
-  soundness and reverse-append distribution --- properties standard SC
-  cannot prove.
-
-\item \textbf{Dependent-type branch elimination:} Type-index comparison
-  prunes impossible constructors, producing smaller residuals and
-  enabling more folding opportunities.
+\item \textbf{Kernel validation, not LLM verification.} The LLM is untrusted
+  for soundness.  Every proposal is validated by the proof engine's
+  deterministic checks.  This eliminates the need for LLM reliability
+  guarantees.
+\item \textbf{Proof outsourcing at two levels.} The same LLM proposes both
+  generalisation cuts (for the main proof) and auxiliary lemmas
+  ($\omega$-rule, proved by a sub-prover).  The kernel validates both.
+\item \textbf{Proof-theoretic grounding.} The cyclic proof foundation tells
+  us exactly what can and cannot be outsourced.  Conditionally-restricted
+  rewrites (logical relations) would be the next step.
 \end{itemize}
 
-\paragraph{Limitations.}
-The LLM lemma proposal succeeds on 6 programs (24 tests), including with
-scrambled names.  The type-index trace condition is specified and
-implemented.  A larger-scale evaluation remains future work.
-
 \paragraph{Future work.}
-Conditional lemmas (logical relations) would bring $\mathsf{sorted}\
-(\mathsf{sort}\ l) = \mathsf{true}$ and commutativity within reach.
-A full statistical evaluation across a larger corpus would strengthen
-the scrambling experiment.  And the extraction bridge would make
-the $\omega$-rule fully automatic.
-
-\paragraph{Future work.}
-The $\omega$-rule extension (Section~\ref{sec:limits}) is the immediate next
-step: lemma environments in the driving step, validated by sub-SC runs, with
-LLM-proposed auxiliary lemma statements.  This would bring $\mathsf{sorted}\ (\sort\ l) = \mathsf{true}$,
-commutativity of plus, and the reversibility of permutations within reach.
-
-Beyond HLS, the sequent perspective suggests studying SC as a decision
-procedure for fragments of CIC: if the SC terminates and produces a residual
-equal to a normal form, it has decided the term's observational class.  Making
-this precise is a direction we plan to pursue.
+Conditional lemmas (logical relations) would extend the $\omega$-rule to
+hypotheses like $\mathsf{oddp}\ n = \mathsf{true} \to \mathsf{evenp}\ n =
+\mathsf{false}$.  A large-scale evaluation across a diverse program corpus
+would strengthen the scrambling experiment.

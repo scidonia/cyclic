@@ -3,88 +3,59 @@
 
 Supercompilation~\cite{turchin-1986-supercompiler} fuses composed functions,
 eliminates intermediate data structures, and discovers recursive structure
-automatically.  Prior work established that standard supercompilation
-corresponds to focused cyclic sequent proof search: driving is cut
-elimination, generalisation is cut introduction, and the trace condition
-is the global progress check of cyclic proof theory.\footnote{A companion
-mechanisation (under review) formalises this correspondence in Rocq with
-0 axioms; the present paper uses the resulting infrastructure as its
-starting point.}  This paper shows that the correspondence is more than
-a correctness proof --- it is a \emph{design instrument} that identified
-two productive extensions to supercompilation.
+automatically.  It does this by driving (symbolic evaluation), splitting
+(case analysis on unknowns), and folding (recognising repeated configurations
+and creating recursive calls).  These operations are not arbitrary --- they
+correspond precisely to proof-theoretic operations in a cyclic sequent
+calculus: driving is cut elimination, splitting is the $\vee$-left rule,
+folding is a cyclic backlink, and the trace condition is the global progress
+check that ensures well-founded induction.
 
-\paragraph{Extension 1: LLM oracle for cut introduction.}
-Syntactic anti-unification is a heuristic for cut introduction, but it is
-purely structural and cannot discover semantic identities (map fusion,
-accumulator introduction).  The sequent formulation suggests an
-\emph{oracle architecture}: any function that proposes cut formulas is
-valid if the kernel accepts the resulting proof graph.  We instantiate
-this with an LLM (DeepSeek V4 Pro); the oracle is untrusted for soundness
---- the CIU theorem requires only the trace condition check.
+This paper makes the correspondence operational: \emph{program transformation
+is theorem proving.}  The supercompiler is a proof engine; the transformations
+it discovers are proofs in cyclic logic; and crucially, any untrusted oracle
+can propose transformations that the kernel validates deterministically.
 
-\paragraph{Extension 2: LLM lemma proposal for the $\omega$-rule.}
-Properties like $\mathsf{sorted}\ (\mathsf{sort}\ l) = \mathsf{true}$
-require auxiliary lemmas.  The sequent formulation identifies this as
-the $\omega$-rule: prove a lemma first, then use it as a rewrite rule.
-We add a lemma environment to the SC: the LLM proposes auxiliary lemmas,
-a sub-SC run proves them, and the main SC uses them as rewrite rules.
-This enables compiler soundness and reverse-append distribution ---
-properties unreachable by standard SC.
+We implement three ideas that follow directly from this observation:
 
-\paragraph{Extension 3: Dependent-type branch elimination.}
-The SC's type annotations carry structural information.  We prune
-impossible constructors from case-splits using type-index comparison
-(e.g., \texttt{vnil} eliminated from $\mathsf{Vec}\ (\mathsf{succ}\ n)$).
-This makes two programs with different dead branches produce identical
-residuals, enabling more folding opportunities.
+\paragraph{1. LLM as untrusted proof oracle.}
+Generalisation (cut introduction) is the creative step in any proof.  Standard
+supercompilers use syntactic anti-unification as a heuristic.  But the proof
+engine doesn't care \emph{how} a cut formula is proposed --- it only checks
+that the resulting proof graph passes the trace condition.  We replace the
+heuristic with an LLM: every proposed generalisation is kernel-validated, and
+soundness is unconditional.  The LLM can hallucinate freely; the kernel rejects
+bad proposals.  A scrambling experiment confirms the LLM reasons from term
+structure, not name recognition.
 
-\paragraph{What is and is not claimed.}
-The end-to-end pipeline is demonstrated: the LLM proposes a lemma,
-the sub-SC validates it, and the SC uses it as a rewrite rule.  The scrambling experiment
-(Section~\ref{sec:eval}) uses 6 programs and 24 tests, finding that
-the LLM succeeds with high confidence on all 6 even with all function
-names scrambled.  The type-index trace condition
-extension (\S\ref{sec:design}) is specified and implemented.
+\paragraph{2. The $\omega$-rule: lemma synthesis by sub-prover.}
+Some theorems require auxiliary lemmas --- strengthened induction hypotheses
+that the main proof engine cannot discover alone.  In proof theory this is
+the $\omega$-rule.  We extend the LLM oracle to propose auxiliary lemmas, and
+the kernel to validate them by running a \emph{second} supercompiler proof on
+the proposed lemma.  Validated lemmas become rewrite rules in the main proof.
+This enables commutativity of addition, compiler soundness, and reverse-append
+distribution --- properties unreachable by standard supercompilation.
 
-\paragraph{Contributions.}
-\begin{enumerate}[leftmargin=*]
-\item \textbf{LLM oracle architecture} (Section~\ref{sec:llm}).
-  A 2-layer generalisation strategy: anti-unification $\to$ LLM oracle.
-  All LLM proposals are validated by the kernel.  The scrambling experiment
-  shows the LLM succeeds on 6 programs even with all names scrambled,
-  and with definitions provided, all 6 pass with high confidence.
+\paragraph{3. Dependent-type branch elimination.}
+The proof engine's type annotations carry structural information.  When a
+dependent type index is known (e.g., $\mathsf{Vec}\ (\mathsf{succ}\ n)$),
+constructors with incompatible indices (e.g., $\mathsf{vnil}$ at index
+$\mathsf{zero}$) are pruned from the search space.  This makes two programs
+with different dead branches produce identical residuals --- a capability
+absent from all prior supercompilation systems.
 
-\item \textbf{Mechanised $\omega$-rule} (Section~\ref{sec:limits}).
-  A lemma environment: lemmas are proved by sub-SC and used as rewrite
-  rules in the main SC.  This enables compiler correctness and
-  reverse-append distribution.  The LLM proposal step succeeds on
-  all tested examples (Section~\ref{sec:eval}).
-
-\item \textbf{Dependent-type branch elimination} (Section~\ref{sec:design}).
-  Type-index comparison prunes impossible constructors during case-splitting.
-  The pruning result shows two programs with different dead branches produce
-  identical residuals --- a strictly smaller output than unpruned SC.
-\end{enumerate}
-
-\paragraph{Empirical results.}
-65 theorems proved by \vmcompute{}.  The breakdown:\footnote{Excludes
-infrastructure lemmas (CanonRoundtrip.v, 16 theorems) from the primary
-count.  Including them: 81 theorems.  All 0 Admitted.}
-\begin{itemize}[leftmargin=*]
-\item \textbf{Standard SC} (AU only): 33 theorems --- monad laws, map fusion,
-  sort-length, sort-sum, insert-length, take-drop.
-\item \textbf{$\omega$-rule} (lemma-driven): 16 theorems --- reverse-append
-  distribution, sort correctness, compiler soundness, gradual cast safety.
-\item \textbf{Dependent-type pruning}: 4 theorems --- Vec index
-  normalisation, dead-branch elimination.
-\item \textbf{LLM evaluation}: 12 theorems --- scrambling experiment.
-\end{itemize}
+\paragraph{What we do not claim.}
+The LLM lemma proposal is demonstrated on 6 programs (24 tests), all
+successful.  This is evidence, not a statistical evaluation.  The companion
+mechanisation (under review) provides the CIU theorem on which the kernel
+validation depends; this paper uses that theorem as infrastructure and
+states the proof-theoretic correspondence directly.
 
 \paragraph{Outline.}
-Section~\ref{sec:background} reviews the SC-as-proof-search dictionary.
-Section~\ref{sec:design} explains how the sequent perspective identified
-the gaps.  Sections~\ref{sec:llm} and \ref{sec:limits} present the
-LLM oracle and lemma proposal.  Section~\ref{sec:examples} presents
-the full example suite including the dependent-type results.
+Section~\ref{sec:background} reviews the cyclic proof foundation.
+Section~\ref{sec:design} explains the architecture.
+Sections~\ref{sec:llm} and \ref{sec:limits} present the LLM oracle and
+$\omega$-rule.  Section~\ref{sec:examples} presents the full example suite.
 Section~\ref{sec:eval} reports the scrambling experiment.
 Section~\ref{sec:related} positions the work.

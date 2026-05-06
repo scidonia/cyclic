@@ -1,68 +1,50 @@
-\section{Background: Supercompilation as Cyclic Proof Search}
+\section{Supercompilation as Cyclic Proof Search}
 \label{sec:background}
 
-We briefly review the correspondence established in prior work, which provides
-the foundation for the two extensions.
+The correspondence between supercompilation and cyclic proof search is the
+foundation on which this paper builds.  We state it here directly; a
+companion mechanisation formalises it in Rocq with 0 axioms.
 
-\subsection{Standard supercompilation}
-
-A supercompiler takes a term $t$ and produces an optimised residual $t'$ such
-that $t \ciu t'$ (contextual equivalence).  It operates on \emph{configurations}
---- judgements $\jTy{\Gamma}{t}{A}$ --- and builds a directed graph:
-
-\begin{description}[leftmargin=2em]
-\item[Driving.] Apply $\beta$, $\iota$ (case/constructor), and $\delta$ (fixpoint
-  unfolding) reductions.  Deterministic; produces zero or one successor.
-\item[Splitting.] When the scrutinee of a \texttt{case} is a neutral variable,
-  introduce one successor per constructor, extending $\Gamma$ with fresh
-  constructor arguments.
-\item[Folding.] When a configuration matches a previously-seen one (up to
-  renaming), close the graph with a back-edge.
-\item[Generalisation.] When a configuration embeds into a previous one
-  (homeomorphic embedding whistle), anti-unify the two to produce a more
-  general configuration that both instantiate.
-\end{description}
-
-\subsection{The proof-theoretic dictionary}
+\subsection{The operational dictionary}
 
 \begin{center}
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lll}
 \toprule
-\textbf{Supercompilation} & \textbf{Sequent calculus} \\
+\textbf{Supercompilation} & \textbf{Sequent calculus} & \textbf{Validator} \\
 \midrule
-Driving & Cut elimination ($\beta/\iota/\delta$ steps) \\
-Splitting on neutral scrutinee & Synchronous left rule ($\vee$-elim) \\
-Folding / memo hit & Cyclic backlink (identity) \\
-Generalisation & Cut introduction \\
-Homeomorphic embedding whistle & Well-quasi-order on proof heights \\
-Trace condition (\texttt{trace\_condition\_ok}) & Global progress in cyclic proof \\
-Residual term & Proof term / normal form \\
-CIU equivalence & Sequent soundness \\
+Driving ($\beta$/$\iota$/$\delta$) & Cut elimination & Local rule check \\
+Splitting on neutral scrutinee & $\vee$-left rule & Constructor arity \\
+Folding / memo hit & Cyclic backlink (identity) & Config equality \\
+Generalisation & Cut introduction & Instance check \\
+Homeomorphic embedding & Well-quasi-order & Whistle heuristic \\
+Trace condition & Global progress & SCC cycle check \\
+Residual term & Proof term / normal form & Readback \\
+CIU equivalence & Sequent soundness & \texttt{supercompile\_ciu\_soundness\_untyped} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\subsection{The mechanised pipeline}
+\subsection{The CIU guarantee}
 
-The prior work establishes this pipeline in Rocq, with 0 axioms and 0 Admitted:
-\[
-  \text{SC success}
-  \;\Rightarrow\;
-  \text{pre-proof}
-  \;\Rightarrow\;
-  \texttt{trace\_condition\_ok}
-  \;\Rightarrow\;
-  t \ciu \text{residual}(t)
-\]
-The key theorem is \texttt{supercompile\_ciu\_soundness\_untyped}: for any
-$\Gamma, t, A$ and any fuel,
+The central theorem (\texttt{supercompile\_ciu\_soundness\_untyped}) states:
+
 \[
   \texttt{supercompile\_jTy\_tc}\ \mathit{fuel}\ \Sigma\ \Gamma\ t\ A = \mathsf{Some}\ (v, b)
   \;\Rightarrow\;
   t \ciu \texttt{residualise\_cfg}\ \mathit{fuel'}\ \Sigma\ b\ v\ 0\ \emptyset
 \]
-The hypothesis mentions only \texttt{trace\_condition\_ok} --- not
-\emph{how} generalisation was performed.  This is the key property exploited
-by both extensions: any generalisation strategy that produces a graph passing
-the trace check inherits the CIU guarantee for free.
+
+where $t \ciu u$ means $t$ and $u$ are indistinguishable under all closing
+substitutions and evaluation contexts.  The hypothesis mentions only
+\texttt{trace\_condition\_ok} --- not how generalisation was performed.
+This is the key property exploited by the oracle architecture.
+
+\subsection{What this means for the oracle}
+
+The CIU theorem is parametric in the generalisation strategy.  \emph{Any}
+function from configs to generalised configs is admissible, provided the
+resulting proof graph passes the trace check.  The LLM is just one such
+function.  If it proposes a valid generalisation, the kernel accepts it;
+if it proposes nonsense, the graph fails the trace check and the SC
+returns \textsf{None}.  The LLM cannot make the system unsound.

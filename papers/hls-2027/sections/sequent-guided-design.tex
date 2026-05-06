@@ -1,42 +1,64 @@
-\section{How the Sequent Calculus Guided Design}
+\section{Architecture: Proof Outsourcing}
 \label{sec:design}
 
-The extensions did not arise from intuition about supercompilation.  They
-arose from asking a single precise proof-theoretic question: \emph{what is
-generalisation, exactly?}  This question yielded two productive answers and
-one precise negative result.
+The previous section establishes that supercompilation \emph{is} cyclic proof
+search.  This section makes it operational: the proof engine (supercompiler)
+delegates creative steps to an untrusted oracle (LLM), and the kernel validates
+every proposal deterministically.
 
-\subsection{Generalisation is cut introduction}
+\subsection{The proof engine}
 
-In the sequent calculus, cut elimination is mechanical (reduce until no more
-cuts remain).  Cut introduction is creative: it means inventing a formula $C$
-such that the proof splits into ``prove $C$'' and ``use $C$ to prove the goal.''
-Generalisation in SC is exactly this: invent a configuration $S_{\mathsf{gen}}$
-such that both the current and companion configurations are instances of it.
-
-Standard anti-unification is one algorithm for cut introduction, but it is
-\emph{purely syntactic}: it finds the most specific common generalisation of
-two terms as terms.  It cannot discover:
-
+The proof engine is the supercompiler's main loop: it receives a judgement
+$\jTy{\Gamma}{t}{A}$ and constructs a cyclic proof graph.  At each vertex:
 \begin{itemize}[leftmargin=*]
-\item \textbf{Fusion identities}: $\map\ f\ (\map\ g\ l)$ and $\map\ (f \circ g)\ l$
-  are syntactically unrelated, but semantically equal.  Anti-unification
-  produces $\map\ ?_0\ ?_1$ --- a trivial generalisation that enables no folding.
-\item \textbf{Accumulator patterns}: $\mathsf{sum}\ (\mathsf{rev}\ l)$ does not
-  share syntactic structure with $\mathsf{sum\_acc}\ l\ 0$, but the latter is
-  the accumulator form that enables a tail-recursive residual.
+\item \textbf{Invertible phase:} Apply driving rules ($\beta$/$\iota$/$\delta$) deterministically.
+\item \textbf{Synchronous phase:} When facing a neutral case-scrutinee, split
+  into one successor per compatible constructor.
+\item \textbf{Cyclic closure:} When a configuration matches a previously-seen
+  one, close the graph with a back-edge.
 \end{itemize}
 
-Once we identified generalisation as cut introduction, the solution became
-clear: replace the syntactic heuristic with an \emph{oracle} that can propose
-cuts with semantic content.  The oracle need not be trusted --- the kernel
-check (trace condition) is the soundness backstop.
+When neither driving nor splitting applies, the engine needs a \emph{cut} --- a
+generalisation that makes folding possible.  This is where the oracle enters.
 
-\subsection{The architecture that follows}
+\subsection{The untrusted oracle}
 
-Both productive gaps point to the same architectural pattern: extend the
-generalisation step with new layers that run \emph{after} anti-unification
-fails:
+The oracle is a function $\texttt{config} \to \texttt{list (config * nat)}
+\to \texttt{option gen\_result}$ implemented by an LLM.  Given the current
+stuck configuration and candidates from the memo table, it proposes a
+generalised configuration and instantiations.  The proposal is validated:
+\begin{itemize}[leftmargin=*]
+\item \textbf{Instance check:} Both the current and companion configs must be
+  instances of the proposal (substitution check).
+\item \textbf{Trace check:} The resulting proof graph must pass
+  \texttt{trace\_condition\_ok} (no ungrounded cycles).
+\end{itemize}
+
+The validation is deterministic; the oracle is untrusted for soundness.
+If the LLM proposes a valid generalisation, the proof proceeds.  If it
+proposes nonsense, the kernel rejects it and the engine continues driving.
+
+\subsection{The $\omega$-rule: lemma outsourcing}
+
+When the proof engine is stuck and the oracle cannot propose a useful
+generalisation, a \emph{lemma} may unblock it.  The $\omega$-rule outsources
+lemma synthesis:
+
+\begin{enumerate}[leftmargin=*]
+\item The LLM proposes a lemma statement (a pair of terms $\mathit{lhs},
+  \mathit{rhs}$).
+\item The kernel runs the proof engine on both $\mathit{lhs}$ and $\mathit{rhs}$
+  independently.  If both produce identical residuals, the lemma is validated.
+\item The validated lemma is added to the proof engine as a rewrite rule.
+\item The main proof retries with the lemma, which may enable a fold that was
+  previously blocked.
+\end{enumerate}
+
+This is the same pattern at two levels: the LLM proposes cuts for the main
+proof (generalisation) and for auxiliary lemmas ($\omega$-rule).  The kernel
+validates both through the same proof engine.
+
+\subsection{The pipeline}
 
 \begin{center}
 \begin{tikzpicture}[
@@ -47,8 +69,8 @@ fails:
   node distance=1.0cm
 ]
 \node[box,fill=red!8] (stuck) {Config stuck\\(AU returns None)};
-\node[trybox]        (llm)   [below=of stuck] {LLM oracle\\(cut introduction, \S\ref{sec:llm})};
-\node[trybox]        (lem)   [below=of llm]   {LLM lemma\\($\omega$-rule, \S\ref{sec:limits})};
+\node[trybox]        (llm)   [below=of stuck] {LLM generalisation\\(cut introduction)};
+\node[trybox]        (lem)   [below=of llm]   {LLM lemma proposal\\($\omega$-rule)};
 \node[box,draw=none,fill=none] (fail) [below=of lem] {drive forward\\(no fold)};
 
 \draw[arrow] (stuck) -- node[right,font=\scriptsize]{try} (llm);
@@ -57,9 +79,6 @@ fails:
 \end{tikzpicture}
 \end{center}
 
-If a layer succeeds, it returns a generalisation and the pipeline stops;
-if a layer fails, the next layer is tried.  The CIU theorem is
-indifferent to which layer produced the generalisation:
-only the trace check matters.  This modularity is a consequence of the
-sequent formulation, where soundness is at the level of the proof
-\emph{graph}, not the construction \emph{procedure}.
+When the pipeline succeeds, the LLM is transparent: the resulting proof is
+a valid cyclic derivation checked by the kernel.  The LLM is a heuristic for
+proof search, not a trusted component.

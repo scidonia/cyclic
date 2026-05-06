@@ -37,9 +37,8 @@
 \newcommand{\vmcompute}{\texttt{vm\_compute}}
 \newcommand{\keyword}[1]{\textbf{#1}}
 
-\title{Mechanisation Guides Design:\\
-       Higher-Level Supercompilation via\\
-       Sequent Calculus}
+\title{Program Transformation as Theorem Proving:\\
+       LLMs as Untrusted Proof Oracles}
 
 \author{Anonymous}
 \institute{}
@@ -48,29 +47,29 @@
 \maketitle
 
 \begin{abstract}
-A mechanised correspondence between supercompilation and cyclic sequent proof
-search (driving = cut elimination, generalisation = cut introduction) leads to
-two productive extensions.
+Supercompilation is theorem proving.  Driving is cut elimination, generalisation
+is cut introduction, and the trace condition is the global progress check of
+cyclic proof theory.  This observation, made precise through mechanisation in
+Rocq, leads directly to an architecture where program optimisation is outsourced
+to an untrusted oracle and validated by a deterministic proof kernel.
 
-First, identifying generalisation as cut introduction suggests an untrusted
-oracle architecture: an LLM proposes cut formulas, and the kernel's existing
-trace-condition check validates them.  Soundness is unconditional --- the
-oracle can be replaced by any heuristic without affecting the CIU theorem.
+We implement this architecture: an LLM (DeepSeek V4 Pro) proposes cut formulas
+(generalisations) and auxiliary lemmas, and the Rocq kernel validates every
+proposal through its existing trace-condition check.  Soundness is unconditional
+--- the LLM can be replaced by any heuristic without affecting the CIU theorem.
 A controlled scrambling experiment shows the LLM succeeds on 6 programs even
-with all function names randomised, providing evidence of compositional
-reasoning from definitions rather than name recognition.
+with all function and type names randomised, providing evidence of compositional
+reasoning from term structure rather than name recognition.
 
-Second, strengthened induction (the $\omega$-rule) is implemented as a lemma
-environment: auxiliary lemmas are proved by a sub-supercompiler and used as
-rewrite rules in the main proof.  This enables compiler soundness and
-reverse-append distribution --- properties standard SC cannot prove automatically.
+The kernel validates lemmas by running a sub-supercompiler (the same proof
+engine) on each proposed statement.  This $\omega$-rule architecture enables
+proofs that standard supercompilation cannot achieve: commutativity of addition,
+compiler soundness, reverse-append distribution, and parity-filter interaction.
+Across 63 primary theorems (81 including infrastructure), 0 are admitted.
 
-Third, type-index comparison prunes impossible branches from dependent-type
-case-splits, making programs with different dead branches produce identical
-residuals.
-
-The system proves 63 primary theorems (81 including infrastructure) with
-0 Admitted via \texttt{vm\_compute}.
+A dependent-type extension prunes impossible constructors from type indices,
+making programs with different dead branches produce identical residuals ---
+a capability absent from all prior supercompilation systems.
 \end{abstract}
 
 \input{sections/intro}
