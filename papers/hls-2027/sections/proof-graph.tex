@@ -6,7 +6,7 @@
 %% --- TOP: main proof ---
 \begin{prooftree}
   \hypo{ys \mapsto \mathsf{nil} \;:\; [ys] \to_s [xs,ys]}
-  \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
+  \infer1[\textsc{back}]{
     \textcolor{red!60}{
       xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) : \mathsf{List}
       \;\textcolor{red!70}{\dagger}
@@ -29,14 +29,22 @@
 
 \begin{prooftree}
   \hypo{ys' \mapsto \mathsf{nil} \;:\; [ys'] \to_s [xs,ys]}
-  \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
+  \infer1[\textsc{back}]{
     \textcolor{red!60}{
       xs,y{:}\mathsf{Nat},ys \vdash
       \mathsf{reverse}\;xs : \mathsf{List}
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\textsc{cons}_{ys'}\;\text{(same structure)}}
+  \hypo{ys' \mapsto \mathsf{cons}\;y'\;ys'' \;:\; [ys'] \to_s [xs,ys]}
+  \infer1[\textsc{back}]{
+    \textcolor{red!60}{
+      xs,y,y',ys \vdash
+      \mathsf{revAcc}\;ys''\;(\mathsf{cons}\;y'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)))
+      : \mathsf{List}
+      \;\textcolor{red!70}{\dagger}
+    }
+  }
   \infer2[\textsc{iota}]{
     \textcolor{green!50!black}{
       xs,y{:}\mathsf{Nat},ys',ys \vdash
