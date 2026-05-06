@@ -17,7 +17,7 @@
     xs,y{:}\mathsf{Nat},ys',ys \vdash
     \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
   }}
-  \infer2[\textsc{iota}]{
+  \infer2[\textsc{iota}\;\textcolor{red!70}{\star}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
   \infer1[\textsc{lemma}]{
@@ -42,13 +42,13 @@
     }
   }
   \hypo{ys' \mapsto \mathsf{cons}\;y'\;ys'' \;:\; [ys'] \to_s [xs,ys]}
-  \infer1[\textsc{back}]{
+  \infer1[\textsc{back}_{\!\!\textcolor{green!50!black}{\ddagger}}]{
     \textcolor{green!50!black}{
       xs,\mathsf{Nat},ys \vdash
       \mathsf{revAcc}\;(\mathsf{cons}\;y'\;ys'')\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
     }
   }
-  \infer2[\textsc{iota}]{
+  \infer2[\textsc{iota}\;\textcolor{red!70}{\star}]{
     \textcolor{green!50!black}{
       xs,y{:}\mathsf{Nat},ys',ys \vdash
       \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
