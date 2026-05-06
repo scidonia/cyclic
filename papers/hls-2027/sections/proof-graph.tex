@@ -36,15 +36,7 @@
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{ys' \mapsto \mathsf{cons}\;y'\;ys'' \;:\; [ys'] \to_s [xs,ys]}
-  \infer1[\textsc{back}]{
-    \textcolor{red!60}{
-      xs,y,y',ys \vdash
-      \mathsf{revAcc}\;ys''\;(\mathsf{cons}\;y'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)))
-      : \mathsf{List}
-      \;\textcolor{red!70}{\dagger}
-    }
-  }
+  \hypo{\text{(recurse on }ys''\text{ — same proof tree)}}
   \infer2[\textsc{iota}]{
     \textcolor{green!50!black}{
       xs,y{:}\mathsf{Nat},ys',ys \vdash
