@@ -42,10 +42,10 @@
     }
   }
   \hypo{ys' \mapsto \mathsf{cons}\;y'\;ys'' \;:\; [ys'] \to_s [xs,ys]}
-  \infer1[\textsc{back}_{\!\!\textcolor{green!50!black}{\ddagger}}]{
+  \infer1[\textsc{back}]{
     \textcolor{green!50!black}{
-      xs,\mathsf{Nat},ys \vdash
-      \mathsf{revAcc}\;(\mathsf{cons}\;y'\;ys'')\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+      xs,y{:}\mathsf{Nat},ys',ys \vdash
+      \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
     }
   }
   \infer2[\textsc{iota}\;\textcolor{red!70}{\star}]{
