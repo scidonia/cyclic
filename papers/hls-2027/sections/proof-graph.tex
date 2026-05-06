@@ -60,7 +60,7 @@
     }
   }
 \end{prooftree}
-
+\end{figure}
 \medskip
 
 {\footnotesize
@@ -71,4 +71,11 @@ $\dagger$ (red) = root companion; $\S$ (green) = revAcc companion; $\star$ = pro
 \textsc{back}: nil branches backlink to root $\dagger$; cons branch backlinks to $\S$
 (self, structural induction — list argument decreases, accumulator grows).
 }
+
+\medskip
+
+Without the \textsc{lemma}, the step from
+$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
+to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
+the two terms do not anti-unify, and no fold is possible.
 

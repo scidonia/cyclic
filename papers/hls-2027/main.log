@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 15:03
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 15:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1056,11 +1056,20 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: OT1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
+
+
+LaTeX Warning: Reference `sec:limits' on page 2 undefined on input line 58.
+
+
+LaTeX Warning: Reference `sec:eval' on page 2 undefined on input line 60.
+
+
+LaTeX Warning: Reference `sec:related' on page 2 undefined on input line 61.
+
 ) (./sections/background.tex
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 2
 3.
-
-(/usr/share/texmf/tex/latex/lm/t1lmtt.fd
+ (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
@@ -1138,6 +1147,9 @@ Underfull \hbox (badness 1394) in paragraph at lines 71--77
 con-fig as an S-expression, and
  []
 
+
+LaTeX Warning: Reference `sec:limits' on page 6 undefined on input line 99.
+
 ) (./sections/examples.tex [6]
 Underfull \hbox (badness 10000) in paragraph at lines 10--12
 \T1/lmr/m/n/10 (+20) The List monad has $[] \OML/lmm/m/it/10 x \OT1/lmr/m/n/10 
@@ -1191,6 +1203,9 @@ it/10 e\OT1/lmr/m/n/10 (+20) ]$ \T1/lmr/m/n/10 (+20) with lemma
  []
 
 [8]
+
+LaTeX Warning: Reference `sec:eval' on page 9 undefined on input line 147.
+
 ! Undefined control sequence.
 l.169 \mathsf{any}\ \mathsf{evenp}\ (\cons
                                           \ n\ (\mathsf{filter}\ \mathsf{odd...
@@ -1301,95 +1316,116 @@ Overfull \hbox (87.12682pt too wide) in paragraph at lines 62--63
  [][] 
  []
 
+
+LaTeX Warning: Reference `fig:reverse-append-proof' on page 10 undefined on inp
+ut line 67.
+
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
 (microtype)             Ignoring protrusion settings for this character.
+Package microtype Info: Character `029' is missing
+(microtype)             in font `T1/lmr/m/sc/10'.
+(microtype)             Ignoring protrusion settings for this character.
+
+Underfull \hbox (badness 1205) in paragraph at lines 77--81
+[]\T1/lmr/m/n/10 (+20) Without the \T1/lmr/m/sc/10 (+20) lemma\T1/lmr/m/n/10 (+
+20) , the step from $[] \OT1/lmr/m/n/10 (+20) ([] \OML/lmm/m/it/10 xs ys\OT1/lm
+r/m/n/10 (+20) ) []$ \T1/lmr/m/n/10 (+20) to
+ []
+
 ) (./sections/limits.tex
-Underfull \hbox (badness 10000) in paragraph at lines 46--50
-[]\T1/lmr/m/n/7 (+20) The com-pan-ion mech-a-ni-sa-tion (un-der re-view) pro-vi
-des the CIU the-o-rem
+Underfull \vbox (badness 2486) has occurred while \output is active []
+
+ [10]
+Underfull \hbox (badness 1028) in paragraph at lines 13--19
+\T1/lmr/m/n/10 (+20) Some aux-il-iary lem-mas re-quire a hy-poth-e-sis. The can
+on-i-cal ex-am-ple is
  []
 
 
-Underfull \hbox (badness 1178) in paragraph at lines 46--50
-\T1/lmr/m/n/7 (+20) (\T1/lmtt/m/n/7 supercompile_ciu_soundness_untyped\T1/lmr/m
-/n/7 (+20) ) on which the or-a-cle ar-chi-tec-ture de-pends. This pa-
+Underfull \hbox (badness 10000) in paragraph at lines 20--30
+[]\T1/lmr/m/n/10 (+20) The in-fras-truc-ture for con-di-tional lem-mas is spec-
+i-fied
  []
 
-) (./sections/evaluation.tex
+
+LaTeX Warning: Reference `sec:eval' on page 11 undefined on input line 42.
+
+) (./sections/evaluation.tex [11] [12]
 Overfull \hbox (25.34637pt too wide) in paragraph at lines 112--121
  [] 
  []
 
-) (./sections/related.tex) (./sections/conclusion.tex) (./main.bbl)
 
-! LaTeX Error: \begin{figure} on input line 4 ended by \end{document}.
+Underfull \hbox (badness 5345) in paragraph at lines 132--138
+[]\T1/lmr/m/n/10 (+20) The most in-ter-est-ing case is reverse-append: the LLM 
+pro-poses
+ []
 
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.91 \end{document}
-                   
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
+[13]) (./sections/related.tex
+Underfull \hbox (badness 10000) in paragraph at lines 150--1
+\T1/lmr/m/n/10 (+20) The full ex-per-i-ment script (\T1/lmtt/m/n/10 scramble_te
+st.py\T1/lmr/m/n/10 (+20) ), re-sults
+ []
 
-(./main.aux)
+
+Underfull \hbox (badness 10000) in paragraph at lines 150--1
+\T1/lmr/m/n/10 (+20) (\T1/lmtt/m/n/10 /tmp/scramble_results.json\T1/lmr/m/n/10 
+(+20) ), and the base-line tests in
+ []
+
+
+Underfull \hbox (badness 1248) in paragraph at lines 150--1
+\T1/lmtt/m/n/10 TestLLMGeneralise.py \T1/lmr/m/n/10 (+20) are in-cluded in the 
+sup-ple-men-tary ma-te-rial. All
+ []
+
+) (./sections/conclusion.tex [14]) (./main.bbl [15]) [16] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
-
-! You can't use `\end' in internal vertical mode.
-\enddocument ...cument/end}\deadcycles \z@ \@@end 
-                                                  
-l.91 \end{document}
-                   
-Sorry, but I'm not programmed to handle this case;
-I'll just pretend that you didn't ask for it.
-If you're in the wrong mode, you might be able to
-return to the right one by typing `I}' or `I$' or `I\par'.
-
-
-! LaTeX Error: \begin{figure} on input line 4 ended by \end{document}.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.91 \end{document}
-                   
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.91 \end{document}
-                   
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-)
-! Emergency stop.
-<*> main.tex
-            
-*** (job aborted, no legal \end found)
-
- 
+ ) 
 Here is how much of TeX's memory you used:
- 28077 strings out of 476106
- 518595 string characters out of 5793933
+ 28091 strings out of 476106
+ 519036 string characters out of 5793933
  1985975 words of memory out of 5000000
  49180 multiletter control sequences out of 15000+600000
- 700132 words of font info for 264 fonts, out of 8000000 for 9000
+ 694702 words of font info for 253 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
-!  ==> Fatal error occurred, no output PDF file produced!
+</usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
+pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/p
+ublic/lm/lmmi10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi5.pfb></usr/sha
+re/texmf/fonts/type1/public/lm/lmmi7.pfb></usr/share/texmf/fonts/type1/public/l
+m/lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmib10.pfb></usr/share/tex
+mf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr6
+.pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/t
+ype1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmri9.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss8.pfb></usr/share
+/texmf/fonts/type1/public/lm/lmss9.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy5.pfb></usr/share/texmf/
+fonts/type1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.p
+fb></usr/share/texmf/fonts/type1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/ty
+pe1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></u
+sr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/pu
+blic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
+symbols/msam10.pfb>
+Output written on main.pdf (16 pages, 523060 bytes).
+PDF statistics:
+ 385 PDF objects out of 1000 (max. 8388607)
+ 294 compressed objects within 3 object streams
+ 108 named destinations out of 1000 (max. 500000)
+ 77845 words of extra memory for PDF output out of 89155 (max. 10000000)
+
