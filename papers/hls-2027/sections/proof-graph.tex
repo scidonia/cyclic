@@ -13,10 +13,6 @@ by structural induction on $ys'$).
 \begin{figure}[t]
 \centering\scriptsize
 \begin{prooftree}
-  \hypo{}
-  \infer1[\textsc{nil}]{
-    xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}
-  }
   \hypo{ys \mapsto \mathsf{nil} \;:\; [ys] \to_s [xs,ys]}
   \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
     \textcolor{red!60}{
@@ -25,7 +21,7 @@ by structural induction on $ys'$).
     }
   }
   \hypo{\textcolor{green!60!black}{\cdots\;\text{(induction on }ys'\text{)}}}
-  \infer3[\textsc{cons}]{
+  \infer2[\textsc{cons}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
   \infer1[\textsc{lemma}]{
