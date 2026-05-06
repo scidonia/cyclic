@@ -1,4 +1,0 @@
-(executable
- (name test_extract)
- (modules test_extract)
- (libraries cyclic))
