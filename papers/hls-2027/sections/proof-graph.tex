@@ -1,51 +1,97 @@
 \subsection{Cyclic proof for reverse-append fusion}
 \label{sec:reverse-append-proof}
 
-Figure~\ref{fig:reverse-append-proof} shows the cyclic proof.
-The root (bottom) is $\mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})$.
-Unfolding $\mathsf{reverse}$ (\textsc{fix}) gives
-$\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil}$.
-The LLM-proposed lemma (rule \textsc{lemma}) rewrites this to
-$\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{reverse}\;\mathit{xs})$.
-Splitting on $\mathit{ys}$ ($\star$, progress event) yields a nil branch
-that closes via a backlink (substitution $\mathit{ys}\mapsto\mathsf{nil}$),
-and a cons branch that drives further by structural induction on $\mathit{ys}$.
-
 \begin{figure}[t]
 \centering
-\footnotesize
 \[
-\AxiomC{$\mathit{ys}\mapsto\mathsf{nil}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{nil}\,/\,\textsc{back} \textcolor{red!70}{\textdagger}}
-\UnaryInfC{\textcolor{red!60}{$\mathsf{reverse}\;\mathit{xs} : \mathsf{List}$ \textcolor{red!70}{\textdagger}}}
-\qquad
-\AxiomC{$\mathsf{revAcc}\;\mathit{ys}'\;(\mathsf{cons}\;\mathit{y}\;(\mathsf{reverse}\;\mathit{xs})) : \mathsf{List}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{cons}}
-\BinaryInfC{$\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{reverse}\;\mathit{xs}) : \mathsf{List}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textcolor{red!70}{\textsc{split} $\star$}}
-\UnaryInfC{$\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil} : \mathsf{List}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{lemma}}
-\UnaryInfC{$\mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys}) : \mathsf{List}$}
-\RightLabel{\;\fontsize{6}{7}\selectfont\textsc{fix}}
+\AxiomC{$
+  xs : \mathsf{List},\; ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{reverse}\;(\mathsf{append}\;xs\;ys)
+  \;:\; \mathsf{List}
+  \;\textcolor{red!70}{\dagger}
+$}
+\RightLabel{\;\scriptsize\textsc{fix}$+\beta$}
+\UnaryInfC{$
+  xs : \mathsf{List},\; ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}
+  \;:\; \mathsf{List}
+$}
+\RightLabel{\;\scriptsize\textsc{lemma}}
+\UnaryInfC{$
+  xs : \mathsf{List},\; ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)
+  \;:\; \mathsf{List}
+$}
+\RightLabel{\;\scriptsize\textsc{fix}$+\beta$}
+\UnaryInfC{$
+  xs : \mathsf{List},\; ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{case}\;ys\;\mathsf{of}\;
+  \bigl\{\mathsf{nil}{\to}\mathsf{reverse}\;xs\;;
+         \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))\bigr\}
+  \;:\; \mathsf{List}
+$}
 \DisplayProof
 \]
 
-\vspace{-4pt}
-{\fontsize{6}{7}\selectfont\textbf{Fig.\ \ref{fig:reverse-append-proof}.}
-Red = backlink target; $\dagger$ = backlink; $\star$ = progress;
-\textsc{lemma} = LLM cut.
-The nil branch $\mathsf{reverse}\;\mathit{xs}$ is an instance of the root under
-$\mathit{ys}\mapsto\mathsf{nil}$ (since $\mathsf{reverse}\;\mathit{xs} =
-\mathsf{reverse}\;(\mathsf{append}\;\mathit{xs}\;\mathsf{nil})$).
-The cons branch ($\cdots$) drives further through induction on $\mathit{ys}$.}
+\vspace{4pt}
+
+\[
+\AxiomC{$
+  xs,ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{reverse}\;xs
+  \;:\; \mathsf{List}
+$}
+\RightLabel{\;\scriptsize\textsc{back}\;\textcolor{red!70}{\dagger}}
+\UnaryInfC{\textcolor{red!60}{$
+  xs,ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil})
+  \;:\; \mathsf{List}
+  \;\textcolor{red!70}{\dagger}
+$}}
+\RightLabel{\;\scriptsize\textsc{nil}}
+\quad
+\AxiomC{$
+  xs,y:\mathsf{Nat},ys':\mathsf{List}
+  \;\vdash\;
+  \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))
+  \;:\; \mathsf{List}
+$}
+\RightLabel{\;\scriptsize\textsc{cons}}
+\BinaryInfC{$
+  xs : \mathsf{List},\; ys : \mathsf{List}
+  \;\vdash\;
+  \mathsf{case}\;ys\;\mathsf{of}\;
+  \bigl\{\mathsf{nil}{\to}\mathsf{reverse}\;xs\;;
+         \mathsf{cons}\;y\;ys'{\to}\mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))\bigr\}
+  \;:\; \mathsf{List}
+$}
+\RightLabel{\;\scriptsize\textcolor{red!70}{\textsc{split}\;$\star$}}
+\DisplayProof
+\]
+
+\vspace{2pt}
+{\footnotesize\textbf{Fig.~\ref{fig:reverse-append-proof}.}
+The proof is split into two parts for readability.  The top derivation
+drives the root goal down to the case expression (bottom-up: \textsc{fix}+$\beta$
+unfolds \textsf{reverse}; \textsc{lemma} rewrites using the LLM-proposed cut;
+\textsc{fix}+$\beta$ unfolds \textsf{revAcc}).  The bottom derivation
+closes the split: the nil branch provides \textsf{reverse}\,$xs$, whose
+equality with the root under $ys{\mapsto}\mathsf{nil}$ justifies the
+\textsc{back}\,$\dagger$ rule (red = backlink target).
+The cons branch drives further through $ys'$ by structural induction.
+$\star$ = progress event; \textsc{lemma} = LLM cut validated by sub-prover.
+}
 \label{fig:reverse-append-proof}
 \end{figure}
 
-\vspace{-6pt}
 Without the \textsc{lemma} rule, the step from
-$\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil}$
-to $\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{reverse}\;\mathit{xs})$ would
-fail --- the two terms do not anti-unify.  The LLM proposes the lemma as a
-cut; the sub-prover proves it by induction on $\mathit{xs}$; the main proof
-uses it as a rewrite.  The lemma is not trusted for soundness --- it is
-validated by the proof engine's kernel checks before use.
+$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
+to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked: the two
+terms do not anti-unify, and no fold is possible.
+\medskip
