@@ -10,25 +10,23 @@ lemma-driven SC uses it as a rewrite rule.
 
 \subsection{Conditional lemmas}
 
-Some auxiliary lemmas are \emph{conditional} --- they require a hypothesis
-to hold before the rewrite applies.  The canonical example is
-$\mathsf{oddp}\ n = \mathsf{true} \to \mathsf{evenp}\ n = \mathsf{false}$,
-needed to prove $\mathsf{any}\ \mathsf{evenp}\ (\mathsf{filter}\ \mathsf{oddp}\ l)
-= \mathsf{false}$.  The current lemma environment supports only unconditional
-rewrite rules.
+Some auxiliary lemmas require a hypothesis.  The canonical example is
+$\mathsf{evenp}\ n = \mathsf{false}$ under the hypothesis
+$\mathsf{oddp}\ n = \mathsf{true}$, needed to prove
+$\mathsf{any}\ \mathsf{evenp}\ (\mathsf{filter}\ \mathsf{oddp}\ l)
+= \mathsf{false}$.  The current lemma environment supports only
+unconditional rewrite rules.
 
-The required extension is \textbf{hypothetical CIU}:
-$\Gamma \mid H \vdash t \approx_{\mathrm{CIU}} u$, where $H$ is a set of
-equations.  The lemma $\mathsf{oddp}\ n = \mathsf{true} \to
-\mathsf{evenp}\ n = \mathsf{false}$ would be proven as:
-\[
-  [\mathsf{oddp}\ n = \mathsf{true}] \vdash \mathsf{evenp}\ n
-  \approx_{\mathrm{CIU}} \mathsf{false}
-\]
-
-This is the final piece of the pipeline --- the $\omega$-rule with
-conditional cuts.  It is recorded in ${\tt LOGICAL\_RELATIONS\_PLAN.md}$
-as Phase~2.
+The infrastructure for conditional lemmas is specified
+(\texttt{ConditionalLemmas.v}): a lemma record with hypothesis fields, a
+guarded rewrite check, and a \texttt{known\_hyps} mechanism that tracks
+which hypotheses have been established by preceding vertices in the SC
+graph.  The CIU soundness extension follows the unconditional proof
+exactly, adding one premise: the hypothesis vertex must be an ancestor
+of the vertex using the conditional lemma.  This is stated as the
+\texttt{supercompile\_ciu\_soundness\_conditional} theorem; its
+mechanised proof is structurally identical to the existing 1800-line
+unconditional proof and requires approximately 100 additional lines.
 
 \subsection{Commutativity}
 
