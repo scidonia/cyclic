@@ -31,10 +31,31 @@ categorical account.  Our prior work instantiates these frameworks for CoC
 with inductives and connects them to SC.  The present paper uses that
 connection as a design guide.
 
+\paragraph{Formally verified supercompilation.}
+Krustev~\cite{krustev-2014-simple-sc-coq,krustev-2018-sc-flia} gives the first
+mechanised correctness proof of a supercompiler in Coq, verifying that the
+residual program is observationally equivalent to the source.  His framework
+handles a first-order language (Whistle) with homeomorphic embedding.
+We extend this direction: (i)~our SC operates on CoC with inductives
+(dependent types), (ii)~the CIU theorem lifts Krustev's observational
+equivalence to the dependently-typed setting, and (iii)~the LLM oracle
+and $\omega$-rule add no new proof obligations because the kernel
+validation is inherited from the CIU theorem.
+
+\paragraph{Bisimulation proofs for transformations.}
+Jones and Hamilton~\cite{jones-hamilton-2006-bisimulation} prove the correctness
+of unfold/fold transformations using bisimulation on program configurations.
+Hamilton's later work on distillation~\cite{hamilton-2007-distillation} extends
+this to labelled transition systems.  Our CIU theorem is a bisimulation proof
+in the sense of~\cite{jones-hamilton-2006-bisimulation}: it establishes that
+the original and residual terms are indistinguishable by any observational
+context.  The proof-theoretic framing makes the generalisation step (fold)
+explicit as cut introduction, rather than an implicit bisimulation up-to
+technique.
+
 \paragraph{LLMs in formal methods.}
 Recent work uses LLMs to suggest proof steps in Lean and Isabelle.
 Our usage is different: the LLM proposes \emph{program transformations}
 (generalisation candidates), not proof terms.  The kernel check
 (\texttt{trace\_condition\_ok}) plays the role of a type checker for
-transformation proposals.  This is closer to the ``draft-sketch-prove''
-paradigm than to neural theorem proving.
+transformation proposals, rather than an oracle for proof search.

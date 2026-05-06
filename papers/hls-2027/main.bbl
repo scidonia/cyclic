@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 \providecommand{\url}[1]{\texttt{#1}}
 \providecommand{\urlprefix}{URL }
 \providecommand{\doi}[1]{https://doi.org/#1}
@@ -15,14 +15,27 @@ Bolingbroke, M.: Call-by-Need Supercompilation. Ph.D. thesis, University of
 Brotherston, J., Simpson, A.: Sequent calculi for induction and infinite
   descent. vol.~21, pp. 1177--1229 (2011)
 
-\bibitem{eisner-blatz-2007-parsing}
-Eisner, J., Blatz, J.: Program transformations for optimisation of parsing
-  algorithms and other weighted logic programs. In: Formal Grammar. pp. 45--85.
-  CSLI Publications (2006)
-
 \bibitem{gill-hutton-2009-worker-wrapper}
 Gill, A., Hutton, G.: The worker/wrapper transformation. In: International
   Conference on Functional Programming (ICFP). pp. 251--262. ACM (2009)
+
+\bibitem{hamilton-2007-distillation}
+Hamilton, G.W.: Distillation with labelled transition systems. In: Partial
+  Evaluation and Program Manipulation (PEPM). pp. 61--70. ACM (2007)
+
+\bibitem{jones-hamilton-2006-bisimulation}
+Jones, N.D., Hamilton, G.W.: Proving the correctness of {U}nfold/{F}old program
+  transformations using bisimulation. In: Essays in honour of {Z}ohar {M}anna.
+  pp. 341--358. Springer (2006)
+
+\bibitem{krustev-2014-simple-sc-coq}
+Krustev, D.N.: A simple supercompiler formally verified in {Coq}. In: Fourth
+  International Valentin Turchin Workshop on Metacomputation (META 2014). pp.
+  102--127 (2014)
+
+\bibitem{krustev-2018-sc-flia}
+Krustev, D.N.: A supercompiler assisting its own formal verification. In: Fifth
+  International Valentin Turchin Workshop on Metacomputation (META 2018) (2018)
 
 \bibitem{mitchell-runciman-2010-supercompilation}
 Mitchell, N., Runciman, C.: Rethinking supercompilation. In: International
