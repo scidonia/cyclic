@@ -4,7 +4,9 @@
 \begin{figure}[t]
 \centering\scriptsize
 \begin{prooftree}
-  \hypo{xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}}
+  \infer0[\textsc{nil}]{
+    xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}
+  }
   \hypo{ys \mapsto \mathsf{nil} \;:\; [ys] \to_s [xs,ys]}
   \infer2[\textsc{back}\;\textcolor{red!70}{\dagger}]{
     \textcolor{red!60}{
@@ -22,9 +24,11 @@
   }
 \end{prooftree}
 \caption{Part~1: split on $ys$.
-$\dagger$\,=\,backlink; red\,=\,companion; $\star$\,=\,progress.
-Nil branch closes via \textsc{back} with substitution $ys\mapsto\mathsf{nil}$.
-Cons branch (green) continues in Fig.~\ref{fig:drive-proof}.}
+\textsc{nil}: iota reduction gives $\mathsf{reverse}\;xs$ when $ys=\mathsf{nil}$.
+\textsc{back}: substitution $ys\mapsto\mathsf{nil}$ closes the nil branch as a
+backlink to the root companion (red $\dagger$).
+Green: cons branch, see Fig.~\ref{fig:drive-proof}.
+$\star$\,=\,progress event.}
 \label{fig:split-proof}
 \end{figure}
 
