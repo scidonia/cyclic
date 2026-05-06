@@ -20,11 +20,7 @@ by structural induction on $ys'$).
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\textcolor{green!60!black}{
-    xs,y{:}\mathsf{Nat},ys' \vdash
-    \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
-    \;\text{(see Fig.~\ref{fig:cons-branch})}
-  }}
+  \hypo{\textcolor{green!60!black}{\text{(see Fig.~\ref{fig:cons-branch})}}}
   \infer2[\textsc{iota}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
