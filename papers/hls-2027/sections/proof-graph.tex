@@ -2,54 +2,46 @@
 \label{sec:reverse-append-proof}
 
 \begin{figure}[t]
-\centering
-\scriptsize
-\[
-\AxiomC{$
-  xs, ys \vdash
-  \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
-  \;\textcolor{red!70}{\dagger}
-$}
-\RightLabel{\;\textsc{fix}$+\beta$}
-\UnaryInfC{$
-  xs, ys \vdash
-  \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
-$}
-\RightLabel{\;\textsc{lemma}}
-\UnaryInfC{$
-  xs, ys \vdash
-  \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
-$}
-\DisplayProof
-\]
-\caption{Part~1: driving phase. \textsc{lemma} = LLM cut
+\centering\scriptsize
+\begin{prooftree}
+  \hypo{
+    xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
+    \;\textcolor{red!70}{\dagger}
+  }
+  \infer1[\textsc{fix}$+\beta$]{
+    xs,ys \vdash \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
+  }
+  \infer1[\textsc{lemma}]{
+    xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
+  }
+\end{prooftree}
+\caption{Part~1: driving phase.
+\textsc{lemma} = LLM-proposed cut
 $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
-= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$.
-See Fig.~\ref{fig:split-proof} for the split.}
+= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
+validated by sub-prover.
+Connects to Fig.~\ref{fig:split-proof}.}
 \label{fig:drive-proof}
 \end{figure}
 
 \begin{figure}[t]
-\centering
-\scriptsize
-\[
-\AxiomC{$xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}$}
-\RightLabel{\;\textsc{back}\;\textcolor{red!70}{\dagger}}
-\UnaryInfC{\textcolor{red!60}{$
-  xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) : \mathsf{List}
-  \;\textcolor{red!70}{\dagger}
-$}}
-\AxiomC{\textcolor{green!60!black}{$\vdots$}}
-\RightLabel{\;\textcolor{red!70}{\textsc{split}\;$\star$}}
-\BinaryInfC{$
-  xs, ys \vdash
-  \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
-$}
-\DisplayProof
-\]
-\caption{Part~2: split on $ys$ (connects to Fig.~\ref{fig:drive-proof}).
-$\dagger$\,=\,backlink; red\,=\,companion; $\star$\,=\,progress; green $\vdots$\,=\,cons
-branch proved by structural induction on $ys'$ (same pattern).
+\centering\scriptsize
+\begin{prooftree}
+  \hypo{xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}}
+  \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
+    \textcolor{red!60}{
+      xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) : \mathsf{List}
+      \;\textcolor{red!70}{\dagger}
+    }
+  }
+  \hypo{\textcolor{green!60!black}{\vdots\;\text{(cons branch, induction on }ys'\text{)}}}
+  \infer2[\textcolor{red!70}{\textsc{split}\;$\star$}]{
+    xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
+  }
+\end{prooftree}
+\caption{Part~2: split on $ys$ (continues Fig.~\ref{fig:drive-proof}).
+$\dagger$\,=\,backlink; red\,=\,companion; $\star$\,=\,progress.
+Green $\vdots$\,=\,cons branch proved by structural induction on $ys'$.
 Nil closes via \textsc{back}: $\mathsf{reverse}\;xs
 = \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil})$
 under $ys{\mapsto}\mathsf{nil}$.}
