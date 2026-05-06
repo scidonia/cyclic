@@ -41,23 +41,25 @@ fails:
 \begin{center}
 \begin{tikzpicture}[
   box/.style={rectangle,draw,rounded corners,fill=blue!5,
-              text width=3.5cm,align=center,font=\small},
+              text width=4cm,align=center,font=\small,minimum height=0.8cm},
   trybox/.style={box,fill=green!8},
   arrow/.style={->,>=stealth,thick},
-  node distance=1.4cm and 0.3cm
+  node distance=1.0cm
 ]
-\node[box]    (au)   {Anti-unification\\(standard SC)};
-\node[trybox] (llm)  [right=of au] {LLM oracle\\(cut introduction, \S\ref{sec:llm})};
-\node[trybox] (lem)  [right=of llm] {LLM lemma\\(omega-rule, \S\ref{sec:limits})};
-\node[box,draw=none,fill=none] (fail) [right=of lem] {drive forward};
+\node[box,fill=red!8] (stuck) {Config stuck\\(AU returns None)};
+\node[trybox]        (llm)   [below=of stuck] {LLM oracle\\(cut introduction, \S\ref{sec:llm})};
+\node[trybox]        (lem)   [below=of llm]   {LLM lemma\\($\omega$-rule, \S\ref{sec:limits})};
+\node[box,draw=none,fill=none] (fail) [below=of lem] {drive forward\\(no fold)};
 
-\draw[arrow] (au)  -- node[above,font=\scriptsize]{None} (llm);
-\draw[arrow] (llm) -- node[above,font=\scriptsize]{None} (lem);
-\draw[arrow] (lem) -- node[above,font=\scriptsize]{None} (fail);
+\draw[arrow] (stuck) -- node[right,font=\scriptsize]{try} (llm);
+\draw[arrow] (llm)   -- node[right,font=\scriptsize]{None} (lem);
+\draw[arrow] (lem)   -- node[right,font=\scriptsize]{None} (fail);
 \end{tikzpicture}
 \end{center}
 
-The CIU theorem is indifferent to which layer produced the generalisation:
+If a layer succeeds, it returns a generalisation and the pipeline stops;
+if a layer fails, the next layer is tried.  The CIU theorem is
+indifferent to which layer produced the generalisation:
 only the trace check matters.  This modularity is a consequence of the
 sequent formulation, where soundness is at the level of the proof
 \emph{graph}, not the construction \emph{procedure}.
