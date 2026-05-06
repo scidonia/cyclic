@@ -75,12 +75,20 @@ The cons branch repeats the pattern; termination by structural induction on
 the cons chain (every split removes one $\mathsf{cons}$).
 }
 
-\caption{See caption text above.}
+\caption{See caption text below.}
 \label{fig:reverse-append-proof}
 \end{figure}
 
-Without the \textsc{lemma}, the step from
-$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
-to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
-the two terms do not anti-unify, and no fold is possible.
 \medskip
+
+{\footnotesize
+\textbf{Fig.~\ref{fig:reverse-append-proof}.}
+Red (\textdagger) = root companion; green = cons branch; $\star$ = progress
+(split on $ys$/$ys'$ structurally decreases).
+\textsc{lemma}: LLM cut $ \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
+= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc) $.
+Top: split $ys$; nil backlinks to root via lemma; cons = bottom tree.
+Bottom: split $ys'$; nil backlinks to root (lemma with $ys\mapsto\mathsf{cons}\;y\;\mathsf{nil}$);
+cons backlinks to bottom tree's own conclusion (green, structural induction
+on the list argument — the accumulator changes but the proof structure is
+invariant).
