@@ -25,8 +25,10 @@
     xs,ys \vdash \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
   }
   \infer1[\textsc{fix}]{
-    xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
-    \;\textcolor{red!70}{\dagger}
+    \textcolor{red!60}{
+      xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
+      \;\textcolor{red!70}{\dagger}
+    }
   }
 \end{prooftree}
 
@@ -47,6 +49,7 @@
     \textcolor{green!50!black}{
       xs,\mathsf{Nat},ys \vdash
       \mathsf{revAcc}\;(\mathsf{cons}\;y'\;ys'')\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+      \;\textcolor{green!50!black}{\S}
     }
   }
   \infer2[\textsc{iota}\;\textcolor{red!70}{\star}]{
