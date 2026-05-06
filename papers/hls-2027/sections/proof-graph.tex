@@ -1,50 +1,57 @@
 \subsection{Cyclic proof for reverse-append fusion}
 \label{sec:reverse-append-proof}
 
+Figure~\ref{fig:reverse-append-proof} shows the cyclic proof.
+The root goal (bottom) is $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}$.
+Driving (\textsc{fix}) and the LLM-proposed lemma (\textsc{lemma}) reduce it to
+$\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$.  The split on $ys$ ($\star$,
+progress event) yields a nil branch that closes via a backlink --- the
+goal $\mathsf{reverse}\;xs$ is an instance of the root under the
+substitution $ys\mapsto\mathsf{nil}$ --- and a cons branch (green, proved
+by structural induction on $ys'$).
+
 \begin{figure}[t]
 \centering\scriptsize
 \begin{prooftree}
-  %% nil branch (backlink)
-  \hypo{xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}}
+  \hypo{}
+  \infer1[\textsc{nil}]{
+    xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}
+  }
   \hypo{ys \mapsto \mathsf{nil} \;:\; [ys] \to_s [xs,ys]}
-  \infer2[\textsc{back}\;\textcolor{red!70}{\dagger}]{
+  \infer1[\textsc{back}\;\textcolor{red!70}{\dagger}]{
     \textcolor{red!60}{
       xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;\mathsf{nil}) : \mathsf{List}
       \;\textcolor{red!70}{\dagger}
     }
   }
-  %% cons branch
   \hypo{\textcolor{green!60!black}{\cdots\;\text{(induction on }ys'\text{)}}}
-  \infer2[\textcolor{red!70}{\textsc{split}\;$\star$}]{
+  \infer3[\textsc{cons}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
-  %% driving
   \infer1[\textsc{lemma}]{
     xs,ys \vdash \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
   }
-  \infer1[\textsc{drv}]{
+  \infer1[\textsc{fix}]{
     xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
     \;\textcolor{red!70}{\dagger}
   }
 \end{prooftree}
 \caption{
-Cyclic proof for reverse-append fusion.
-\textsc{drv}: unfold $\mathsf{reverse}$.
-\textsc{lemma}: LLM cut
-$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
-= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
-validated by sub-prover.
-\textsc{split}$\star$: progress event; precondition $ys=\mathsf{nil}$ (closed via
-\textsc{back} with $ys{\mapsto}\mathsf{nil}$, red $\dagger$ = backlink to root)
-and $ys=\mathsf{cons}\;y\;ys'$ (green, induction on $ys'$).
-Root $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$ at bottom; backlink from
-nil branch returns to root under $ys{\mapsto}\mathsf{nil}$.
+  Cyclic proof for reverse-append fusion.
+  $\dagger$ = backlink target; red = companion; $\star$ = progress event.
+  \textsc{lemma}: LLM cut
+  $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
+  = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
+  validated by sub-prover.
+  Nil branch $\mathsf{reverse}\;xs$ is an instance of the root under
+  $ys\mapsto\mathsf{nil}$; cons branch (green) drives further through $ys'$.
 }
 \label{fig:reverse-append-proof}
 \end{figure}
 
-Without the \textsc{lemma}, the step from
+Without the \textsc{lemma} rule, the step from
 $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
 to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
 the two terms do not anti-unify, and no fold is possible.
 \medskip
+
