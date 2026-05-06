@@ -57,6 +57,8 @@
       Transform.SpeculationFires
       Transform.DependentVec
       Transform.Commutativity
+      Transform.OmegaEq
+      Transform.OmegaEqTest
       Transform.DependentPruning
       Transform.TypeIndexTrace
       Transform.MonadLaws
