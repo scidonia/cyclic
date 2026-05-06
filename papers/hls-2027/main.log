@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 14:27
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 14:31
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1208,6 +1208,11 @@ Underfull \vbox (badness 2762) has occurred while \output is active []
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/7'.
 (microtype)             Ignoring protrusion settings for this character.
+
+Overfull \hbox (43.36914pt too wide) in paragraph at lines 54--55
+ [][] 
+ []
+
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
 (microtype)             Ignoring protrusion settings for this character.
@@ -1215,7 +1220,7 @@ Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
 ) (./sections/limits.tex
-Underfull \hbox (badness 2626) in paragraph at lines 73--1
+Underfull \hbox (badness 2626) in paragraph at lines 79--1
 \T1/lmr/m/n/10 (+20) Without the \T1/lmr/m/sc/10 (+20) lemma\T1/lmr/m/n/10 (+20
 ) , the step from $[] \OT1/lmr/m/n/10 (+20) ([] \OML/lmm/m/it/10 xs ys\OT1/lmr/
 m/n/10 (+20) ) []$ \T1/lmr/m/n/10 (+20) to
@@ -1297,7 +1302,7 @@ pe1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></u
 sr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/pu
 blic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 524507 bytes).
+Output written on main.pdf (16 pages, 524176 bytes).
 PDF statistics:
  396 PDF objects out of 1000 (max. 8388607)
  304 compressed objects within 4 object streams
