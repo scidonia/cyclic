@@ -14,11 +14,7 @@
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\textcolor{green!60!black}{
-    xs,y{:}\mathsf{Nat},ys'
-    \vdash \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
-    \;\textit{(see Fig.~\ref{fig:drive-proof})}
-  }}
+  \hypo{\textcolor{green!60!black}{\cdots\;\text{(Fig.~\ref{fig:drive-proof})}}}
   \infer2[\textcolor{red!70}{\textsc{split}\;$\star$}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
@@ -36,26 +32,24 @@ $\star$\,=\,progress event.}
 \centering\scriptsize
 \begin{prooftree}
   \hypo{
-    \textcolor{green!60!black}{\cdots\;\text{(from Fig.~\ref{fig:split-proof} split)}}
-  }
-  \infer1[\phantom{X}]{
-    xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
-  }
-  \infer1[\textsc{lemma}]{
-    xs,ys \vdash \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
-  }
-  \infer1[\textsc{drv}]{
     xs,ys \vdash \mathsf{reverse}\;(\mathsf{append}\;xs\;ys) : \mathsf{List}
     \;\textcolor{red!70}{\dagger}
   }
+  \infer1[\textsc{drv}]{
+    xs,ys \vdash \mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil} : \mathsf{List}
+  }
+  \infer1[\textsc{lemma}]{
+    xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
+  }
 \end{prooftree}
-\caption{Part~2: driving from root to split (reading bottom-up).
+\caption{Part~2: driving from root to split conclusion
+(feeds into Fig.~\ref{fig:split-proof}).
 \textsc{drv}: unfold $\mathsf{reverse} = \lambda l.\,\mathsf{revAcc}\;l\;\mathsf{nil}$.
 \textsc{lemma}: LLM cut
 $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
 = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
 validated by sub-prover.
-Green $\cdots$ connects back to the conclusion of Fig.~\ref{fig:split-proof}.}
+The root ($\dagger$) is the cyclic backlink target.}
 \label{fig:drive-proof}
 \end{figure}
 
