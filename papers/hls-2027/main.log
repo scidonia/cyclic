@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 12:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  6 MAY 2026 12:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1209,6 +1209,18 @@ Underfull \vbox (badness 2762) has occurred while \output is active []
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
+
+Underfull \hbox (badness 10000) in paragraph at lines 4--15
+\T1/lmr/m/n/10 (+20) Figure [][]5.11[][] shows the cyclic proof. The root goal 
+(bot-tom) is
+ []
+
+
+Underfull \hbox (badness 2486) in paragraph at lines 4--15
+[] \OT1/lmr/m/n/10 (+20) ([] [] []) : []$\T1/lmr/m/n/10 (+20) . Un-fold-ing $[]
+$ (rule \T1/lmr/m/sc/10 (+20) fix\T1/lmr/m/n/10 (+20) ) ex-poses
+ []
+
 \myBox1=\box127
 \myScoreStart1=\dimen337
 \myCenter1=\dimen338
@@ -1216,16 +1228,16 @@ Package microtype Info: Character `029' is missing
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/6'.
 (microtype)             Ignoring protrusion settings for this character.
-\myBox2=\box128
-\myScoreStart2=\dimen340
-\myCenter2=\dimen341
-\myScoreEnd2=\dimen342
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
-6.
- (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
+5.
+(/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-))
-(./sections/limits.tex [10{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]
+)
+Overfull \hbox (47.44896pt too wide) detected at line 57
+[]
+ []
+
+) (./sections/limits.tex [10{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]
 Underfull \hbox (badness 1028) in paragraph at lines 13--19
 \T1/lmr/m/n/10 (+20) Some aux-il-iary lem-mas re-quire a hy-poth-e-sis. The can
 on-i-cal ex-am-ple is
@@ -1271,46 +1283,39 @@ sup-ple-men-tary ma-te-rial. All
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 28016 strings out of 476106
- 515253 string characters out of 5793933
+ 28019 strings out of 476106
+ 515326 string characters out of 5793933
  1984975 words of memory out of 5000000
- 49095 multiletter control sequences out of 15000+600000
- 695893 words of font info for 259 fonts, out of 8000000 for 9000
+ 49093 multiletter control sequences out of 15000+600000
+ 696156 words of font info for 262 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
-
-pdfTeX warning (dest): name{figure.1.1} has been referenced but does not exist,
- replaced by a fixed one
-
-</usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/type
-1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx6.pfb></usr/
-share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr/share/texmf/fonts/type1/publi
-c/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/share
-/texmf/fonts/type1/public/lm/lmmi6.pfb></usr/share/texmf/fonts/type1/public/lm/
-lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmib10.pfb></usr/share/texmf
-/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr6.p
-fb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/typ
-e1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></usr/
-share/texmf/fonts/type1/public/lm/lmri9.pfb></usr/share/texmf/fonts/type1/publi
-c/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss9.pfb></usr/share/t
-exmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/l
-msy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf/fo
-nts/type1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pf
-b></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/ty
-pe1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></u
-sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 536165 bytes).
+</usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
+pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx6.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/sha
+re/texmf/fonts/type1/public/lm/lmmi6.pfb></usr/share/texmf/fonts/type1/public/l
+m/lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmib10.pfb></usr/share/tex
+mf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr6
+.pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/t
+ype1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmri7.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmri9.pfb></usr/share/texmf/fonts/type1/public/lm/lmss10.pfb></usr/share
+/texmf/fonts/type1/public/lm/lmss9.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy6.pfb></usr/share/texmf/
+fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy9.p
+fb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/t
+ype1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></u
+sr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist
+/fonts/type1/public/amsfonts/symbols/msam10.pfb>
+Output written on main.pdf (16 pages, 548304 bytes).
 PDF statistics:
- 397 PDF objects out of 1000 (max. 8388607)
+ 399 PDF objects out of 1000 (max. 8388607)
  306 compressed objects within 4 object streams
- 109 named destinations out of 1000 (max. 500000)
+ 108 named destinations out of 1000 (max. 500000)
  81941 words of extra memory for PDF output out of 89155 (max. 10000000)
 
