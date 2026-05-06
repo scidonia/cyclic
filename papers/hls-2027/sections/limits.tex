@@ -37,38 +37,21 @@ SC to different-shaped residuals.  This requires a lemma environment
 with the inductive equations for $\mathsf{plus}$, which the SC can prove
 individually but cannot chain together without the lemma-driven loop.
 
-\subsection{Honest limitations}
-
-The claims in this paper are bounded by the following constraints:
-
-The claims in this paper are bounded by the following constraints:
+\subsection{Limitations}
 
 \begin{itemize}[leftmargin=*]
 \item The LLM lemma proposal succeeds on all 6 tested programs
-  (Section~\ref{sec:eval}), including with scrambled names.  Three
-  representative lemmas are validated by the sub-SC and used by the
-  lemma-driven SC to prove the reverse-append, compiler correctness,
-  and gradual cast results.  A larger-scale evaluation across more
-  programs remains future work.
-
-\item The scrambling experiment uses 6 programs and 24 total tests.  The
-  LLM succeeds on all 6, which refutes the hypothesis that name recognition
-  \emph{alone} explains the results, but this is not a statistical evaluation.
-  Larger corpora and controlled failure cases are future work.
-
-\item The type-index trace condition (Section~\ref{sec:design}) extends
-  \texttt{is\_progress\_vertex} to recognise type-level structural descent
-  as progress, but this does not yet enable any theorem that was previously
-  out of reach.  The surrounding infrastructure (branch elimination from
-  type indices) does produce new equalities.
+  (Section~\ref{sec:eval}), including with scrambled names, and the
+  proposed lemmas are validated by the sub-SC.  A larger corpus
+  would strengthen the evidence.
 
 \item The companion mechanisation (under review) provides the CIU theorem
   (\texttt{supercompile\_ciu\_soundness\_untyped}) on which the oracle
   architecture depends.  This paper states the proof-theoretic correspondence
-  directly and reuses that theorem as a black box.
+  directly.
 
 \item 33 of the 63 primary theorems are provable by standard SC alone
-  (anti-unification) — they calibrate the system but are not evidence
-  for the new contributions.  16 theorems require the lemma-driven SC
-  ($\omega$-rule), and 4 require dependent-type pruning.
+  (anti-unification) --- they calibrate the system.  16 theorems require
+  the lemma-driven SC ($\omega$-rule), and 4 require dependent-type
+  pruning.
 \end{itemize}

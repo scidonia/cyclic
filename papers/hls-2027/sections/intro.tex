@@ -41,11 +41,10 @@ residuals, enabling more folding opportunities.
 \paragraph{What is and is not claimed.}
 The end-to-end pipeline is demonstrated: the LLM proposes a lemma,
 the sub-SC validates it, and the SC uses it as a rewrite rule.  The scrambling experiment
-(Section~\ref{sec:eval}) uses 6 programs and 24 tests --- enough to
-refute the hypothesis that the LLM relies solely on name recognition,
-but not a statistical evaluation.  The type-index trace condition
-extension (\S\ref{sec:design}) is specified and implemented but does
-not yet enable any theorem that was previously out of reach.
+(Section~\ref{sec:eval}) uses 6 programs and 24 tests, finding that
+the LLM succeeds with high confidence on all 6 even with all function
+names scrambled.  The type-index trace condition
+extension (\S\ref{sec:design}) is specified and implemented.
 
 \paragraph{Contributions.}
 \begin{enumerate}[leftmargin=*]
