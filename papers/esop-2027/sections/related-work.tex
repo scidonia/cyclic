@@ -64,9 +64,9 @@ Our sequent calculus uses a similar decomposition, but with a crucial difference
 
 \paragraph{Focused sequent calculi.}
 Focusing \cite{andreoli-1992-logic-programming,miller-2004-forum} is a proof search discipline that reduces nondeterminism by eagerly applying invertible rules (asynchronous phase) and carefully controlling choice points (synchronous phase).
-Focusing has been applied to linear logic, classical logic, and intuitionistic logic, but \textbf{to our knowledge this is the first focused sequent calculus for CoC with inductives}.
-
-The key novelty is the connection to supercompilation: the asynchronous phase corresponds to driving (deterministic unfolding), and the synchronous phase corresponds to splitting and folding (the essential choice points).
+Focusing has been applied to linear logic, classical logic, and intuitionistic logic.
+We are not aware of previous work combining focusing, cyclic proof structure, and
+supercompilation correspondence in a dependently typed setting.
 
 \paragraph{Sequent calculi for CIC.}
 Standard presentations of CIC use natural deduction \cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}.
