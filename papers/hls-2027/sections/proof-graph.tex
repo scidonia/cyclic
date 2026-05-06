@@ -3,7 +3,8 @@
 
 \begin{figure}[t]
 \centering\scriptsize
-%% --- TOP: main proof ---
+
+%% Main proof
 \begin{prooftree}
   \hypo{ys \mapsto \mathsf{nil} \;:\; [ys] \to_s [xs,ys]}
   \infer1[\textsc{back}]{
@@ -12,7 +13,7 @@
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\textcolor{green!50!black}{\textsc{cons}}_{ys}}
+  \hypo{\textcolor{green!50!black}{\text{(split on }ys'\text{, below)}}}
   \infer2[\textsc{iota}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
@@ -27,16 +28,17 @@
 
 \medskip
 
+%% Split on ys'
 \begin{prooftree}
   \hypo{ys' \mapsto \mathsf{nil} \;:\; [ys'] \to_s [xs,ys]}
   \infer1[\textsc{back}]{
     \textcolor{red!60}{
       xs,y{:}\mathsf{Nat},ys \vdash
-      \mathsf{reverse}\;xs : \mathsf{List}
+      \mathsf{reverse}\;(\mathsf{append}\;xs\;(\mathsf{cons}\;y\;\mathsf{nil})) : \mathsf{List}
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\text{(recurse on }ys''\text{ — same proof tree)}}
+  \hypo{\textcolor{green!50!black}{\text{(split on }ys''\text{, same pattern)}}}
   \infer2[\textsc{iota}]{
     \textcolor{green!50!black}{
       xs,y{:}\mathsf{Nat},ys',ys \vdash
@@ -50,15 +52,18 @@
 {\footnotesize
 \textbf{Fig.~\ref{fig:reverse-append-proof}.}
 Cyclic proof for $\mathsf{reverse}\;(\mathsf{append}\;xs\;ys)$.
-$\dagger$ = backlink to the root; red = companion.
-\textsc{lemma}: LLM cut (proved by sub-prover).
-Top: case on $ys$. Nil \textsc{back} with $ys\mapsto\mathsf{nil}$.
-Bottom (\textcolor{green!50!black}{green}): identical structure on $ys'$.
-The nil \textsc{back} ($ys'\mapsto\mathsf{nil}$) yields $\mathsf{reverse}\;xs$,
-which is an instance of the root under $ys\mapsto\mathsf{nil}$ --- the same
-backlink target.
-The cons branch $\textsc{cons}_{ys'}$ is proved via the cyclic structure:
-it is again an instance of $\textsc{cons}_{ys}$ under $ys'\mapsto\mathsf{cons}\;y'\;ys''$.
+$\dagger$ = companion (all backlinks point here).
+\textsc{fix}: unfold $\mathsf{reverse}$.
+\textsc{lemma}: LLM cut
+$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
+= \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
+validated by sub-prover.
+\textsc{iota}: case on $ys$ (top) or $ys'$ (bottom).
+\textsc{back}: the nil branch (at any depth) is an instance of the root
+companion under a suitable substitution:
+$ys\mapsto\mathsf{nil}$ (top), $ys\mapsto\mathsf{cons}\;y\;\mathsf{nil}$ (bottom).
+The cons branch repeats the pattern; termination by structural induction on
+the cons chain (every split removes one $\mathsf{cons}$).
 }
 
 \caption{See caption text above.}
