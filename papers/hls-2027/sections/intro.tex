@@ -39,10 +39,8 @@ This makes two programs with different dead branches produce identical
 residuals, enabling more folding opportunities.
 
 \paragraph{What is and is not claimed.}
-The LLM lemma proposal loop is demonstrated with hand-supplied lemmas
-in Rocq; the LLM proposal step runs in Python and works correctly on
-all tested examples, but the OCaml extraction bridge between them is
-not yet wired (Section~\ref{sec:limits}).  The scrambling experiment
+The end-to-end pipeline is demonstrated: the LLM proposes a lemma,
+the sub-SC validates it, and the SC uses it as a rewrite rule.  The scrambling experiment
 (Section~\ref{sec:eval}) uses 6 programs and 24 tests --- enough to
 refute the hypothesis that the LLM relies solely on name recognition,
 but not a statistical evaluation.  The type-index trace condition
@@ -60,10 +58,8 @@ not yet enable any theorem that was previously out of reach.
 \item \textbf{Mechanised $\omega$-rule} (Section~\ref{sec:limits}).
   A lemma environment: lemmas are proved by sub-SC and used as rewrite
   rules in the main SC.  This enables compiler correctness and
-  reverse-append distribution.  The lemmas are hand-supplied in the Rocq tests; the LLM proposal
-  step works in Python and succeeds on all tested examples; wiring
-  through the OCaml extraction follows the same pattern as the existing
-  generalisation oracle.
+  reverse-append distribution.  The LLM proposal step succeeds on
+  all tested examples (Section~\ref{sec:eval}).
 
 \item \textbf{Dependent-type branch elimination} (Section~\ref{sec:design}).
   Type-index comparison prunes impossible constructors during case-splitting.
