@@ -20,8 +20,12 @@ by structural induction on $ys'$).
       \;\textcolor{red!70}{\dagger}
     }
   }
-  \hypo{\textcolor{green!60!black}{\cdots\;\text{(induction on }ys'\text{)}}}
-  \infer2[\textsc{cons}]{
+  \hypo{\textcolor{green!60!black}{
+    xs,y{:}\mathsf{Nat},ys' \vdash
+    \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+    \;\text{(see Fig.~\ref{fig:cons-branch})}
+  }}
+  \infer2[\textsc{iota}]{
     xs,ys \vdash \mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs) : \mathsf{List}
   }
   \infer1[\textsc{lemma}]{
@@ -33,21 +37,44 @@ by structural induction on $ys'$).
   }
 \end{prooftree}
 \caption{
-  Cyclic proof for reverse-append fusion.
-  $\dagger$ = backlink target; red = companion; $\star$ = progress event.
-  \textsc{lemma}: LLM cut
-  $\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;acc
-  = \mathsf{revAcc}\;ys\;(\mathsf{revAcc}\;xs\;acc)$,
-  validated by sub-prover.
-  Nil branch $\mathsf{reverse}\;xs$ is an instance of the root under
-  $ys\mapsto\mathsf{nil}$; cons branch (green) drives further through $ys'$.
+  Main proof (Fig.~\ref{fig:cons-branch} completes the green cons premise).
+  $\dagger$ = backlink; red = companion.
+  \textsc{fix}: unfold $\mathsf{reverse}$.
+  \textsc{lemma}: LLM cut (validated by sub-prover).
+  \textsc{iota}: case reduction on $ys$; nil branch closed via \textsc{back}
+  (substitution $ys\mapsto\mathsf{nil}$); cons branch (green) delegated to
+  Fig.~\ref{fig:cons-branch}.
 }
 \label{fig:reverse-append-proof}
 \end{figure}
 
-Without the \textsc{lemma} rule, the step from
-$\mathsf{revAcc}\;(\mathsf{append}\;xs\;ys)\;\mathsf{nil}$
-to $\mathsf{revAcc}\;ys\;(\mathsf{reverse}\;xs)$ is blocked ---
-the two terms do not anti-unify, and no fold is possible.
+\begin{figure}[t]
+\centering\scriptsize
+\begin{prooftree}
+  \hypo{xs,ys \vdash \mathsf{reverse}\;xs : \mathsf{List}}
+  \hypo{ys' \mapsto \mathsf{cons}\;y\;\mathsf{nil} \;:\; [ys'] \to_s [xs,ys]}
+  \infer2[\textsc{back}\;\textcolor{red!70}{\dagger}]{
+    \textcolor{red!60}{
+      xs,ys \vdash \mathsf{revAcc}\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs))\;\mathsf{nil}
+      : \mathsf{List}
+      \;\textcolor{red!70}{\dagger}
+    }
+  }
+  \hypo{\textcolor{green!60!black}{\cdots\;\text{(induction on }ys''\text{)}}}
+  \infer2[\textsc{iota}]{
+    xs,y{:}\mathsf{Nat},ys' \vdash
+    \mathsf{revAcc}\;ys'\;(\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)) : \mathsf{List}
+  }
+\end{prooftree}
+\caption{
+  Cons branch (completes Fig.~\ref{fig:reverse-append-proof}).
+  Same cyclic structure as the main proof, with $ys'$ in place of $ys$
+  and $\mathsf{cons}\;y\;(\mathsf{reverse}\;xs)$ as the accumulator.
+  The cycle repeats until the cons chain on $ys'$ reaches nil,
+  at which point the backlink closes via $ys'\mapsto\mathsf{cons}\;y\;\mathsf{nil}$.
+}
+\label{fig:cons-branch}
+\end{figure}
 \medskip
+
 

@@ -45,11 +45,13 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Other $\omega $-rule examples}{9}{subsection.1.5.7}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Commutativity of addition}{9}{subsection.1.5.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.9}Parity-filter interaction}{9}{subsection.1.5.9}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces  Cyclic proof for reverse-append fusion. $\dagger $ = backlink target; red = companion; $\star $ = progress event. \textsc  {lemma}: LLM cut $\mathsf  {revAcc}\tmspace  +\thickmuskip {.2777em}(\mathsf  {append}\tmspace  +\thickmuskip {.2777em}xs\tmspace  +\thickmuskip {.2777em}ys)\tmspace  +\thickmuskip {.2777em}acc = \mathsf  {revAcc}\tmspace  +\thickmuskip {.2777em}ys\tmspace  +\thickmuskip {.2777em}(\mathsf  {revAcc}\tmspace  +\thickmuskip {.2777em}xs\tmspace  +\thickmuskip {.2777em}acc)$, validated by sub-prover. Nil branch $\mathsf  {reverse}\tmspace  +\thickmuskip {.2777em}xs$ is an instance of the root under $ys\DOTSB \mapstochar \rightarrow \mathsf  {nil}$; cons branch (green) drives further through $ys'$. }}{10}{figure.1.1}\protected@file@percent }
-\newlabel{fig:reverse-append-proof}{{1}{10}{Cyclic proof for reverse-append fusion. $\dagger $ = backlink target; red = companion; $\star $ = progress event. \textsc {lemma}: LLM cut $\mathsf {revAcc}\;(\mathsf {append}\;xs\;ys)\;acc = \mathsf {revAcc}\;ys\;(\mathsf {revAcc}\;xs\;acc)$, validated by sub-prover. Nil branch $\mathsf {reverse}\;xs$ is an instance of the root under $ys\mapsto \mathsf {nil}$; cons branch (green) drives further through $ys'$}{figure.1.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces  Main proof (Fig.~\ref {fig:cons-branch} completes the green cons premise). $\dagger $ = backlink; red = companion. \textsc  {fix}: unfold $\mathsf  {reverse}$. \textsc  {lemma}: LLM cut (validated by sub-prover). \textsc  {iota}: case reduction on $ys$; nil branch closed via \textsc  {back} (substitution $ys\DOTSB \mapstochar \rightarrow \mathsf  {nil}$); cons branch (green) delegated to Fig.~\ref {fig:cons-branch}. }}{10}{figure.1.1}\protected@file@percent }
+\newlabel{fig:reverse-append-proof}{{1}{10}{Main proof (Fig.~\ref {fig:cons-branch} completes the green cons premise). $\dagger $ = backlink; red = companion. \textsc {fix}: unfold $\mathsf {reverse}$. \textsc {lemma}: LLM cut (validated by sub-prover). \textsc {iota}: case reduction on $ys$; nil branch closed via \textsc {back} (substitution $ys\mapsto \mathsf {nil}$); cons branch (green) delegated to Fig.~\ref {fig:cons-branch}}{figure.1.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Summary}{10}{subsection.1.5.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.11}Cyclic proof for reverse-append fusion}{10}{subsection.1.5.11}\protected@file@percent }
 \newlabel{sec:reverse-append-proof}{{5.11}{10}{Cyclic proof for reverse-append fusion}{subsection.1.5.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  Cons branch (completes Fig.~\ref {fig:reverse-append-proof}). Same cyclic structure as the main proof, with $ys'$ in place of $ys$ and $\mathsf  {cons}\tmspace  +\thickmuskip {.2777em}y\tmspace  +\thickmuskip {.2777em}(\mathsf  {reverse}\tmspace  +\thickmuskip {.2777em}xs)$ as the accumulator. The cycle repeats until the cons chain on $ys'$ reaches nil, at which point the backlink closes via $ys'\DOTSB \mapstochar \rightarrow \mathsf  {cons}\tmspace  +\thickmuskip {.2777em}y\tmspace  +\thickmuskip {.2777em}\mathsf  {nil}$. }}{11}{figure.1.2}\protected@file@percent }
+\newlabel{fig:cons-branch}{{2}{11}{Cons branch (completes Fig.~\ref {fig:reverse-append-proof}). Same cyclic structure as the main proof, with $ys'$ in place of $ys$ and $\mathsf {cons}\;y\;(\mathsf {reverse}\;xs)$ as the accumulator. The cycle repeats until the cons chain on $ys'$ reaches nil, at which point the backlink closes via $ys'\mapsto \mathsf {cons}\;y\;\mathsf {nil}$}{figure.1.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {6}What Remains}{11}{section.1.6}\protected@file@percent }
 \newlabel{sec:limits}{{6}{11}{What Remains}{section.1.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.1}The $\omega $-rule pipeline}{11}{subsection.1.6.1}\protected@file@percent }
@@ -59,8 +61,8 @@
 \@writefile{toc}{\contentsline {section}{\numberline {7}Evaluation: Does the LLM Reason Compositionally?}{12}{section.1.7}\protected@file@percent }
 \newlabel{sec:eval}{{7}{12}{Evaluation: Does the LLM Reason Compositionally?}{section.1.7}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Results}{12}{subsection.1.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Key findings}{12}{subsection.1.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Finding 1: Structure suffices.}{12}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Key findings}{13}{subsection.1.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Finding 1: Structure suffices.}{13}{section*.9}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Finding 2: Definitions restore confidence.}{13}{section*.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Finding 3: Compositional, not bibliographic.}{13}{section*.11}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Interpretation.}{13}{section*.12}\protected@file@percent }
@@ -69,27 +71,27 @@
 \citation{mitchell-runciman-2010-supercompilation}
 \citation{bolingbroke-2013-phd}
 \citation{gill-hutton-2009-worker-wrapper}
-\citation{brotherston-simpson-2011-sequent}
-\citation{afshari-wehr-2024-abstract-cyclic}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Limitations of the evaluation}{14}{subsection.1.7.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Reproducibility}{14}{subsection.1.7.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {8}Related Work}{14}{section.1.8}\protected@file@percent }
 \newlabel{sec:related}{{8}{14}{Related Work}{section.1.8}{}}
 \@writefile{toc}{\contentsline {paragraph}{Higher-level supercompilation.}{14}{section*.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Worker/wrapper.}{14}{section*.14}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Cyclic proofs.}{14}{section*.15}\protected@file@percent }
+\citation{brotherston-simpson-2011-sequent}
+\citation{afshari-wehr-2024-abstract-cyclic}
 \bibstyle{splncs04}
 \bibdata{refs}
 \bibcite{afshari-wehr-2024-abstract-cyclic}{1}
+\@writefile{toc}{\contentsline {paragraph}{Worker/wrapper.}{15}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Cyclic proofs.}{15}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{LLMs in formal methods.}{15}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{15}{section.1.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{15}{Conclusion}{section.1.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{Future work.}{15}{section*.17}\protected@file@percent }
 \bibcite{bolingbroke-2013-phd}{2}
 \bibcite{brotherston-simpson-2011-sequent}{3}
 \bibcite{eisner-blatz-2007-parsing}{4}
 \bibcite{gill-hutton-2009-worker-wrapper}{5}
 \bibcite{mitchell-runciman-2010-supercompilation}{6}
-\@writefile{toc}{\contentsline {paragraph}{LLMs in formal methods.}{15}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{15}{section.1.9}\protected@file@percent }
-\newlabel{sec:conclusion}{{9}{15}{Conclusion}{section.1.9}{}}
-\@writefile{toc}{\contentsline {paragraph}{Future work.}{15}{section*.17}\protected@file@percent }
 \bibcite{sorensen-gluck-jones-1996-positive}{7}
 \bibcite{turchin-1986-supercompiler}{8}
 \gdef \@abspage@last{16}
