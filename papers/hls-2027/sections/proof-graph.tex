@@ -32,15 +32,15 @@ smaller in $\mathit{xs}$.  The cyclic backlink at $v_4$ closes the proof.
 
 \begin{figure}[t]
 \centering
+\small
 \begin{tikzpicture}[
-  node distance=2.2cm and 3cm,
+  node distance=2.0cm and 2.5cm,
   vtx/.style={rectangle,draw,rounded corners,font=\footnotesize,
-              minimum width=3cm,minimum height=0.7cm,align=center},
+              minimum width=3.5cm,minimum height=0.7cm,align=center},
   lemma/.style={vtx,fill=green!15,draw=green!50!black},
   stuck/.style={vtx,fill=red!10,draw=red!50!black},
   driveedge/.style={->,>=stealth,font=\scriptsize},
-  foldedge/.style={->,>=stealth,>=Stealth,bend right=40,
-                   draw=blue!60!black,thick,font=\scriptsize},
+  foldedge/.style={->,>=stealth,draw=blue!60!black,thick,font=\scriptsize},
   lemmaedge/.style={->,>=stealth,dashed,draw=green!50!black,font=\scriptsize}
 ]
 
@@ -52,50 +52,41 @@ smaller in $\mathit{xs}$.  The cyclic backlink at $v_4$ closes the proof.
   $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathsf{nil}$
 };
 
-\node[stuck,below left=of v1] (v2) {
+\node[stuck,below left=of v1,yshift=-0.5cm] (v2) {
   $\mathsf{revAcc}\;\mathit{ys}\;\mathsf{nil}$
-  \\
-  {\tiny(\texttt{append = nil})}
 };
 
-\node[stuck,below right=of v1] (v3) {
-  $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})$
-  \\
-  $(\mathsf{cons}\;\mathit{x}\;\mathsf{nil})$
-  \\
-  {\tiny(\texttt{append = cons})}
+\node[stuck,below right=of v1,yshift=-0.5cm] (v3) {
+  $\mathsf{revAcc}\;(\mathsf{cons}\;\mathit{x}\;(\mathsf{append}\;\mathit{xs}^\prime\;\mathit{ys}))\;\mathsf{nil}$
 };
 
-\node[vtx,below=of v3] (v3driven) {
-  $\mathsf{revAcc}\;\mathit{xs}\;(\mathsf{cons}\;\mathit{x}\;(\mathsf{revAcc}\;\mathit{ys}\;\mathsf{nil}))$
-  \\
-  {\tiny(stuck: accumulator differs from companion)}
+\node[vtx,below=of v3,yshift=-0.3cm] (v3driven) {
+  $\mathsf{revAcc}\;\mathit{xs}^\prime\;(\mathsf{cons}\;\mathit{x}\;(\mathsf{revAcc}\;\mathit{ys}\;\mathsf{nil}))$
 };
 
-\node[lemma,right=of v3driven,xshift=2cm] (lemma) {
-  \textbf{Lemma (LLM-proposed)} \\
+\node[lemma,right=of v3driven,xshift=3cm] (lemma) {
+  \textbf{Lemma (LLM)} \\
   $\mathsf{revAcc}\;(\mathsf{append}\;\mathit{xs}\;\mathit{ys})\;\mathit{acc}$
   \\
   $=$ \\
   $\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;\mathit{xs}\;\mathit{acc})$
 };
 
-\node[vtx,below=of v3driven] (v4) {
+\node[vtx,below=of v3driven,yshift=-0.3cm] (v4) {
   $\mathsf{revAcc}\;\mathit{ys}\;(\mathsf{revAcc}\;\mathit{xs}\;\mathsf{nil})$
-  \\
-  {\tiny(lemma rewrites, then fold to root)}
 };
 
-\draw[driveedge] (root)  -- node[right] {unfold reverse} (v1);
-\draw[driveedge] (v1)    -- node[left]  {split nil} (v2);
-\draw[driveedge] (v1)    -- node[right] {split cons} (v3);
-\draw[driveedge] (v3)    -- node[right] {drive revAcc} (v3driven);
-\draw[foldedge]  (v4)    to node[left]  {cyclic backlink} (root);
+\draw[driveedge] (root)  -- node[right] {unfold} (v1);
+\draw[driveedge] (v1)    -- node[left]  {nil} (v2);
+\draw[driveedge] (v1)    -- node[right] {cons} (v3);
+\draw[driveedge] (v3)    -- node[right] {drive} (v3driven);
+\draw[foldedge]  (v4.west) -- ++(-1.5,0) |- (root.west) node[pos=0.25,left] {backlink};
 
-\draw[lemmaedge,dashed] (v3driven) -- node[above] {LLM} (lemma);
-\draw[lemmaedge,dashed] (lemma.south) |- node[right,pos=0.7] {sub-SC proves} (v4);
+\draw[lemmaedge] (v3driven) -- node[above] {propose} (lemma);
+\draw[lemmaedge] (lemma.south) |- node[right,pos=0.7] {sub-SC proves} (v4);
 
-\node[draw,dashed,fit=(v3driven)(v3),inner sep=6pt,label={[font=\small\bfseries]above right:{stuck}}] {};
+\node[draw,dashed,fit=(v3driven)(v3),inner sep=6pt,
+      label={[font=\small\bfseries]above right:{stuck}}] {};
 
 \end{tikzpicture}
 \caption{
