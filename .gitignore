@@ -22,3 +22,4 @@ coq_lsp_mcp_trace.txt
 coq_lsp_standalone_trace.txt
 __pycache__/
 _paperchecker/
+_paper_registry.json
