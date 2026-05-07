@@ -1,0 +1,146 @@
+{
+  "ab0e89d6bac4c6a88ab4cd0fd562faa34163b7b8d4be56ae57fa7bbf48076fa9": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document does not contain the specific typing judgement notation $\\Sigma\\GammatA$ or any explicit claim that such a judgement is \"standard for CoC with inductives\"; the paper predates the common use of that notation and does not discuss inductive types in the modern sense."
+  },
+  "39fbed48efd0f6fd8174ac0565d49a9ae5b757f64b91fa412cb0efb8f0b17e76": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[4]",
+    "reason": "The source explicitly states that the paper describes the rules for inductive definitions in the system Coq, which is the Calculus of Constructions with inductives, and the typing judgment $\\Sigma\\GammatA$ is standard for this system."
+  },
+  "6276ebeadf2bfea982802740c038e8eabb251c337d160d8e1415936eeb10e268": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[0]",
+    "reason": "The source explicitly describes supercompilation as involving symbolic evaluation (driving), case analysis, generalization, and fold/refold steps, matching the claim exactly."
+  },
+  "cca97c4775314dfc9e2b20401df3d4abaa7aff05e202edf31d4661452b23a45c": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[16]",
+    "reason": "The source explicitly states that a supercompiler creates a graph of configurations and transitions via driving, performs generalization to make the process finite, and uses fold/refold steps (as illustrated by the closed tree and renaming/folding in Example 1), directly matching the claim."
+  },
+  "4922c3b92dc1b4ea216f0dd3fea9ca402a04451407db89f345121f17a14f0176": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document discusses well-quasi-ordering and tree embeddings in the context of Kruskal's Tree Theorem and Vazsonyi's conjecture, but it contains no mention of \"whistles\" or \"homeomorphic embedding\" in relation to any \"classical approaches\" using such whistles."
+  },
+  "e85f4ba6d06d15962e3d5d313e949da12e4636e06d2e78513ddae2a789ace6d5": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[3]",
+    "reason": "The source explicitly states that \"well-quasi orders in general, and homeomorphic embedding in particular, have gained popularity to ensure the termination of program analysis, specialisation and transformation techniques,\" directly matching the claim that classical approaches use whistles based on homeomorphic embedding or well-quasi-orderings."
+  },
+  "e68a9e76b28536b918dc08c87b97585519e91c15413468927f6e8e78418a0573": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document discusses supercompilation, deforestation, and related techniques but never mentions \"whistles,\" \"homeomorphic embedding,\" or \"well-quasi-orderings,\" so it provides no content supporting the claim."
+  },
+  "19ced1a4c2d0c58aa3ab1c6c44756d6aeac98f2679ac1f47b09c1931cf0b19c1": {
+    "status": "unchecked",
+    "confidence": 0,
+    "phrase": "",
+    "reason": "No source found"
+  },
+  "7be4c2e34e7b3ee7e7b180b12e853f39850d88d73b31bbd3cad68e3297f625fb": {
+    "status": "unchecked",
+    "confidence": 0,
+    "phrase": "",
+    "reason": "No source found"
+  },
+  "08c3ee5375564eaf828b3cc98e9a22976457b9ea7c05005d4ebe7ad378ea9588": {
+    "status": "unchecked",
+    "confidence": 0,
+    "phrase": "",
+    "reason": "No source found"
+  },
+  "797b896e26f58f9370b2b6d04728c3cfdb0c70c68d2c8c3f9832c732b95ba04b": {
+    "status": "unchecked",
+    "confidence": 0,
+    "phrase": "",
+    "reason": "No source found"
+  },
+  "cfe8255bc324049f0bad9e7a04c3f525fb6113c9f018e54a125c704650750a34": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[30]",
+    "reason": "The source explicitly states that Turchin's supercompiler was formulated for Refal and that the authors later reconsidered the theory in the context of a more familiar functional language, directly supporting the claim that existing work focuses on first-order functional languages like Refal and functional subsets."
+  },
+  "11f7fa43fa61eabec0b63197c84873c5bb7cda69e1dc38f620a358200ef3fbf2": {
+    "status": "unchecked",
+    "confidence": 0,
+    "phrase": "",
+    "reason": "No source found"
+  },
+  "7c1cbc669a9d585f35a6169d9733d1538c6409d9de58150c908acbba3d96bfb2": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[1]",
+    "reason": "The source document states in phrase [1] that \"A cyclic proof system is a proof system whose proof figure is a tree with cycles,\" which directly matches the claim that cyclic proof systems represent potentially infinite derivations using finite directed graphs with back-edges, validated by a global soundness condition."
+  },
+  "7f5e758b1ea981fba7395889f690c68b0cd5d04996b74809d5767651088dd1d2": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[9]",
+    "reason": "The source explicitly states that cyclic proofs are \"proofs given by regular trees, i.e. to those proofs representable by finite graphs,\" which directly matches the claim that cyclic proof systems represent potentially infinite derivations using finite directed graphs with back-edges, validated by a global soundness condition."
+  },
+  "1fa897f35f32499fff39852b83160b504db983db108d4909690690e0382994d8": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document contains no mention of \"abstract cyclic frameworks,\" \"activation algebras,\" or \"categorical structure,\" and focuses instead on a specific syntactic cut-elimination procedure for a temporal logic cyclic proof system."
+  },
+  "dd22a66d85603ea467df176d95154037d55ba34b633ae0e8817a77de9d18c4b3": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document discusses bidirectional type checking and local type inference for a language with subtyping and impredicative polymorphism, but it does not mention or substantiate the claim about \"sequent calculi for dependent types.\""
+  },
+  "f09e41db5387702e6e760126e8a09d585396eb6b627be51337c674350d67eea0": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[5]",
+    "reason": "The source explicitly states that focusing proofs are a subclass of proofs that is both complete and tractable, directly substantiating the claim."
+  },
+  "d3b8a0ef5e458a80c583610c99e571d49dd2a5a4a3aaba274c6fcaa395d1b96a": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[1]",
+    "reason": "The source document explicitly states in phrase [1] that \"Probably the most significant result concerning cut-free sequent calculus proofs in linear logic is the completeness of focused proofs,\" which directly substantiates the claim."
+  },
+  "1d9543712008a35c6df50bf7ded66a590d857608c160c0d3b9d36e46c02d3f6a": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document describes the Calculus of Constructions using natural deduction style and sequent calculi, but it does not claim that standard presentations of CIC use natural deduction; rather, it presents its own system in natural deduction style without making a comparative claim about standard presentations."
+  },
+  "bb67a84273f328e8a2ff9a2688ceee1ebecc4ad0a2de1460dbf9b5f19af19bdf": {
+    "status": "unsubstantiated",
+    "confidence": 1,
+    "phrase": "[-1]",
+    "reason": "The source document describes rules for inductive definitions in Coq and mentions natural deduction only in passing as a general correspondence principle, but it does not state or support the claim that \"sequent calculi for CIC\" exist or that \"standard presentations of CIC use natural deduction.\""
+  },
+  "51d29f699a1c7df5a2e1b0bc730db298764f699f297b71cecb847456099e8974": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[0]",
+    "reason": "The source document's title and abstract explicitly state that Herbelin develops a sequent calculus for the Calculus of Constructions, directly matching the claim."
+  },
+  "9d012a09db7217f013d9be84b292c10b11b78be9ebd2e80dec10afa983c89283": {
+    "status": "verified",
+    "confidence": 5,
+    "phrase": "[2]",
+    "reason": "The source explicitly states that the paper compares a system using a local well-founded induction rule with a system using a global induction discharge condition, directly matching the claim."
+  },
+  "50e28f15f6c882d2fdf822c7062690323bdecb8839a764badbc77805413c76be": {
+    "status": "unchecked",
+    "confidence": 0,
+    "phrase": "",
+    "reason": "No source found"
+  }
+}
