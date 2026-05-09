@@ -131,18 +131,62 @@ Module BacklinkAdmissible.
       * exact H0.
   Qed.
 
-  (** The DFS counter adds: count(0 → v2) = count(0 → v1) + count(v1 → v2)
-      when v1 lies on the path from 0 to v2. *)
-  Lemma count_additive :
-    forall b I v1 v2 depth,
-      count_progress_edges b I 0 v2 depth =
-      match count_progress_edges b I 0 v1 depth,
-            count_progress_edges b I v1 v2 depth with
-      | Some n1, Some n2 => Some (n1 + n2)
-      | _, _ => None
-      end.
+  (** Base case: count from a vertex to itself is zero. *)
+  Lemma count_refl : forall b I v depth,
+    count_progress_edges b I v v depth = Some 0.
   Proof.
-  Admitted.
+    intros. destruct depth; simpl; rewrite Nat.eqb_refl; reflexivity.
+  Qed.
+
+  (** try_succs: if w is in the successor list, the recursive call
+      for w determines the result. *)
+  Lemma try_succs_in :
+    forall (b : SC.cfg_builder) (I : nat) (target : nat)
+           (succs : list nat) (w : nat) (depth : nat) (n : nat),
+      In w succs ->
+      count_progress_edges b I w target depth = Some n ->
+      (fix try_succs (ws : list nat) : option nat :=
+         match ws with
+         | [] => None
+         | w' :: ws' =>
+             match count_progress_edges b I w' target depth with
+             | Some n0 => Some n0
+             | None => try_succs ws'
+             end
+         end) succs = Some n.
+  Proof.
+    induction succs as [|x xs IH]; intros w depth n Hin Hcount.
+    - inversion Hin.
+    - simpl in Hin. destruct Hin as [->|Hin'].
+      + simpl. rewrite Hcount. reflexivity.
+      + simpl. destruct (count_progress_edges b I x target depth) as [n0|] eqn:Hc.
+        * reflexivity.
+        * apply (IH xs w depth n Hin' Hcount).
+  Qed.
+
+  (** Single step: if v1 is a progress vertex on I and v2 is a successor,
+      then count(v1 → v2) = Some 1. *)
+  Lemma progress_edge_increases_count :
+    forall b I v1 v2 depth,
+      depth > 0 ->
+      SC.is_progress_vertex b v1 = true ->
+      split_inductive b v1 = Some I ->
+      In v2 (SC.succs_of b v1) ->
+      count_progress_edges b I v1 v2 depth = Some 1.
+  Proof.
+    intros b I v1 v2 depth Hdepth Hprog Hsplit Hin.
+    unfold split_inductive in Hsplit.
+    destruct (SC.lookup_label b v1) as [[[]]|] eqn:Hlabel; try discriminate.
+    (* It's a jTy *)
+    destruct (SC.is_progress_vertex b v1) eqn:Hprog'; try discriminate.
+    inversion Hsplit. subst i.
+    destruct depth as [|depth']; [lia|].
+    simpl. rewrite Hprog'. rewrite Hlabel. simpl.
+    rewrite Nat.eqb_refl. simpl.
+    eapply try_succs_in.
+    - exact Hin.
+    - apply count_refl.
+  Qed.
 
   (** If v2 is a successor of v1 which is a progress vertex on I,
       then the count to v2 equals the count to v1 plus 1. *)
@@ -180,26 +224,25 @@ Module BacklinkAdmissible.
   Proof.
     intros b I v1 v2 Hprog Hsplit Hin.
     unfold per_type_rank.
-    unfold split_inductive in Hsplit.
-    destruct (SC.lookup_label b v1) as [[[]| |]|] eqn:Hlabel; try discriminate.
-    destruct (SC.is_progress_vertex b v1) eqn:Hprog'; try discriminate.
-    inversion Hsplit. subst.
-    (* Now we know v1 is a progress vertex on inductive I *)
     set (depth := SC.cb_next b).
-    (* Use additivity and progress_edge_increases_count *)
-    (* count(0 → v2, depth) = count(0 → v1, depth) + count(v1 → v2, depth)
-       = count(0 → v1, depth) + 1 *)
-    pose proof (count_additive b I v1 v2 depth) as Hadd.
-    pose proof (progress_edge_increases_count b I v1 v2 depth Hprog' Hlabel Hin) as Hinc.
-    (* Hinc: count(v1 → v2, depth) = Some 1 *)
-    destruct (count_progress_edges b I 0 v1 depth) as [c1|] eqn:Hc1;
-      destruct (count_progress_edges b I v1 v2 depth) as [c2|] eqn:Hc2;
-      destruct (count_progress_edges b I 0 v2 depth) as [c3|] eqn:Hc3;
-      try congruence.
-    * injection Hinc as ->.
-      rewrite Hadd in Hc3. rewrite Hc1, Hc2 in Hc3.
-      injection Hc3 as ->.
-      lia.
+    (* Both counts exist because cb_next bounds the graph depth. *)
+    assert (Hdepth : depth > 0).
+    { unfold depth. pose proof (SC.cb_next b). lia. }
+    pose proof (progress_edge_increases_count b I v1 v2 depth Hdepth Hprog Hsplit Hin) as Hinc.
+    destruct (count_progress_edges b I 0 v2 depth) as [c2|] eqn:Hc2;
+      destruct (count_progress_edges b I 0 v1 depth) as [c1|] eqn:Hc1.
+    (* Need to relate c2 to c1.  The count to v2 is at least c1 + 1
+       because the path to v2 must pass through v1.
+       We state a weaker result: since both sides are reachable,
+       the counts differ by at least 1. *)
+    2,3,4: exfalso; (* unreachable vertices: cb_next bounds graph *)
+            admit.
+    (* The key insight: the path to v2 MUST go through v1,
+       because v2 is a child of v1 in the exploration tree.
+       This follows from the SC graph construction:
+       vertices are allocated in order, and each vertex (except 0)
+       appears in exactly one cb_succ entry.
+       Admitted for now. *)
   Admitted.
 
   (** Step 1: Unfolding — eliminate backlinks by rewriting companions.
