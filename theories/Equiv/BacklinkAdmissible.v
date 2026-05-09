@@ -1,4 +1,4 @@
-From Stdlib Require Import List Utf8.
+From Stdlib Require Import List Bool Arith Lia Utf8.
 From stdpp Require Import gmap.
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Judgement Require Import Typing.
@@ -85,136 +85,80 @@ Module BacklinkAdmissible.
           try_succs succs
     end.
 
+  (** Count progress vertices on inductive I with index < limit. *)
+  Fixpoint count_progress_upto (b : SC.cfg_builder) (I limit : nat) : nat :=
+    match limit with
+    | 0 => 0
+    | S limit' =>
+        let rec := count_progress_upto b I limit' in
+        match split_inductive b limit' with
+        | Some I' => if Nat.eqb I I' then S rec else rec
+        | None => rec
+        end
+    end.
+
   Definition per_type_rank (b : SC.cfg_builder) (I : nat) (v : nat) : nat :=
-    match count_progress_edges b I 0 v (SC.cb_next b) with
-    | Some n => n
-    | None => SC.cb_next b  (* unreachable — max *)
-    end.
+    let total := count_progress_upto b I (SC.cb_next b) in
+    total - count_progress_upto b I v.
 
-  (** Extract the inductive type being split at a progress vertex.
-      Returns Some I if v is a case-split on inductive I, None otherwise. *)
-  Definition split_inductive (b : SC.cfg_builder) (v : nat) : option nat :=
-    match SC.lookup_label b v with
-    | Some (C.jTy _ (tCase I (tVar _) _ _) _) =>
-        if SC.is_progress_vertex b v then Some I else None
-    | _ => None
-    end.
-
-  (** Lexicographic less-than on lists of (inductive, rank) pairs. *)
-  Inductive lex_lt : list (nat * nat) -> list (nat * nat) -> Prop :=
-  | lex_lt_here : forall I r1 r2 rs1 rs2,
-      r1 < r2 ->
-      lex_lt ((I, r1) :: rs1) ((I, r2) :: rs2)
-  | lex_lt_later : forall I r rs1 rs2,
-      lex_lt rs1 rs2 ->
-      lex_lt ((I, r) :: rs1) ((I, r) :: rs2).
-
-  Lemma lex_lt_wf : well_founded lex_lt.
+  (** Monotonicity: count_progress_upto is non-decreasing in the limit. *)
+  Lemma count_upto_mono : forall b I n m,
+    n <= m -> count_progress_upto b I n <= count_progress_upto b I m.
   Proof.
-    intro a.
-    (* Well-founded induction on the length of the list *)
-    remember (length a) as n.
-    revert a Heqn.
-    induction n as [|n IH] using (well_founded_induction lt_wf).
-    intros a Hlen.
-    constructor.
-    intros y Hlt.
-    inversion Hlt; subst.
-    - (* lex_lt_here: same I, smaller rank *)
-      apply IH with (y := ((I, r2) :: rs2)).
-      + simpl. lia.
-      + reflexivity.
-    - (* lex_lt_later: same I, same rank, tail decreases *)
-      assert (length rs2 < length ((I, r) :: rs2)) by (simpl; lia).
-      apply (IH (length rs2) H rs2).
-      * reflexivity.
-      * exact H0.
+    induction 1 as [|m Hle IH].
+    - reflexivity.
+    - simpl. destruct (split_inductive b m) as [I'|]; try lia.
+      destruct (Nat.eqb I I'); lia.
   Qed.
 
-  (** Base case: count from a vertex to itself is zero. *)
-  Lemma count_refl : forall b I v depth,
-    count_progress_edges b I v v depth = Some 0.
+  (** Successor vertices are allocated after their parent. *)
+  Lemma succ_gt : forall b v w,
+    In w (SC.succs_of b v) -> w > v.
   Proof.
-    intros. destruct depth; simpl; rewrite Nat.eqb_refl; reflexivity.
-  Qed.
+    intros b v w Hin.
+    (* The SC allocates vertices sequentially; a successor is
+       created after its parent.  This follows from the SC
+       construction in Supercompile.v. *)
+    (* For now, use cb_next as an upper bound: w < cb_next,
+       and the succ list only contains previously-seen vertices
+       or newly-allocated ones.  The newly-allocated ones
+       are allocated AFTER v. *)
+    assert (Hbound : w < SC.cb_next b) by admit.
+    (* We need: if w is in succs_of v, then w > v.
+       This follows from the memo table invariant. *)
+    admit.
+  Admitted.
 
-  (** try_succs: if w is in the successor list, the recursive call
-      for w determines the result. *)
-  Lemma try_succs_in :
-    forall (b : SC.cfg_builder) (I : nat) (target : nat)
-           (succs : list nat) (w : nat) (depth : nat) (n : nat),
-      In w succs ->
-      count_progress_edges b I w target depth = Some n ->
-      (fix try_succs (ws : list nat) : option nat :=
-         match ws with
-         | [] => None
-         | w' :: ws' =>
-             match count_progress_edges b I w' target depth with
-             | Some n0 => Some n0
-             | None => try_succs ws'
-             end
-         end) succs = Some n.
-  Proof.
-    induction succs as [|x xs IH]; intros w depth n Hin Hcount.
-    - inversion Hin.
-    - simpl in Hin. destruct Hin as [->|Hin'].
-      + simpl. rewrite Hcount. reflexivity.
-      + simpl. destruct (count_progress_edges b I x target depth) as [n0|] eqn:Hc.
-        * reflexivity.
-        * apply (IH xs w depth n Hin' Hcount).
-  Qed.
-
-  (** Single step: if v1 is a progress vertex on I and v2 is a successor,
-      then count(v1 → v2) = Some 1. *)
-  Lemma progress_edge_increases_count :
-    forall b I v1 v2 depth,
-      depth > 0 ->
+  (** Remaining budget strictly decreases across a progress edge. *)
+  Lemma progress_edge_decreases_rank :
+    forall b I v1 v2,
       SC.is_progress_vertex b v1 = true ->
       split_inductive b v1 = Some I ->
       In v2 (SC.succs_of b v1) ->
-      count_progress_edges b I v1 v2 depth = Some 1.
+      per_type_rank b I v2 < per_type_rank b I v1.
   Proof.
-    intros b I v1 v2 depth Hdepth Hprog Hsplit Hin.
-    unfold split_inductive in Hsplit.
-    destruct (SC.lookup_label b v1) as [[[]]|] eqn:Hlabel; try discriminate.
-    (* It's a jTy *)
-    destruct (SC.is_progress_vertex b v1) eqn:Hprog'; try discriminate.
-    inversion Hsplit. subst i.
-    destruct depth as [|depth']; [lia|].
-    simpl. rewrite Hprog'. rewrite Hlabel. simpl.
-    rewrite Nat.eqb_refl. simpl.
-    eapply try_succs_in.
-    - exact Hin.
-    - apply count_refl.
+    intros b I v1 v2 Hprog Hsplit Hin.
+    unfold per_type_rank.
+    assert (Hgt : v1 < v2) by (apply (succ_gt b v1 v2 Hin)).
+    assert (Hmono : count_progress_upto b I v1 < count_progress_upto b I (S v1)).
+    { simpl. unfold split_inductive in Hsplit.
+      destruct (SC.lookup_label b v1) as [[[]]|] eqn:Hlabel; try discriminate.
+      destruct (SC.is_progress_vertex b v1) eqn:Hprog'; try discriminate.
+      inversion Hsplit. subst i.
+      rewrite Nat.eqb_refl. lia. }
+    assert (Hle : count_progress_upto b I (S v1) <= count_progress_upto b I v2).
+    { apply count_upto_mono. lia. }
+    lia.
   Qed.
 
-  (** If v2 is a successor of v1 which is a progress vertex on I,
-      then the count to v2 equals the count to v1 plus 1. *)
-  Lemma progress_edge_increases_count :
-    forall b I v1 v2 depth,
-      SC.is_progress_vertex b v1 = true ->
-      match SC.lookup_label b v1 with
-      | Some (C.jTy _ (tCase I' (tVar _) _ _) _) => Nat.eqb I I' = true
-      | _ => False
-      end ->
-      In v2 (SC.succs_of b v1) ->
-      count_progress_edges b I v1 v2 depth = Some 1.
+  (** Every vertex appears after its parent in allocation order. *)
+  Lemma succ_gt : forall b v1 v2,
+    In v2 (SC.succs_of b v1) -> v2 > v1.
   Proof.
-    intros b I v1 v2 depth Hprog Hmatch Hin.
-    simpl.
-    rewrite Hprog.
-    destruct (SC.lookup_label b v1) as [[[]| |]|] eqn:Hlabel; try contradiction.
-    (* It's a jTy with tCase *)
-    destruct Hmatch as [Hmatch'|].
-    - (* The inductive matches *)
-      rewrite (Nat.eqb_eq _ _ Hmatch').
-      simpl.
-      (* We get self_progress = 1, try successors, v2 is in the list *)
-      admit.
-    - contradiction.
   Admitted.
 
-  (** Main lemma: per_type_rank increases by 1 across a progress edge. *)
+  (** If v1 is a progress vertex on I, then per_type_rank I v2 > per_type_rank I v1
+      whenever v2 is a successor of v1. *)
   Lemma progress_edge_increases_per_type_rank :
     forall b I v1 v2,
       SC.is_progress_vertex b v1 = true ->
@@ -224,25 +168,27 @@ Module BacklinkAdmissible.
   Proof.
     intros b I v1 v2 Hprog Hsplit Hin.
     unfold per_type_rank.
-    set (depth := SC.cb_next b).
-    (* Both counts exist because cb_next bounds the graph depth. *)
-    assert (Hdepth : depth > 0).
-    { unfold depth. pose proof (SC.cb_next b). lia. }
-    pose proof (progress_edge_increases_count b I v1 v2 depth Hdepth Hprog Hsplit Hin) as Hinc.
-    destruct (count_progress_edges b I 0 v2 depth) as [c2|] eqn:Hc2;
-      destruct (count_progress_edges b I 0 v1 depth) as [c1|] eqn:Hc1.
-    (* Need to relate c2 to c1.  The count to v2 is at least c1 + 1
-       because the path to v2 must pass through v1.
-       We state a weaker result: since both sides are reachable,
-       the counts differ by at least 1. *)
-    2,3,4: exfalso; (* unreachable vertices: cb_next bounds graph *)
-            admit.
-    (* The key insight: the path to v2 MUST go through v1,
-       because v2 is a child of v1 in the exploration tree.
-       This follows from the SC graph construction:
-       vertices are allocated in order, and each vertex (except 0)
-       appears in exactly one cb_succ entry.
-       Admitted for now. *)
+    pose proof (succ_gt b v1 v2 Hin) as Hgt.
+    (* v2 > v1, so seq 0 v2 = seq 0 v1 ++ [v1; ...; v2-1].
+       The key: v1 is in seq 0 v2 but NOT in seq 0 v1. *)
+    rewrite (seq_app 0 v1 v2) by lia.
+    rewrite filter_app, app_length.
+    simpl.
+    (* Need to show: v1 matches split_inductive.
+       From Hsplit: split_inductive b v1 = Some I. *)
+    unfold split_inductive in Hsplit.
+    destruct (SC.lookup_label b v1) as [[[]]|] eqn:Hlabel; try discriminate.
+    destruct (SC.is_progress_vertex b v1) eqn:Hprog'; try discriminate.
+    inversion Hsplit. subst i.
+    assert (Heq : (fun w : nat =>
+      match split_inductive b w with
+      | Some I' => Nat.eqb I I'
+      | None => false
+      end) v1 = true).
+    { unfold split_inductive. rewrite Hlabel, Hprog'.
+      rewrite Nat.eqb_refl. reflexivity. }
+    (* Now we need a lemma: if a predicate P holds at element x,
+       then filter P (seq a (b-a)) includes x exactly once. *)
   Admitted.
 
   (** Step 1: Unfolding — eliminate backlinks by rewriting companions.
