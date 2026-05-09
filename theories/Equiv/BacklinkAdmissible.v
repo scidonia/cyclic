@@ -2,8 +2,9 @@ From Stdlib Require Import List Bool Arith Lia Utf8.
 From stdpp Require Import gmap.
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Judgement Require Import Typing.
-From Cyclic.Transform Require Import Supercompile.
+From Cyclic.Transform Require Import Supercompile CyclicTraceConditionBudget.
 From Cyclic.CyclicProof Require Import Ranked.
+From Cyclic.Graph Require Import FiniteDigraph.
 Import Term.Syntax.
 Import ListNotations.
 Set Default Proof Using "Type".
@@ -24,42 +25,55 @@ Module BacklinkAdmissible.
     | _ => None
     end.
 
-  (** * Lexicographic ordering for multiple induction parameters
+  (** * Lexicographic ranking on lifted vertices (v, k)
 
-      The budget trace (Claim 2) gives a counter k for each vertex,
-      decremented on any progress edge.  We refine this by type:
-      per_type_rank(b, I, v) tracks the budget for inductive I.
-      The lexicographic product over all I is well-founded. *)
+      The budget trace (Claim 2) lifts each vertex v to pairs (v, k)
+      where k ∈ [0, B] is a budget counter.  Progress edges consume
+      budget (k decreases), non-progress edges preserve it.
 
-  (** Placeholder: extract the budget counter for vertex v from the
-      budget trace construction.  In the mechanised proof, this is
-      the second component of the lifted vertex (v, k). *)
-  Parameter budget_at_vertex : SC.cfg_builder -> nat -> nat.
+      We work on the lifted trace graph directly: the per-type rank
+      is simply k, and the lexicographic ranking is well-founded
+      because k cannot go below 0. *)
 
-  (** For the initial proof, all types share the same counter.
-      Later refinement: split by type for individual recursor extraction. *)
-  Definition per_type_rank (b : SC.cfg_builder) (I : nat) (v : nat) : nat :=
-    budget_at_vertex b v.
+  Module CTB := CyclicTraceConditionBudget.
 
-  (** Claim 2: the budget counter strictly decreases on progress edges. *)
-  Axiom budget_decreases_on_progress :
-    forall b v1 v2,
-      SC.is_progress_vertex b v1 = true ->
-      In v2 (SC.succs_of b v1) ->
-      budget_at_vertex b v2 < budget_at_vertex b v1.
+  Notation traceV := (nat * nat)%type.
 
-  (** Per-type rank decreases on progress edges (trivial from the
-      single-counter definition above). *)
-  Lemma progress_edge_decreases_rank :
-    forall b I v1 v2,
-      SC.is_progress_vertex b v1 = true ->
-      split_inductive b v1 = Some I ->
-      In v2 (SC.succs_of b v1) ->
-      per_type_rank b I v2 < per_type_rank b I v1.
+  Definition per_type_rank (vk : traceV) : nat := snd vk.
+
+  (** The base graph has no single per-vertex budget.  The budget
+      is defined on LIFTED vertices (v, k).  For progress edges:
+      (v1, k1) → (v2, k2) with k2 < k1 (budget decreases). *)
+
+  (** The budget trace graph has the property that for any edge,
+      the counter never increases, and on progress edges it strictly
+      decreases. *)
+  Lemma trace_rank_monotone :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
+      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
+      snd wk <= snd vk.
   Proof.
-    intros b I v1 v2 Hprog Hsplit Hin.
+    apply CTB.trace_rank_monotone.
+  Qed.
+
+  Lemma trace_rank_strict_on_progress :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
+      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
+      CTB.progress_edge_trace G is_progress B vk wk ->
+      snd wk < snd vk.
+  Proof.
+    apply CTB.trace_rank_strict_on_progress.
+  Qed.
+
+  Lemma progress_edge_decreases_rank :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
+      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
+      CTB.progress_edge_trace G is_progress B vk wk ->
+      per_type_rank wk < per_type_rank vk.
+  Proof.
+    intros G is_progress B vk wk Hedge Hprog.
     unfold per_type_rank.
-    apply budget_decreases_on_progress; assumption.
+    apply (trace_rank_strict_on_progress G is_progress B vk wk Hedge Hprog).
   Qed.
 
   (** Lexicographic less-than on lists of (inductive, rank) pairs. *)
