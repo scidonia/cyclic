@@ -57,7 +57,9 @@ In words: with the trace-condition check enabled, the configuration graph is a r
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-The trace condition $\mathsf{SC.trace\_condition\_ok}$ verifies that the non-progress graph (with outgoing edges of progress vertices removed) contains no directed cycles. Each vertex classified as a case-split is a progress vertex. The proof proceeds in two stages:
+The budget-trace approach originates in Brotherston's cyclic proof theory~\cite{brotherston-2006-cyclic}: to ensure that a cyclic derivation is well-founded, every infinite path must pass through infinitely many \emph{progress events} (case-splits on structurally smaller components). The budget instrumentation---pairing each vertex with a counter that decrements on progress edges---is a constructive method for extracting a ranking function from this condition. Intuitively: each circuit around a cycle consumes one unit of budget at the progress edge; since there are only $|V|$ vertices, the budget must be exhausted after at most $|V|$ circuits, preventing infinite descent.
+
+Our construction instantiates this schema for the supercompiler's configuration graph. The trace condition $\mathsf{SC.trace\_condition\_ok}$ verifies that the non-progress graph (with outgoing edges of progress vertices removed) contains no directed cycles. Each vertex classified as a case-split is a progress vertex. The proof proceeds in two stages:
 \begin{enumerate}[leftmargin=*]
 \item \textbf{Cycle detection.} We prove \texttt{trace\_condition\_ok\_cycle\_progress}: if $\mathsf{trace\_condition\_ok}$ holds, every directed cycle contains at least one progress edge. The proof uses a combinatorial pigeonhole argument: any walk of length $>|V|$ through $|V|$ vertices repeats, yielding a shorter cycle.
 \item \textbf{Budget instrumentation.} We lift the base graph to pairs $(v,k)$ where $k \in [0,|V|]$. Progress edges consume budget ($k \mapsto k-1$); non-progress edges preserve it ($k \mapsto k$). Since every original cycle contains a progress edge, the lifted graph is acyclic; its topological ordering yields a ranking $\lambda(v,k).\;k$, satisfying the well-foundedness condition.
