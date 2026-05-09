@@ -1,7 +1,19 @@
 \section{Main results}
 \label{sec:equiv}
 
-We organise the central results as a four-claim pipeline, each building on the previous. All results are fully mechanised in Rocq with 0 axioms; a mapping from theorems to artefact names and file paths is given in the appendix.
+We organise the central results as a four-claim pipeline. All results are fully mechanised in Rocq with 0 axioms.
+
+\paragraph{Notation.}
+We define the following abbreviations for the key functions, with their Coq counterparts:
+
+\[
+\begin{array}{lll}
+\mathcal{S}(f,\Sigma,\Gamma,t,A) & \equiv & \texttt{SC.supercompile\_jTy}\;f\;\Sigma\;\Gamma\;t\;A \\
+\mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) & \equiv & \texttt{SC.supercompile\_jTy\_tc}\;f\;\Sigma\;\Gamma\;t\;A \\
+\mathcal{R}(f_r,\Sigma,\mathit{b},v) & \equiv & \texttt{SC.residualise\_cfg}\;f_r\;\Sigma\;\mathit{b}\;v\;0\;\emptyset \\
+t \approx u & \equiv & t \approx_{\mathrm{ciu}} u \quad (\forall\sigma,w.\; t[\sigma] \Downarrow w \iff u[\sigma] \Downarrow w)
+\end{array}
+\]
 
 \subsection{Claim 1: Pre-proof correspondence}
 
@@ -9,7 +21,7 @@ We organise the central results as a four-claim pipeline, each building on the p
 \label{thm:pre-proof}
 For every environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $A$,
 \[
-  \mathsf{SC.supercompile\_jTy}\;f\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
+  \mathcal{S}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
 \] 
 implies that $\mathit{b}$ forms a $\mathsf{rooted\_preproof}$ with root $v$ in the focused sequent calculus of Section~\ref{sec:focused}.
 \end{theorem}
@@ -30,7 +42,7 @@ The overall pre-proof property follows by structural induction on $f$. A fourth 
 \label{thm:cyclic-proof}
 For every $\Sigma$, $f$, $\Gamma$, $t$, $A$,
 \[
-  \mathsf{SC.supercompile\_jTy\_tc}\;f\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
+  \mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
 \]
 implies that $\mathit{b}$ is a $\mathsf{rooted\_cyclic\_proof}$: it satisfies both the local rule condition (Claim~1) and a global progress condition witnessed by a ranking function on budget-instrumented vertices.
 \end{theorem}
@@ -50,9 +62,9 @@ The combinatorial part totals $\sim$500 lines (FiniteDigraph, SCC, bounded-retur
 \label{thm:ciu}
 For every $\Sigma$, $f_s$, $f_r$, $\Gamma$, $t$, $A$,
 \[
-  \mathsf{SC.supercompile\_jTy\_tc}\;f_s\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
+  \mathcal{S}_{\!\mathit{tc}}(f_s,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
-  t \approx_{\mathrm{ciu}} \mathsf{Residualise}(f_r,\Sigma,\mathit{b},v)
+  t \approx \mathcal{R}(f_r,\Sigma,\mathit{b},v)
 \]
 where $\approx_{\mathrm{ciu}}$ is contextual equivalence:
 \[
