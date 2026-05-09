@@ -53,6 +53,10 @@ Module BacklinkAdmissible.
       corresponds to the lexicographic product of the two rankings.
   *)
 
+  (** Per-type progress budget. Initially a placeholder counting ALL
+      progress edges; will be refined to count per inductive type. *)
+  Definition per_type_rank (b : SC.cfg_builder) (I : nat) (v : nat) : nat := 0.
+
   (** Extract the inductive type being split at a progress vertex.
       Returns Some I if v is a case-split on inductive I, None otherwise. *)
   Definition split_inductive (b : SC.cfg_builder) (v : nat) : option nat :=
