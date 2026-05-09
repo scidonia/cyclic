@@ -16,7 +16,13 @@ We organise the results as a four-claim pipeline, each mechanized in Rocq:
 \end{enumerate}
 
 \paragraph{Limitations.}
-The current presentation focuses on a sequent system tailored to the supercompilation correspondence rather than a full CIC sequent calculus; several CIC-specific features (conversion, universe cumulativity, dependent elimination obligations) are deferred.
+The current presentation focuses on a sequent system tailored to the supercompilation correspondence rather than a full CIC sequent calculus; several CIC-specific features are deferred.
+
+\paragraph{Dependent elimination motives.}
+In a dependent case expression $\mathsf{case}\;v\;\mathsf{of}\;\{\mathsf{nil}\to e_0;\;\mathsf{cons}\to e_1\}$ on $\mathsf{Vec}\;A\;n$, the return type (motive) may depend on $n$. The SC handles this via a \texttt{propagate\_motive\_once} step (CaseCase.v:132) that pushes constructor information into the motive, making it more concrete during the async driving phase. We prove that this propagation preserves CIU equivalence (\texttt{ciu\_jTy\_propagate\_motive\_once}, CaseCase.v:306) and that motive propagation preserves termination (\texttt{propagate\_motive\_preserves\_terminates\_to}, CaseCase.v:242). The budget-trace construction (Claim~2) ensures termination of the combined driving-plus-propagation phase. Example~4 validates the mechanism: $\mathsf{Vec}\;A\;(\mathsf{length}\;(\mathsf{map}\;f\;v))$ normalises to $\mathsf{Vec}\;A\;(\mathsf{length}\;v)$ via motive propagation during driving.
+
+\paragraph{Other deferred features.}
+Conversion, universe cumulativity, and full dependent elimination obligations are not handled by the current focused calculus.
 
 \paragraph{Future work.}
 The proof-theoretic perspective suggests several directions. Richer evaluation strategies (e.g., call-by-value) correspond to different choices of invertible rules. Stronger trace conditions expand the class of recursive programs that can be handled. And the cut-elimination and identity-expansion properties of sequent calculi suggest principled approaches to improving generalisation and back-linking heuristics. Immediate next steps are: (i) extending the focused calculus to cover a fuller CIC sequent system (conversion, universe cumulativity, dependent elimination), and (ii) strengthening the generalisation heuristic to optimise more complex patterns such as nested deforestation.
