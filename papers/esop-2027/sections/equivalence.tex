@@ -16,7 +16,7 @@ t \approx u & \equiv & t \approx_{\mathrm{ciu}} u \quad (\forall\sigma,w.\; t[\s
 \]
 
 \paragraph{Pre-proofs and cyclic proofs.}
-A $\mathsf{cfg\_builder}$ $b$ is a finite directed graph where each vertex $v$ carries a judgement $\mathsf{label}(b,v)$ and a successor list $\mathsf{succ}(b,v)$. It is a \emph{rooted pre-proof} if every vertex satisfies a local sequent rule: $\mathsf{label}(b,v)$ is the conclusion of a rule whose premises are $\mathsf{label}(b,\mathsf{succ}(b,v))$. It is a \emph{rooted cyclic proof} if additionally every directed cycle contains a \emph{progress event} (a case-split on a neutral scrutinee), witnessed by a well-founded ranking on a budget-instrumented graph.
+A $\mathsf{cfg\_builder}$ $b$ is a finite directed graph where each vertex $v$ carries a judgement $\mathsf{label}(b,v)$ and a successor list $\mathsf{succ}(b,v)$. It is a \emph{rooted pre-proof} if every vertex satisfies a local sequent rule: $\mathsf{label}(b,v)$ is the conclusion of a rule whose premises are $\mathsf{label}(b,\mathsf{succ}(b,v))$. It is a \emph{rooted cyclic proof} if additionally every directed cycle contains a \emph{progress event} (a case-split on a neutral scrutinee), witnessed by a well-founded ranking. We write $\mathcal{P}(b,v)$ and $\mathcal{C}(b,v)$ for these properties.
 
 \subsection{Claim 1: Pre-proof correspondence}
 
@@ -26,7 +26,7 @@ For every environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $
 \[
   \mathcal{S}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
-  \mathsf{rooted\_preproof}(\mathit{b},v).
+  \mathcal{P}(\mathit{b},v).
 \]
 \end{theorem}
 
@@ -48,7 +48,7 @@ For every $\Sigma$, $f$, $\Gamma$, $t$, $A$,
 \[
   \mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
-  \mathsf{rooted\_cyclic\_proof}(\mathit{b},v).
+  \mathcal{C}(\mathit{b},v).
 \]
 \end{theorem}
 
