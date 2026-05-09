@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:30
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1126,25 +1126,25 @@ File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 lm/lm-ts1.enc}] [9]) (./sections/examples.tex [10])
 (./sections/related-work.tex [11] [12] [13]) (./sections/equivalence.tex
 [14]
-Overfull \hbox (57.47917pt too wide) in paragraph at lines 58--59
+Overfull \hbox (57.47917pt too wide) in paragraph at lines 62--63
 []\T1/lmr/bx/n/10 (-20) Cycle de-tec-tion. \T1/lmr/m/n/10 (-20) We prove \T1/lm
 tt/m/n/10 trace_condition_ok_cycle_progress\T1/lmr/m/n/10 (-20) : if $[]$
  []
 
 [15]
-Overfull \hbox (14.74327pt too wide) in paragraph at lines 90--93
+Overfull \hbox (14.74327pt too wide) in paragraph at lines 96--99
 []\T1/lmr/bx/n/10 (-20) (Examples). []\T1/lmr/m/it/10 (-20) The fol-low-ing ide
 n-ti-ties pass the pipeline ($[]$
  []
 
 ) (./sections/conclusion.tex [16]) (./main.bbl [17])
-(./sections/mechanisation-plan.tex
+(./sections/mechanisation-plan.tex [18]
 Overfull \hbox (95.37433pt too wide) in paragraph at lines 17--18
 \T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
 v:1659\T1/lmr/m/n/10 (-20) ). 
  []
 
-[18]
+
 Overfull \hbox (21.37157pt too wide) in paragraph at lines 37--42
 [] \OT1/lmr/m/n/10 (-20) (\OML/lmm/m/it/10 v; []\OT1/lmr/m/n/10 (-20) )$\T1/lmr
 /m/it/10 (-20) , then there ex-ists a $[]$ on a budget-instrumented
@@ -1204,7 +1204,11 @@ Overfull \hbox (1.45598pt too wide) in paragraph at lines 95--118
  [] 
  []
 
-) [20] [21] (./main.aux)
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [20])
+[21] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1213,11 +1217,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7F41135060B33E745EA329DEFFABAB6C;427.
  ) 
 Here is how much of TeX's memory you used:
- 27294 strings out of 476106
- 501727 string characters out of 5793933
- 1939975 words of memory out of 5000000
+ 27298 strings out of 476106
+ 501771 string characters out of 5793933
+ 1937975 words of memory out of 5000000
  48250 multiletter control sequences out of 15000+600000
- 718951 words of font info for 307 fonts, out of 8000000 for 9000
+ 719208 words of font info for 309 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,14n,107p,1001b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1239,11 +1243,12 @@ type1/public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy9.pfb></u
 sr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/p
 ublic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sh
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/sha
-re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on main.pdf (21 pages, 595148 bytes).
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
+Output written on main.pdf (21 pages, 599460 bytes).
 PDF statistics:
- 533 PDF objects out of 1000 (max. 8388607)
- 411 compressed objects within 5 object streams
+ 538 PDF objects out of 1000 (max. 8388607)
+ 414 compressed objects within 5 object streams
  151 named destinations out of 1000 (max. 500000)
  92181 words of extra memory for PDF output out of 106986 (max. 10000000)
 

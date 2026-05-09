@@ -22,12 +22,14 @@ A $\mathsf{cfg\_builder}$ $b$ is a finite directed graph where each vertex $v$ c
 
 \begin{theorem}[Pre-proof construction]
 \label{thm:pre-proof}
-For every environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $A$,
+\noindent
+$\forall\;\Sigma\in\mathsf{Env},\;f\in\mathbb{N},\;\Gamma\in\mathsf{Ctx},\;t\in\mathsf{Tm},\;A\in\mathsf{Tm}$,
 \[
   \mathcal{S}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
   \mathcal{P}(\mathit{b},v).
 \]
+In words: every successful supercompilation run yields a rooted pre-proof whose edge structure matches the drive/split/fold operations of the focused sequent calculus.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -44,12 +46,14 @@ A fourth lemma \texttt{cfg\_vertex\_drive\_rule} classifies each vertex by its s
 
 \begin{theorem}[Cyclic proof]
 \label{thm:cyclic-proof}
-For every $\Sigma$, $f$, $\Gamma$, $t$, $A$,
+\noindent
+$\forall\;\Sigma,f,\Gamma,t,A$,
 \[
   \mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
   \mathcal{C}(\mathit{b},v).
 \]
+In words: with the trace-condition check enabled, the configuration graph is a rooted cyclic proof --- every cycle contains a progress event, witnessed by a budget-instrumented ranking.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -65,12 +69,14 @@ $\sim$700 lines total (FiniteDigraph, SCC, bounded-return lemma, budget instrume
 
 \begin{theorem}[CIU equivalence]
 \label{thm:ciu}
-For every $\Sigma$, $f_s$, $f_r$, $\Gamma$, $t$, $A$,
+\noindent
+$\forall\;\Sigma,f_s,f_r,\Gamma,t,A$,
 \[
   \mathcal{S}_{\!\mathit{tc}}(f_s,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
   t \approx \mathcal{R}(f_r,\Sigma,\mathit{b},v).
 \]
+In words: the residual read back from $\mathit{b}$ is observationally indistinguishable from the source $t$ --- they terminate to the same values under all closing substitutions and evaluation contexts.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
