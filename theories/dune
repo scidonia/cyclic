@@ -81,6 +81,7 @@ Transform.ConditionalLemmas
     Equiv.CIUJudgement
     Equiv.CIUNatObs
     Equiv.CIUChecklistLengthMap
-    Equiv.SupercompileChecklistIndexPipeline))
+    Equiv.SupercompileChecklistIndexPipeline
+     Equiv.SplitNonInvertible))
 
 
