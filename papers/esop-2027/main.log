@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:54
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 23:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1100,12 +1100,13 @@ Con-sider $[] \OML/lmm/m/it/10 A \OT1/lmr/m/n/10 (-20) ([] ([] \OML/lmm/m/it/10
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
+
+[7]
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
 (microtype)             Ignoring protrusion settings for this character.
 
-[7]
-Overfull \hbox (42.1414pt too wide) in paragraph at lines 71--71
+Overfull \hbox (42.1414pt too wide) in paragraph at lines 73--73
  [][][]\T1/lmr/m/n/9 (-20) Rocq: \T1/lmtt/m/n/9 cfg_vertex_drive_rule \T1/lmr/m
 /n/9 (-20) in \T1/lmtt/m/n/9 theories/Transform/SupercompilationCorrespondence.
 v\T1/lmr/m/n/9 (-20) .| 
@@ -1120,9 +1121,9 @@ LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
  (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ))) (./sections/supercompilation-as-search.tex [8{/usr/share/texmf/fonts/enc/dv
-ips/lm/lm-ts1.enc}] [9]) (./sections/examples.tex [10])
-(./sections/related-work.tex [11] [12] [13]) (./sections/equivalence.tex
-[14] [15]
+ips/lm/lm-ts1.enc}] [9]) (./sections/examples.tex [10] [11])
+(./sections/related-work.tex [12] [13]) (./sections/equivalence.tex [14]
+[15]
 Overfull \hbox (57.47917pt too wide) in paragraph at lines 64--65
 []\T1/lmr/bx/n/10 (-20) Cycle de-tec-tion. \T1/lmr/m/n/10 (-20) We prove \T1/lm
 tt/m/n/10 trace_condition_ok_cycle_progress\T1/lmr/m/n/10 (-20) : if $[]$
@@ -1242,10 +1243,10 @@ ublic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sh
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on main.pdf (22 pages, 605400 bytes).
+Output written on main.pdf (22 pages, 606304 bytes).
 PDF statistics:
- 549 PDF objects out of 1000 (max. 8388607)
- 421 compressed objects within 5 object streams
+ 551 PDF objects out of 1000 (max. 8388607)
+ 422 compressed objects within 5 object streams
  154 named destinations out of 1000 (max. 500000)
  92181 words of extra memory for PDF output out of 106986 (max. 10000000)
 

@@ -40,6 +40,8 @@ A backlink closes a goal by pointing to a previous vertex. This is the cyclic as
 
 \textsc{back-exact} applies when a prior vertex has a syntactically identical label. \textsc{back-inst} applies when a prior vertex matches under an explicit substitution $\sigma$. The judgement $\Delta \vdash \sigma :_s \Gamma$ states that $\sigma$ is an explicit substitution from context $\Gamma$ to $\Delta$, i.e., a list of terms in $\Delta$ that can replace the variables of $\Gamma$.
 
+Making the substitution an explicit premise---rather than a meta-level side condition---is an engineering choice driven by mechanisation: the instance check becomes a syntactic comparison ($\mathsf{tm\_eqb}$ on terms) verifiable by the Rocq kernel, rather than requiring an external substitution calculus. This is unusual in a conventional sequent calculus, where substitutions are typically admissible rather than primitive. We do not prove admissibility of the \textsc{back} rule (that every backlink-closed proof corresponds to a proof without backlinks); that correspondence, established by Brotherston and Simpson for first-order logic~\cite{brotherston-simpson-2011-sequent}, is not yet extended to CoC with inductives.
+
 \subsection{Phases and focusing}
 
 Rules are partitioned into two phases: an \textbf{asynchronous} phase (driving, deterministic) and a \textbf{synchronous} phase (split and backlink, requiring choice). This matches supercompilation: drive eagerly until stuck, then split or fold.
