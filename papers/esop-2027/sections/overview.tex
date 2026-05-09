@@ -1,9 +1,9 @@
-\section{Overview: SC \texorpdfstring{=}{=} cyclic proof search}
+\section{Overview: SC as operational focused proof search}
 \label{sec:overview}
 
 Before presenting formal definitions, we sketch the core idea informally.
 
-A supercompiler maintains a \emph{configuration graph} where each node is a typing judgement $\Gamma \vdash t : A$ and each edge represents an operational step. This graph \emph{is} a proof object in a cyclic sequent calculus:
+A supercompiler maintains a \emph{configuration graph} where each node is a typing judgement $\Gamma \vdash t : A$ and each edge represents an operational step. Successful supercompilation yields a proof object in a cyclic sequent calculus:
 
 \begin{center}
 \small
@@ -13,9 +13,11 @@ A supercompiler maintains a \emph{configuration graph} where each node is a typi
 Driving (unfolding, $\beta$, $\iota$) & Invertible sequent rule & Async (deterministic) \\
 Case-split on neutral variable & Synchronous choice rule & Sync (progress event) \\
 Memo table hit (folding) & Cyclic backlink & Cycle closure \\
-Generalisation + instantiation & Substitution lemma & Async (invertible) \\
+Generalisation & Cut introduction (lemma) & Sync (choice) \\
 \end{tabular}
 \end{center}
+
+The separation of invertible (async) from non-invertible (sync) rules follows the discipline of Andreoli's \emph{focusing}~\cite{andreoli-1992-logic-programming}: invertible rules are applied eagerly (driving), and non-invertible rules are explored at choice points (splitting, folding). We do not define explicit polarity judgments or phase transitions; we use ``focused'' in the operational sense, where the eager strategy is justified by the invertibility of the driving rules---applying them never loses provability.
 
 Cyclic proofs require a \textbf{global trace condition} for soundness: every cycle must contain a \emph{progress event}---a case-split on a neutral scrutinee. This matches the termination discipline used in supercompilation: a recursive call must descend on a structurally smaller component. The budget trace construction (Claim~2) enforces this by assigning a decreasing rank to each progress edge.
 

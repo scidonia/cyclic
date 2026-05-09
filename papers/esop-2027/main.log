@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:34
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1077,7 +1077,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Overfull \hbox (19.73146pt too wide) in paragraph at lines 94--95
+Overfull \hbox (19.73146pt too wide) in paragraph at lines 99--100
 []\T1/lmr/m/n/10 (-20) This is par-tic-u-larly valu-able in de-pen-dent types. 
 Con-sider $[] \OML/lmm/m/it/10 A \OT1/lmr/m/n/10 (-20) ([] ([] \OML/lmm/m/it/10
  f v\OT1/lmr/m/n/10 (-20) ))$\T1/lmr/m/n/10 (-20) :
@@ -1085,6 +1085,7 @@ Con-sider $[] \OML/lmm/m/it/10 A \OT1/lmr/m/n/10 (-20) ([] ([] \OML/lmm/m/it/10
 
 ) (./sections/overview.tex [4{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]
 ) (./sections/calculus.tex [5]) (./sections/focused-cyclic-sequents.tex
+[6]
 \myBox1=\box127
 \myScoreStart1=\dimen337
 \myCenter1=\dimen338
@@ -1100,8 +1101,6 @@ Con-sider $[] \OML/lmm/m/it/10 A \OT1/lmr/m/n/10 (-20) ([] ([] \OML/lmm/m/it/10
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
-
-[6]
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
 (microtype)             Ignoring protrusion settings for this character.
@@ -1112,7 +1111,7 @@ Overfull \hbox (42.1414pt too wide) in paragraph at lines 71--71
 v\T1/lmr/m/n/9 (-20) .| 
  []
 
-(./sections/cyclic-proof-diagram.tex [7]
+[7] (./sections/cyclic-proof-diagram.tex
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/6'.
 (microtype)             Ignoring protrusion settings for this character.
@@ -1137,7 +1136,7 @@ Overfull \hbox (14.74327pt too wide) in paragraph at lines 96--99
 n-ti-ties pass the pipeline ($[]$
  []
 
-) (./sections/conclusion.tex [16]) (./main.bbl [17])
+[16]) (./sections/conclusion.tex) (./main.bbl [17])
 (./sections/mechanisation-plan.tex [18]
 Overfull \hbox (95.37433pt too wide) in paragraph at lines 17--18
 \T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
@@ -1168,12 +1167,12 @@ Overfull \hbox (32.37451pt too wide) in paragraph at lines 65--66
 v\T1/lmr/m/n/10 (-20) ). 
  []
 
-
+[19]
 Overfull \hbox (0.314pt too wide) in paragraph at lines 70--71
 []$[]$\T1/lmr/m/n/10 (-20) , $[]$, $[]$, $[]$, $[]$: CIU
  []
 
-[19]
+
 Underfull \hbox (badness 4859) in paragraph at lines 102--102
 []|\T1/lmr/m/n/9 (+20) Pre-proofs & cyclic
  []
@@ -1205,7 +1204,7 @@ Overfull \hbox (1.45598pt too wide) in paragraph at lines 95--118
  []
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 2626) has occurred while \output is active []
 
  [20])
 [21] (./main.aux)
@@ -1217,11 +1216,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7F41135060B33E745EA329DEFFABAB6C;427.
  ) 
 Here is how much of TeX's memory you used:
- 27302 strings out of 476106
- 501819 string characters out of 5793933
- 1937975 words of memory out of 5000000
+ 27306 strings out of 476106
+ 501863 string characters out of 5793933
+ 1938975 words of memory out of 5000000
  48250 multiletter control sequences out of 15000+600000
- 719462 words of font info for 311 fonts, out of 8000000 for 9000
+ 719769 words of font info for 313 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,14n,107p,1001b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1245,10 +1244,10 @@ ublic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sh
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on main.pdf (21 pages, 599691 bytes).
+Output written on main.pdf (21 pages, 601755 bytes).
 PDF statistics:
- 538 PDF objects out of 1000 (max. 8388607)
- 414 compressed objects within 5 object streams
+ 541 PDF objects out of 1000 (max. 8388607)
+ 415 compressed objects within 5 object streams
  151 named destinations out of 1000 (max. 500000)
  92181 words of extra memory for PDF output out of 106986 (max. 10000000)
 

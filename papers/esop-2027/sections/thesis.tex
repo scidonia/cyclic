@@ -84,7 +84,12 @@ For each example, the supercompiler produces a residual, and computational equal
 See Section~\ref{sec:equiv} (Proposition~\ref{prop:examples}) and Section~\ref{sec:example} for a detailed walkthrough.
 
 \subsection{Why focusing matters}
-Focusing separates proof search into an asynchronous (invertible) phase and a synchronous (choice-bearing) phase. Driving is deterministic (async); generalisation and folding are the choice points (sync); case-splitting sits at the boundary. See Section~\ref{sec:overview} for the correspondence table.
+
+In Andreoli's focusing calculus~\cite{andreoli-1992-logic-programming}, formulas are classified as \emph{positive} or \emph{negative}, and proof search alternates between an \emph{asynchronous phase} (where all invertible rules are applied eagerly) and a \emph{synchronous phase} (where a formula is selected and its non-invertible rules explored). The central theorem is completeness: the focused proof search strategy does not lose provability.
+
+We use ``focusing'' in this operational sense, without defining explicit polarity judgments or phase transitions. A sequent rule is \emph{invertible} if the conclusion implies the premises---i.e., applying the rule eagerly never makes an otherwise provable goal unprovable. Our driving rules ($\beta$/$\iota$/$\delta$) are invertible: reducing a redex preserves typability and operational semantics. Case-splitting on neutral scrutinees is non-invertible: choosing the wrong branch can lead to a dead end, so it is a genuine choice point. Generalisation and folding correspond to cut and identity, respectively---they are synchronous decisions about \emph{which} cut formula to introduce or \emph{which} previous vertex to fold against.
+
+The supercompiler's operational discipline---drive eagerly until stuck, then split or fold---thus instantiates a focused proof search strategy. The completeness of this strategy (that it does not lose programs that could be supercompiled by a different interleaving) is not proved here and is deferred to future work.
 
 \subsection{Why cyclic proofs matter: post-hoc induction}
 \label{sec:thesis:cyclic}
