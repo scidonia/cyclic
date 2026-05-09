@@ -131,28 +131,75 @@ Module BacklinkAdmissible.
       * exact H0.
   Qed.
 
-  (** If vertex v2 is reachable from v1 by a progress edge splitting on
-      inductive I, then per_type_rank I increases by exactly 1, and all
-      other types J ≠ I are unchanged.
+  (** The DFS counter adds: count(0 → v2) = count(0 → v1) + count(v1 → v2)
+      when v1 lies on the path from 0 to v2. *)
+  Lemma count_additive :
+    forall b I v1 v2 depth,
+      count_progress_edges b I 0 v2 depth =
+      match count_progress_edges b I 0 v1 depth,
+            count_progress_edges b I v1 v2 depth with
+      | Some n1, Some n2 => Some (n1 + n2)
+      | _, _ => None
+      end.
+  Proof.
+  Admitted.
 
-      This follows from the DFS counting definition of per_type_rank:
-      the counter increments by 1 when the progress vertex splitting on
-      I is encountered, and by 0 for all other vertices. *)
+  (** If v2 is a successor of v1 which is a progress vertex on I,
+      then the count to v2 equals the count to v1 plus 1. *)
+  Lemma progress_edge_increases_count :
+    forall b I v1 v2 depth,
+      SC.is_progress_vertex b v1 = true ->
+      match SC.lookup_label b v1 with
+      | Some (C.jTy _ (tCase I' (tVar _) _ _) _) => Nat.eqb I I' = true
+      | _ => False
+      end ->
+      In v2 (SC.succs_of b v1) ->
+      count_progress_edges b I v1 v2 depth = Some 1.
+  Proof.
+    intros b I v1 v2 depth Hprog Hmatch Hin.
+    simpl.
+    rewrite Hprog.
+    destruct (SC.lookup_label b v1) as [[[]| |]|] eqn:Hlabel; try contradiction.
+    (* It's a jTy with tCase *)
+    destruct Hmatch as [Hmatch'|].
+    - (* The inductive matches *)
+      rewrite (Nat.eqb_eq _ _ Hmatch').
+      simpl.
+      (* We get self_progress = 1, try successors, v2 is in the list *)
+      admit.
+    - contradiction.
+  Admitted.
+
+  (** Main lemma: per_type_rank increases by 1 across a progress edge. *)
   Lemma progress_edge_increases_per_type_rank :
     forall b I v1 v2,
       SC.is_progress_vertex b v1 = true ->
       split_inductive b v1 = Some I ->
       In v2 (SC.succs_of b v1) ->
-      (* Then per_type_rank I v2 = per_type_rank I v1 + 1 and for J ≠ I,
-         per_type_rank J v2 = per_type_rank J v1.
-         We state a weaker version: the per-type rank for I strictly increases. *)
-      exists p, count_progress_edges b I 0 v2 (SC.cb_next b) = Some p /\
-           count_progress_edges b I 0 v1 (SC.cb_next b) = Some (p - 1).
+      per_type_rank b I v2 = per_type_rank b I v1 + 1.
   Proof.
     intros b I v1 v2 Hprog Hsplit Hin.
-    (* Admitted: requires reasoning about DFS path uniqueness in the SC graph.
-       Follows from the fact that the forward graph is a tree (no cycles
-       before generalisation), so the path from root is unique. *)
+    unfold per_type_rank.
+    unfold split_inductive in Hsplit.
+    destruct (SC.lookup_label b v1) as [[[]| |]|] eqn:Hlabel; try discriminate.
+    destruct (SC.is_progress_vertex b v1) eqn:Hprog'; try discriminate.
+    inversion Hsplit. subst.
+    (* Now we know v1 is a progress vertex on inductive I *)
+    set (depth := SC.cb_next b).
+    (* Use additivity and progress_edge_increases_count *)
+    (* count(0 → v2, depth) = count(0 → v1, depth) + count(v1 → v2, depth)
+       = count(0 → v1, depth) + 1 *)
+    pose proof (count_additive b I v1 v2 depth) as Hadd.
+    pose proof (progress_edge_increases_count b I v1 v2 depth Hprog' Hlabel Hin) as Hinc.
+    (* Hinc: count(v1 → v2, depth) = Some 1 *)
+    destruct (count_progress_edges b I 0 v1 depth) as [c1|] eqn:Hc1;
+      destruct (count_progress_edges b I v1 v2 depth) as [c2|] eqn:Hc2;
+      destruct (count_progress_edges b I 0 v2 depth) as [c3|] eqn:Hc3;
+      try congruence.
+    * injection Hinc as ->.
+      rewrite Hadd in Hc3. rewrite Hc1, Hc2 in Hc3.
+      injection Hc3 as ->.
+      lia.
   Admitted.
 
   (** Step 1: Unfolding — eliminate backlinks by rewriting companions.
