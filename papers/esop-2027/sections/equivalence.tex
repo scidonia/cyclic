@@ -22,8 +22,9 @@ t \approx u & \equiv & t \approx_{\mathrm{ciu}} u \quad (\forall\sigma,w.\; t[\s
 For every environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $A$,
 \[
   \mathcal{S}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
-\] 
-implies that $\mathit{b}$ forms a $\mathsf{rooted\_preproof}$ with root $v$ in the focused sequent calculus of Section~\ref{sec:focused}.
+  \;\Longrightarrow\;
+  \mathsf{rooted\_preproof}(\mathit{b},v)
+\]
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -44,7 +45,7 @@ For every $\Sigma$, $f$, $\Gamma$, $t$, $A$,
 \[
   \mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
 \]
-implies that $\mathit{b}$ is a $\mathsf{rooted\_cyclic\_proof}$: it satisfies both the local rule condition (Claim~1) and a global progress condition witnessed by a ranking function on budget-instrumented vertices.
+implies that $\mathit{b}$ is a $\mathsf{rooted\_cyclic\_proof}$ with root $v$, ranked on budget-instrumented vertices $(v,k)$.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
