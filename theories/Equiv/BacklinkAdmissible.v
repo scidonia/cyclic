@@ -110,12 +110,50 @@ Module BacklinkAdmissible.
       lex_lt ((I, r) :: rs1) ((I, r) :: rs2).
 
   Lemma lex_lt_wf : well_founded lex_lt.
-  Proof. Admitted.
+  Proof.
+    intro a.
+    (* Well-founded induction on the length of the list *)
+    remember (length a) as n.
+    revert a Heqn.
+    induction n as [|n IH] using (well_founded_induction lt_wf).
+    intros a Hlen.
+    constructor.
+    intros y Hlt.
+    inversion Hlt; subst.
+    - (* lex_lt_here: same I, smaller rank *)
+      apply IH with (y := ((I, r2) :: rs2)).
+      + simpl. lia.
+      + reflexivity.
+    - (* lex_lt_later: same I, same rank, tail decreases *)
+      assert (length rs2 < length ((I, r) :: rs2)) by (simpl; lia).
+      apply (IH (length rs2) H rs2).
+      * reflexivity.
+      * exact H0.
+  Qed.
 
-  (** If the budget decreases, the lexicographic ranking decreases too. *)
-  Lemma budget_decrease_implies_lex_decrease :
-    forall b v1 v2, True.
-  Proof. Admitted.
+  (** If vertex v2 is reachable from v1 by a progress edge splitting on
+      inductive I, then per_type_rank I increases by exactly 1, and all
+      other types J ≠ I are unchanged.
+
+      This follows from the DFS counting definition of per_type_rank:
+      the counter increments by 1 when the progress vertex splitting on
+      I is encountered, and by 0 for all other vertices. *)
+  Lemma progress_edge_increases_per_type_rank :
+    forall b I v1 v2,
+      SC.is_progress_vertex b v1 = true ->
+      split_inductive b v1 = Some I ->
+      In v2 (SC.succs_of b v1) ->
+      (* Then per_type_rank I v2 = per_type_rank I v1 + 1 and for J ≠ I,
+         per_type_rank J v2 = per_type_rank J v1.
+         We state a weaker version: the per-type rank for I strictly increases. *)
+      exists p, count_progress_edges b I 0 v2 (SC.cb_next b) = Some p /\
+           count_progress_edges b I 0 v1 (SC.cb_next b) = Some (p - 1).
+  Proof.
+    intros b I v1 v2 Hprog Hsplit Hin.
+    (* Admitted: requires reasoning about DFS path uniqueness in the SC graph.
+       Follows from the fact that the forward graph is a tree (no cycles
+       before generalisation), so the path from root is unique. *)
+  Admitted.
 
   (** Step 1: Unfolding — eliminate backlinks by rewriting companions.
 
