@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 22:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1083,9 +1083,8 @@ Con-sider $[] \OML/lmm/m/it/10 A \OT1/lmr/m/n/10 (-20) ([] ([] \OML/lmm/m/it/10
  f v\OT1/lmr/m/n/10 (-20) ))$\T1/lmr/m/n/10 (-20) :
  []
 
-) (./sections/overview.tex [4{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]
-) (./sections/calculus.tex [5]) (./sections/focused-cyclic-sequents.tex
-[6]
+[4{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]) (./sections/overview.tex
+[5]) (./sections/calculus.tex) (./sections/focused-cyclic-sequents.tex [6]
 \myBox1=\box127
 \myScoreStart1=\dimen337
 \myCenter1=\dimen338
@@ -1105,39 +1104,38 @@ Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
 (microtype)             Ignoring protrusion settings for this character.
 
+[7]
 Overfull \hbox (42.1414pt too wide) in paragraph at lines 71--71
  [][][]\T1/lmr/m/n/9 (-20) Rocq: \T1/lmtt/m/n/9 cfg_vertex_drive_rule \T1/lmr/m
 /n/9 (-20) in \T1/lmtt/m/n/9 theories/Transform/SupercompilationCorrespondence.
 v\T1/lmr/m/n/9 (-20) .| 
  []
 
-[7] (./sections/cyclic-proof-diagram.tex
+(./sections/cyclic-proof-diagram.tex
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/6'.
 (microtype)             Ignoring protrusion settings for this character.
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
 4.
-
-(/usr/share/texmf/tex/latex/lm/ts1lmr.fd
+ (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)))
-(./sections/supercompilation-as-search.tex [8{/usr/share/texmf/fonts/enc/dvips/
-lm/lm-ts1.enc}] [9]) (./sections/examples.tex [10])
+))) (./sections/supercompilation-as-search.tex [8{/usr/share/texmf/fonts/enc/dv
+ips/lm/lm-ts1.enc}] [9]) (./sections/examples.tex [10])
 (./sections/related-work.tex [11] [12] [13]) (./sections/equivalence.tex
-[14]
+[14] [15]
 Overfull \hbox (57.47917pt too wide) in paragraph at lines 62--63
 []\T1/lmr/bx/n/10 (-20) Cycle de-tec-tion. \T1/lmr/m/n/10 (-20) We prove \T1/lm
 tt/m/n/10 trace_condition_ok_cycle_progress\T1/lmr/m/n/10 (-20) : if $[]$
  []
 
-[15]
+
 Overfull \hbox (14.74327pt too wide) in paragraph at lines 96--99
 []\T1/lmr/bx/n/10 (-20) (Examples). []\T1/lmr/m/it/10 (-20) The fol-low-ing ide
 n-ti-ties pass the pipeline ($[]$
  []
 
-[16]) (./sections/conclusion.tex) (./main.bbl [17])
-(./sections/mechanisation-plan.tex [18]
+[16]) (./sections/conclusion.tex) [17] (./main.bbl [18])
+(./sections/mechanisation-plan.tex
 Overfull \hbox (95.37433pt too wide) in paragraph at lines 17--18
 \T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
 v:1659\T1/lmr/m/n/10 (-20) ). 
@@ -1161,18 +1159,18 @@ Overfull \hbox (5.78168pt too wide) in paragraph at lines 48--49
 m/n/10 (-20) , with progress pred-i-cate $[]$. 
  []
 
-
+[19]
 Overfull \hbox (32.37451pt too wide) in paragraph at lines 65--66
 \T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
 v\T1/lmr/m/n/10 (-20) ). 
  []
 
-[19]
+
 Overfull \hbox (0.314pt too wide) in paragraph at lines 70--71
 []$[]$\T1/lmr/m/n/10 (-20) , $[]$, $[]$, $[]$, $[]$: CIU
  []
 
-
+[20]
 Underfull \hbox (badness 4859) in paragraph at lines 102--102
 []|\T1/lmr/m/n/9 (+20) Pre-proofs & cyclic
  []
@@ -1203,11 +1201,7 @@ Overfull \hbox (1.45598pt too wide) in paragraph at lines 95--118
  [] 
  []
 
-
-Underfull \vbox (badness 2626) has occurred while \output is active []
-
- [20])
-[21] (./main.aux)
+) [21] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1216,13 +1210,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7F41135060B33E745EA329DEFFABAB6C;427.
  ) 
 Here is how much of TeX's memory you used:
- 27304 strings out of 476106
- 501841 string characters out of 5793933
+ 27308 strings out of 476106
+ 501885 string characters out of 5793933
  1938975 words of memory out of 5000000
  48250 multiletter control sequences out of 15000+600000
- 719639 words of font info for 312 fonts, out of 8000000 for 9000
+ 719852 words of font info for 314 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 102i,14n,107p,1001b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,14n,107p,1367b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx6.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr/share/texmf/fonts/type1/pub
@@ -1244,7 +1238,7 @@ ublic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sh
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on main.pdf (21 pages, 602088 bytes).
+Output written on main.pdf (21 pages, 602929 bytes).
 PDF statistics:
  541 PDF objects out of 1000 (max. 8388607)
  415 compressed objects within 5 object streams
