@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 21:25
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  9 MAY 2026 21:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1126,41 +1126,39 @@ File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 lm/lm-ts1.enc}] [9]) (./sections/examples.tex [10])
 (./sections/related-work.tex [11] [12] [13]) (./sections/equivalence.tex
 [14]
-Overfull \hbox (19.14539pt too wide) detected at line 45
+Overfull \hbox (57.47917pt too wide) in paragraph at lines 41--42
+[]\T1/lmr/bx/n/10 (-20) Cycle de-tec-tion. \T1/lmr/m/n/10 (-20) We prove \T1/lm
+tt/m/n/10 trace_condition_ok_cycle_progress\T1/lmr/m/n/10 (-20) : if $[]$
+ []
+
+
+Overfull \hbox (17.40408pt too wide) detected at line 56
 [] \OML/lmm/m/it/10 f[] ^^F ^^@ t A \OT1/lmr/m/n/10 = [] (\OML/lmm/m/it/10 v; \
-OT1/lmr/m/it/10 b\OT1/lmr/m/n/10 )  \OMS/lmsy/m/n/10 )  \OML/lmm/m/it/10 t \OMS
-/lmsy/m/n/10 ^^Y[] [] \OML/lmm/m/it/10 f[] ^^F \OT1/lmr/m/it/10 b \OML/lmm/m/it
-/10 v \OT1/lmr/m/n/10 0 \OMS/lmsy/m/n/10 ;
+OT1/lmr/m/it/10 b\OT1/lmr/m/n/10 )  =[]\OMS/lmsy/m/n/10 )  \OML/lmm/m/it/10 t \
+OMS/lmsy/m/n/10 ^^Y[] []\OT1/lmr/m/n/10 (\OML/lmm/m/it/10 f[]; ^^F; \OT1/lmr/m/
+it/10 b\OML/lmm/m/it/10 ; v\OT1/lmr/m/n/10 )
  []
 
 [15]
-Overfull \hbox (38.18562pt too wide) in paragraph at lines 57--58
-\T1/lmtt/m/n/10 ciu_jTy_of_ciu_jTy_rel_eq\T1/lmr/m/n/10 (-20) . Coq: \T1/lmtt/m
-/n/10 supercompile_ciu_soundness_untyped \T1/lmr/m/n/10 (-20) (line 1808),
+Overfull \hbox (4.45276pt too wide) in paragraph at lines 79--82
+[]\T1/lmr/bx/n/10 (-20) (Examples). []\T1/lmr/m/it/10 (-20) The fol-low-ing ide
+n-ti-ties are val-i-dated by the pipeline.
  []
 
 
-Overfull \hbox (1.22575pt too wide) in paragraph at lines 61--70
-[]\T1/lmr/bx/n/10 (-20) (Examples). []\T1/lmr/m/it/10 (-20) The fol-low-ing ex-
-am-ples pass the four-claim pipeline
- []
-
-
-Overfull \hbox (2.649pt too wide) in paragraph at lines 61--70
-\T1/lmr/m/it/10 (-20) ($[] \OT1/lmr/m/n/10 (-20) ([] \OML/lmm/m/it/10 f l\OT1/l
-mr/m/n/10 (-20) ) = [] \OML/lmm/m/it/10 l$\T1/lmr/m/it/10 (-20) ), append-lengt
-h nor-mal-i-sa-tion ($[] \OT1/lmr/m/n/10 (-20) ([] \OML/lmm/m/it/10 l[] l[]\OT1
-/lmr/m/n/10 (-20) ) =
+Overfull \hbox (6.29741pt too wide) in paragraph at lines 79--82
+\T1/lmr/m/it/10 (-20) For each, the su-per-com-piler pro-duces a resid-ual whos
+e nor-mal form (by $[]$)
  []
 
 ) (./sections/conclusion.tex [16]) (./main.bbl [17])
-(./sections/mechanisation-plan.tex
+(./sections/mechanisation-plan.tex [18]
 Overfull \hbox (95.37433pt too wide) in paragraph at lines 17--18
 \T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
 v:1659\T1/lmr/m/n/10 (-20) ). 
  []
 
-[18]
+
 Overfull \hbox (21.37157pt too wide) in paragraph at lines 37--42
 [] \OT1/lmr/m/n/10 (-20) (\OML/lmm/m/it/10 v; []\OT1/lmr/m/n/10 (-20) )$\T1/lmr
 /m/it/10 (-20) , then there ex-ists a $[]$ on a budget-instrumented
@@ -1184,12 +1182,12 @@ Overfull \hbox (32.37451pt too wide) in paragraph at lines 65--66
 v\T1/lmr/m/n/10 (-20) ). 
  []
 
-
+[19]
 Overfull \hbox (0.314pt too wide) in paragraph at lines 70--71
 []$[]$\T1/lmr/m/n/10 (-20) , $[]$, $[]$, $[]$, $[]$: CIU
  []
 
-[19]
+
 Underfull \hbox (badness 4859) in paragraph at lines 102--102
 []|\T1/lmr/m/n/9 (+20) Pre-proofs & cyclic
  []
@@ -1220,7 +1218,11 @@ Overfull \hbox (1.45598pt too wide) in paragraph at lines 95--118
  [] 
  []
 
-) [20] (./main.aux)
+
+Underfull \vbox (badness 2626) has occurred while \output is active []
+
+ [20])
+[21] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1229,13 +1231,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7F41135060B33E745EA329DEFFABAB6C;427.
  ) 
 Here is how much of TeX's memory you used:
- 27283 strings out of 476106
- 501556 string characters out of 5793933
+ 27287 strings out of 476106
+ 501654 string characters out of 5793933
  1938975 words of memory out of 5000000
- 48246 multiletter control sequences out of 15000+600000
- 718749 words of font info for 304 fonts, out of 8000000 for 9000
+ 48250 multiletter control sequences out of 15000+600000
+ 718714 words of font info for 304 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 102i,14n,107p,1181b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,14n,107p,1001b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx6.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr/share/texmf/fonts/type1/pub
@@ -1256,10 +1258,10 @@ sr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/p
 ublic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sh
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on main.pdf (20 pages, 593912 bytes).
+Output written on main.pdf (21 pages, 594611 bytes).
 PDF statistics:
- 529 PDF objects out of 1000 (max. 8388607)
- 408 compressed objects within 5 object streams
+ 532 PDF objects out of 1000 (max. 8388607)
+ 410 compressed objects within 5 object streams
  150 named destinations out of 1000 (max. 500000)
  92181 words of extra memory for PDF output out of 106986 (max. 10000000)
 

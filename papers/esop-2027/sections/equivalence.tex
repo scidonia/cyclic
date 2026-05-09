@@ -7,66 +7,90 @@ We organise the central results as a four-claim pipeline, each building on the p
 
 \begin{theorem}[Pre-proof construction]
 \label{thm:pre-proof}
-For any environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $A$:
+For every environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $A$,
 \[
-  \mathsf{supercompile\_jTy}\;f\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
-  \;\Rightarrow\;
-  \mathsf{rooted\_preproof}\; \mathit{b}\;v
-\]
-where $\mathit{b}$ is a $\mathsf{cfg\_builder}$ (a finite map from vertices to configurations plus successor and instantiation maps).
+  \mathsf{SC.supercompile\_jTy}\;f\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
+\] 
+implies that $\mathit{b}$ forms a $\mathsf{rooted\_preproof}$ with root $v$ in the focused sequent calculus of Section~\ref{sec:focused}.
 \end{theorem}
 
-\paragraph{Proof sketch.} By construction of the supercompiler loop. The internal state records a memo table mapping configurations to vertices. Each step---driving, splitting, generalising, or memo lookup---corresponds to a sequent rule as defined in Section~\ref{sec:focused}. Driving steps satisfy the asynchronous rules (fixpoint unfolding, $\beta/\iota$-reduction); case splits on neutral scrutinees satisfy the synchronous left rule; memo hits satisfy the cyclic backlink rule; and generalisation steps satisfy the generalisation rule, with the generalised configuration forming a new vertex whose local rule is checked recursively. The three step-level correspondences (driving, splitting, folding) are proved independently at the graph level via a bisimulation relating supercompiler graph structure to sequent rule instances. The full correspondence is assembled by structural induction on the supercompiler fuel. Coq: \texttt{all\_supercompiled\_programs\_yield\_preproof} (SupercompilationCorrespondence.v:1659).
+\begin{proof}[Proof sketch]
+The supercompiler $\mathsf{SC.supercompile\_cfg}$ is a recursive graph-construction loop. At each step it either marks a memo hit (cyclic backlink), applies driving (asynchronous reduction), splits on a neutral scrutinee (synchronous left rule), or generalises (cut introduction). These four cases correspond exactly to the four rule forms of the focused sequent calculus. The correspondence is proved by three lemmas, each establishing a bisimulation between SC graph edges and sequent rule instances:
+\begin{itemize}[leftmargin=*]
+\item \texttt{drive\_corresponds\_to\_async\_edge}: a driving edge (one successor) matches an asynchronous rule application;
+\item \texttt{split\_corresponds\_to\_sync\_edge}: a case-split edge (multiple successors) matches a synchronous rule;
+\item \texttt{memo\_corresponds\_to\_fold}: a memo-table hit matches a cyclic backlink, with the instantiation substitution forming a sub-derivation.
+\end{itemize}
+The overall pre-proof property follows by structural induction on $f$. A fourth lemma \texttt{cfg\_vertex\_drive\_rule} classifies each vertex by its successor structure (0, 1 with driving, 1 without change, $n > 1$), giving a complete local rule assignment.
+\phantom{qed}\end{proof}
 
 \subsection{Claim 2: Cyclic proof via budget trace}
 
 \begin{theorem}[Cyclic proof]
 \label{thm:cyclic-proof}
-With the trace-condition check enabled:
+For every $\Sigma$, $f$, $\Gamma$, $t$, $A$,
 \[
-  \mathsf{supercompile\_jTy\_tc}\;f\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
-  \;\Rightarrow\;
-  \mathsf{rooted\_cyclic\_proof}\;\mathit{b}\;v
+  \mathsf{SC.supercompile\_jTy\_tc}\;f\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
 \]
-where the ranking condition is satisfied by a budget-instrumented trace graph on pairs $(v,k)$.
+implies that $\mathit{b}$ is a $\mathsf{rooted\_cyclic\_proof}$: it satisfies both the local rule condition (Claim~1) and a global progress condition witnessed by a ranking function on budget-instrumented vertices.
 \end{theorem}
 
-\paragraph{Proof sketch.} The boolean trace check (\texttt{trace\_condition\_ok}) verifies that the non-progress graph (erasing outgoing edges from progress vertices) contains no directed cycles. Progress vertices are those whose configuration contains a case-split on a neutral scrutinee. The proof constructs a budget-instrumented graph: each vertex $v$ is lifted to pairs $(v,k)$ where $k \in [0,B]$ is a budget counter that is decremented on progress edges (case splits) and preserved on non-progress edges. Since every cycle in the original graph must contain at least one progress edge (by \texttt{trace\_condition\_ok\_cycle\_progress}), the lifted graph is acyclic. This acyclicity yields a ranking function $\lambda(v,k).\;k$, satisfying the global progress condition of the cyclic proof system. The construction is purely combinatorial: $\sim$500 lines for the graph-theoretic lemmas (FiniteDigraph, SCC detection, cycle extraction) and $\sim$200 lines for the budget instrumentation and ranking witness. Coq: \texttt{supercompile\_yields\_rooted\_cyclic\_proof} (SupercompilationCorrespondence.v:1694).
+\begin{proof}[Proof sketch]
+The trace condition $\mathsf{SC.trace\_condition\_ok}$ verifies that the non-progress graph (with outgoing edges of progress vertices removed) contains no directed cycles. Each vertex classified as a case-split is a progress vertex. The construction proceeds in two stages:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Cycle detection.} We prove \texttt{trace\_condition\_ok\_cycle\_progress}: if $\mathsf{trace\_condition\_ok}$ holds, every directed cycle in the original graph contains at least one progress edge. The proof extracts a cycle from the SCC decomposition and uses a combinatorial pigeonhole argument: any walk of length $>|V|$ through $|V|$ vertices repeats, yielding a shorter cycle, contradicting the boolean check.
+\item \textbf{Budget instrumentation.} We lift the base graph to pairs $(v,k)$ where $k \in [0,|V|]$. An edge is a progress edge iff its source is a progress vertex; progress edges consume one unit of budget ($k \mapsto k-1$), and non-progress edges preserve it ($k \mapsto k$). Since every original cycle contains a progress edge, the lifted graph is acyclic; its topological ordering yields a ranking $\lambda(v,k).\;k$, satisfying the well-foundedness condition.
+\end{enumerate}
+The combinatorial part totals $\sim$500 lines (FiniteDigraph, SCC, bounded-return lemma); the budget instrumentation and ranking witness are $\sim$200 lines.
+\phantom{qed}\end{proof}
 
 \subsection{Claim 3: CIU soundness}
 
 \begin{theorem}[CIU equivalence]
 \label{thm:ciu}
-For any environment $\Sigma$, fuel $f_s$, fuel $f_r$, context $\Gamma$, term $t$, type $A$:
+For every $\Sigma$, $f_s$, $f_r$, $\Gamma$, $t$, $A$,
 \[
-  \mathsf{supercompile\_jTy\_tc}\;f_s\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
-  \;\Rightarrow\;
-  t \approx_{\mathrm{ciu}} \mathsf{residualise\_cfg}\;f_r\;\Sigma\;\mathit{b}\;v\;0\;\emptyset
+  \mathsf{SC.supercompile\_jTy\_tc}\;f_s\;\Sigma\;\Gamma\;t\;A = \mathsf{Some}\,(v,\mathit{b})
+  \;\Longrightarrow\;
+  t \approx_{\mathrm{ciu}} \mathsf{Residualise}(f_r,\Sigma,\mathit{b},v)
 \]
-where $t \approx_{\mathrm{ciu}} u$ means: for all closing substitutions $\sigma$ and CBN values $w$, $t[\sigma] \Downarrow w$ iff $u[\sigma] \Downarrow w$.
+where $\approx_{\mathrm{ciu}}$ is contextual equivalence:
+\[
+  t \approx_{\mathrm{ciu}} u \quad\equiv\quad
+  \forall\sigma,w.\; (t[\sigma] \Downarrow w \iff u[\sigma] \Downarrow w)
+\]
+and $\mathsf{Residualise}$ reads back the configuration graph into a term with explicit $\mathsf{tFix}$ binders for cyclic back-edges.
 \end{theorem}
 
-\paragraph{Proof sketch.} By fuel induction on the residualiser, with the trace condition ensuring non-terminating self-loops are excluded. The residualisation function \texttt{residualise\_cfg} recursively traverses the configuration graph, reconstructing a term with explicit \texttt{tFix} binders for cyclic back-edges. For each constructor of the CBN term language ($\lambda$, application, case, fixpoint, inductive constructor), we prove a component lemma that CIU is a congruence:
+\begin{proof}[Proof sketch]
+By fuel induction on the residualiser, with the trace condition guaranteeing exclusion of non-terminating self-loops. The proof decomposes into congruence lemmas for each term constructor:
 \begin{itemize}[leftmargin=*]
-\item \texttt{ciu\_tApp}: if $t \approx_{\mathrm{ciu}} u$ then $t\;\mathit{arg} \approx_{\mathrm{ciu}} u\;\mathit{arg}$ for any $\mathit{arg}$;
-\item \texttt{ciu\_shift}, \texttt{ciu\_subst0}: CIU preserved under shift and substitution;
+\item \texttt{ciu\_tApp}: CIU is a congruence for application;
+\item \texttt{ciu\_subst0}, \texttt{ciu\_shift}: CIU preserved under substitution and binder shifting;
 \item \texttt{ciu\_apps}: CIU preserved under multi-argument application;
-\item \texttt{ciu\_case}: if branches are pairwise CIU-equivalent, the case expressions are CIU-equivalent;
-\item \texttt{ciu\_of\_eq}: syntactic equality implies CIU (for the fold step).
+\item \texttt{ciu\_case}: pairwise CIU-equivalent branches yield CIU-equivalent case expressions;
+\item \texttt{ciu\_of\_eq}: syntactic equality implies CIU.
 \end{itemize}
-The main theorem composes these lemmas: each residualisation step either preserves the original term (for non-backlink vertices) or introduces a \texttt{tFix} binder that is CIU-equivalent to the unfolded recursive call. The trace condition guarantees the residualiser terminates. The typed variant lifts the untyped CIU result through the typing judgements using the substitution lemma \texttt{ciu\_jTy\_of\_ciu\_jTy\_rel\_eq}. Coq: \texttt{supercompile\_ciu\_soundness\_untyped} (line~1808), \texttt{supercompile\_ciu\_soundness\_typed} (line~1877).
+These lemmas lift CIU through all nine term constructors: variables, sorts, dependent products, abstractions, applications, fixpoints, inductive types, constructors, and case expressions. The final step composes them: each residualisation step preserves equivalence up to \texttt{tFix} introduction, and \texttt{tFix} is justified by the cyclic graph structure (the backlink is CIU-equivalent to unfolding by Claim~2). The typed variant $\approx_{\mathrm{ciu\_jTy}}$ follows from the untyped result via the substitution lemma \texttt{ciu\_jTy\_of\_ciu\_jTy\_rel\_eq}, which lifts CIU from terms to typing judgements under well-typed closing substitutions.
+\phantom{qed}\end{proof}
 
 \subsection{Claim 4: Example validation}
 
 \begin{proposition}[Examples]
 \label{prop:examples}
-The following examples pass the four-claim pipeline with computational equality verified by Rocq's \texttt{vm\_compute}:
-length-map fusion ($\mathsf{length}\;(\mathsf{map}\;f\;l) = \mathsf{length}\;l$),
-append-length normalisation ($\mathsf{length}\;(\mathsf{append}\;l_1\;l_2) = \mathsf{plus}\;(\mathsf{length}\;l_1)\;(\mathsf{length}\;l_2)$),
-append-associativity via 2-pass supercompilation,
-take-drop fusion ($\mathsf{length}\;(\mathsf{append}\;(\mathsf{take}\;n\;l)\;(\mathsf{drop}\;n\;l)) = \mathsf{length}\;l$),
-nested map-map deforestation ($\mathsf{length}\;(\mathsf{map}\;f\;(\mathsf{map}\;g\;l)) = \mathsf{length}\;l$),
-and vector-index normalisation ($\mathsf{Vec}\;A\;(\mathsf{length}\;(\mathsf{map}\;f\;l)) \equiv \mathsf{Vec}\;A\;(\mathsf{length}\;l)$ as an index equality).
+The following identities are validated by the pipeline. For each, the supercompiler produces a residual whose normal form (by $\texttt{vm\_compute}$) coincides with the expected optimised term.
+\begin{align*}
+  \mathsf{length}\;(\mathsf{map}\;f\;l) &= \mathsf{length}\;l \\
+  \mathsf{length}\;(\mathsf{append}\;l_1\;l_2) &= \mathsf{plus}\;(\mathsf{length}\;l_1)\;(\mathsf{length}\;l_2) \\
+  \mathsf{length}\;(\mathsf{append}\;(\mathsf{take}\;n\;l)\;(\mathsf{drop}\;n\;l)) &= \mathsf{length}\;l \\
+  \mathsf{length}\;(\mathsf{map}\;f\;(\mathsf{map}\;g\;l)) &= \mathsf{length}\;l \\
+  \mathsf{Vec}\;A\;(\mathsf{length}\;(\mathsf{map}\;f\;v)) &\equiv \mathsf{Vec}\;A\;(\mathsf{length}\;v)
+\end{align*}
+Additionally, append-associativity holds via 2-pass supercompilation.
 \end{proposition}
+
+\begin{proof}
+For each example, the supercompiler is invoked with sufficient fuel and the resulting residual is compared to the expected output by $\texttt{vm\_compute}$ (kernel-level symbolic evaluation). The equality is definitional at the level of normal forms. This validates that the pipeline obtains for concrete inputs; the CIU guarantee that the residual is observationally equivalent to the source is provided by Claim~3.
+\end{proof}
 
 \paragraph{Proof.} For each example, the supercompiler processes the input term and produces a residual. Computational equivalence is verified by \texttt{vm\_compute}, which reduces both the residual and the expected output to normal form and checks syntactic equality. This is not a proof of CIU for the example (that follows from Claim~3) but a validation that the supercompiler produces a residual whose normal form coincides with the expected optimised result.
