@@ -29,7 +29,7 @@ $\forall\;\Sigma\in\mathsf{Env},\;f\in\mathbb{N},\;\Gamma\in\mathsf{Ctx},\;t\in\
   \;\Longrightarrow\;
   \mathcal{P}(\mathit{b},v).
 \]
-In words: every successful supercompilation run yields a rooted pre-proof whose edge structure matches the drive/split/fold operations of the focused sequent calculus.
+In words: every successful supercompilation run yields a rooted pre-proof ($\mathcal{P}(\mathit{b},v)$) whose edge structure matches the drive/split/fold operations of the focused sequent calculus.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -53,7 +53,7 @@ $\forall\;\Sigma,f,\Gamma,t,A$,
   \;\Longrightarrow\;
   \mathcal{C}(\mathit{b},v).
 \]
-In words: with the trace-condition check enabled, the configuration graph is a rooted cyclic proof --- every cycle contains a progress event, witnessed by a budget-instrumented ranking.
+In words: with the trace-condition check enabled, the configuration graph is a rooted cyclic proof ($\mathcal{C}(\mathit{b},v)$) --- every cycle contains a progress event, witnessed by a budget-instrumented ranking.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -76,7 +76,7 @@ $\forall\;\Sigma,f_s,f_r,\Gamma,t,A$,
   \;\Longrightarrow\;
   t \approx \mathcal{R}(f_r,\Sigma,\mathit{b},v).
 \]
-In words: the residual read back from $\mathit{b}$ is observationally indistinguishable from the source $t$ --- they terminate to the same values under all closing substitutions and evaluation contexts.
+In words: the residual read back from $\mathit{b}$ is observationally indistinguishable from the source $t$ ($t \approx \mathcal{R}(f_r,\Sigma,\mathit{b},v)$) --- they terminate to the same values under all closing substitutions and evaluation contexts.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
