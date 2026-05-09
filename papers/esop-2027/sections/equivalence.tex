@@ -15,6 +15,9 @@ t \approx u & \equiv & t \approx_{\mathrm{ciu}} u \quad (\forall\sigma,w.\; t[\s
 \end{array}
 \]
 
+\paragraph{Pre-proofs and cyclic proofs.}
+A $\mathsf{cfg\_builder}$ $b$ is a finite directed graph where each vertex $v$ carries a judgement $\mathsf{label}(b,v)$ and a successor list $\mathsf{succ}(b,v)$. It is a \emph{rooted pre-proof} if every vertex satisfies a local sequent rule: $\mathsf{label}(b,v)$ is the conclusion of a rule whose premises are $\mathsf{label}(b,\mathsf{succ}(b,v))$. It is a \emph{rooted cyclic proof} if additionally every directed cycle contains a \emph{progress event} (a case-split on a neutral scrutinee), witnessed by a well-founded ranking on a budget-instrumented graph.
+
 \subsection{Claim 1: Pre-proof correspondence}
 
 \begin{theorem}[Pre-proof construction]
@@ -23,19 +26,19 @@ For every environment $\Sigma$, fuel $f$, context $\Gamma$, term $t$, and type $
 \[
   \mathcal{S}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
-  \mathsf{rooted\_preproof}(\mathit{b},v)
+  \mathsf{rooted\_preproof}(\mathit{b},v).
 \]
 \end{theorem}
 
 \begin{proof}[Proof sketch]
 The supercompiler $\mathsf{SC.supercompile\_cfg}$ is a recursive graph-construction loop. At each step it either marks a memo hit (cyclic backlink), applies driving (asynchronous reduction), splits on a neutral scrutinee (synchronous left rule), or generalises (cut introduction). These four cases correspond exactly to the four rule forms of the focused sequent calculus. The correspondence is proved by three lemmas, each establishing a bisimulation between SC graph edges and sequent rule instances:
 \begin{itemize}[leftmargin=*]
-\item \texttt{drive\_corresponds\_to\_async\_edge}: a driving edge (one successor) matches an asynchronous rule application;
-\item \texttt{split\_corresponds\_to\_sync\_edge}: a case-split edge (multiple successors) matches a synchronous rule;
-\item \texttt{memo\_corresponds\_to\_fold}: a memo-table hit matches a cyclic backlink, with the instantiation substitution forming a sub-derivation.
+\item \texttt{drive\_corresponds\_to\_async\_edge}: a driving edge matches an asynchronous rule;
+\item \texttt{split\_corresponds\_to\_sync\_edge}: a case-split edge matches a synchronous rule;
+\item \texttt{memo\_corresponds\_to\_fold}: a memo-table hit matches a cyclic backlink.
 \end{itemize}
-The overall pre-proof property follows by structural induction on $f$. A fourth lemma \texttt{cfg\_vertex\_drive\_rule} classifies each vertex by its successor structure (0, 1 with driving, 1 without change, $n > 1$), giving a complete local rule assignment.
-\phantom{qed}\end{proof}
+A fourth lemma \texttt{cfg\_vertex\_drive\_rule} classifies each vertex by its successor structure (0, 1 with driving, 1 without change, $n>1$), giving a complete local rule assignment. The overall property follows by structural induction on $f$.
+\end{proof}
 
 \subsection{Claim 2: Cyclic proof via budget trace}
 
@@ -44,18 +47,19 @@ The overall pre-proof property follows by structural induction on $f$. A fourth 
 For every $\Sigma$, $f$, $\Gamma$, $t$, $A$,
 \[
   \mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
+  \;\Longrightarrow\;
+  \mathsf{rooted\_cyclic\_proof}(\mathit{b},v).
 \]
-implies that $\mathit{b}$ is a $\mathsf{rooted\_cyclic\_proof}$ with root $v$, ranked on budget-instrumented vertices $(v,k)$.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-The trace condition $\mathsf{SC.trace\_condition\_ok}$ verifies that the non-progress graph (with outgoing edges of progress vertices removed) contains no directed cycles. Each vertex classified as a case-split is a progress vertex. The construction proceeds in two stages:
+The trace condition $\mathsf{SC.trace\_condition\_ok}$ verifies that the non-progress graph (with outgoing edges of progress vertices removed) contains no directed cycles. Each vertex classified as a case-split is a progress vertex. The proof proceeds in two stages:
 \begin{enumerate}[leftmargin=*]
-\item \textbf{Cycle detection.} We prove \texttt{trace\_condition\_ok\_cycle\_progress}: if $\mathsf{trace\_condition\_ok}$ holds, every directed cycle in the original graph contains at least one progress edge. The proof extracts a cycle from the SCC decomposition and uses a combinatorial pigeonhole argument: any walk of length $>|V|$ through $|V|$ vertices repeats, yielding a shorter cycle, contradicting the boolean check.
-\item \textbf{Budget instrumentation.} We lift the base graph to pairs $(v,k)$ where $k \in [0,|V|]$. An edge is a progress edge iff its source is a progress vertex; progress edges consume one unit of budget ($k \mapsto k-1$), and non-progress edges preserve it ($k \mapsto k$). Since every original cycle contains a progress edge, the lifted graph is acyclic; its topological ordering yields a ranking $\lambda(v,k).\;k$, satisfying the well-foundedness condition.
+\item \textbf{Cycle detection.} We prove \texttt{trace\_condition\_ok\_cycle\_progress}: if $\mathsf{trace\_condition\_ok}$ holds, every directed cycle contains at least one progress edge. The proof uses a combinatorial pigeonhole argument: any walk of length $>|V|$ through $|V|$ vertices repeats, yielding a shorter cycle.
+\item \textbf{Budget instrumentation.} We lift the base graph to pairs $(v,k)$ where $k \in [0,|V|]$. Progress edges consume budget ($k \mapsto k-1$); non-progress edges preserve it ($k \mapsto k$). Since every original cycle contains a progress edge, the lifted graph is acyclic; its topological ordering yields a ranking $\lambda(v,k).\;k$, satisfying the well-foundedness condition.
 \end{enumerate}
-The combinatorial part totals $\sim$500 lines (FiniteDigraph, SCC, bounded-return lemma); the budget instrumentation and ranking witness are $\sim$200 lines.
-\phantom{qed}\end{proof}
+$\sim$700 lines total (FiniteDigraph, SCC, bounded-return lemma, budget instrumentation).
+\end{proof}
 
 \subsection{Claim 3: CIU soundness}
 
@@ -65,14 +69,8 @@ For every $\Sigma$, $f_s$, $f_r$, $\Gamma$, $t$, $A$,
 \[
   \mathcal{S}_{\!\mathit{tc}}(f_s,\Sigma,\Gamma,t,A) = \mathsf{Some}\,(v,\mathit{b})
   \;\Longrightarrow\;
-  t \approx \mathcal{R}(f_r,\Sigma,\mathit{b},v)
+  t \approx \mathcal{R}(f_r,\Sigma,\mathit{b},v).
 \]
-where $\approx_{\mathrm{ciu}}$ is contextual equivalence:
-\[
-  t \approx_{\mathrm{ciu}} u \quad\equiv\quad
-  \forall\sigma,w.\; (t[\sigma] \Downarrow w \iff u[\sigma] \Downarrow w)
-\]
-and $\mathsf{Residualise}$ reads back the configuration graph into a term with explicit $\mathsf{tFix}$ binders for cyclic back-edges.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -84,14 +82,14 @@ By fuel induction on the residualiser, with the trace condition guaranteeing exc
 \item \texttt{ciu\_case}: pairwise CIU-equivalent branches yield CIU-equivalent case expressions;
 \item \texttt{ciu\_of\_eq}: syntactic equality implies CIU.
 \end{itemize}
-These lemmas lift CIU through all nine term constructors: variables, sorts, dependent products, abstractions, applications, fixpoints, inductive types, constructors, and case expressions. The final step composes them: each residualisation step preserves equivalence up to \texttt{tFix} introduction, and \texttt{tFix} is justified by the cyclic graph structure (the backlink is CIU-equivalent to unfolding by Claim~2). The typed variant $\approx_{\mathrm{ciu\_jTy}}$ follows from the untyped result via the substitution lemma \texttt{ciu\_jTy\_of\_ciu\_jTy\_rel\_eq}, which lifts CIU from terms to typing judgements under well-typed closing substitutions.
-\phantom{qed}\end{proof}
+These lift CIU through all nine term constructors. The final step composes them: each residualisation step preserves equivalence up to \texttt{tFix} introduction, and \texttt{tFix} is justified by the cyclic graph structure (the backlink is CIU-equivalent to unfolding by Claim~2). The typed variant follows via the substitution lemma \texttt{ciu\_jTy\_of\_ciu\_jTy\_rel\_eq}.
+\end{proof}
 
 \subsection{Claim 4: Example validation}
 
 \begin{proposition}[Examples]
 \label{prop:examples}
-The following identities are validated by the pipeline. For each, the supercompiler produces a residual whose normal form (by $\texttt{vm\_compute}$) coincides with the expected optimised term.
+The following identities pass the pipeline ($\texttt{vm\_compute}$ confirms definitional equality of residuals):
 \begin{align*}
   \mathsf{length}\;(\mathsf{map}\;f\;l) &= \mathsf{length}\;l \\
   \mathsf{length}\;(\mathsf{append}\;l_1\;l_2) &= \mathsf{plus}\;(\mathsf{length}\;l_1)\;(\mathsf{length}\;l_2) \\
@@ -99,11 +97,9 @@ The following identities are validated by the pipeline. For each, the supercompi
   \mathsf{length}\;(\mathsf{map}\;f\;(\mathsf{map}\;g\;l)) &= \mathsf{length}\;l \\
   \mathsf{Vec}\;A\;(\mathsf{length}\;(\mathsf{map}\;f\;v)) &\equiv \mathsf{Vec}\;A\;(\mathsf{length}\;v)
 \end{align*}
-Additionally, append-associativity holds via 2-pass supercompilation.
+Append-associativity additionally holds via 2-pass supercompilation.
 \end{proposition}
 
 \begin{proof}
-For each example, the supercompiler is invoked with sufficient fuel and the resulting residual is compared to the expected output by $\texttt{vm\_compute}$ (kernel-level symbolic evaluation). The equality is definitional at the level of normal forms. This validates that the pipeline obtains for concrete inputs; the CIU guarantee that the residual is observationally equivalent to the source is provided by Claim~3.
+For each example, the supercompiler is invoked with sufficient fuel and the residuals are compared by $\texttt{vm\_compute}$. The CIU guarantee follows from Claim~3.
 \end{proof}
-
-\paragraph{Proof.} For each example, the supercompiler processes the input term and produces a residual. Computational equivalence is verified by \texttt{vm\_compute}, which reduces both the residual and the expected output to normal form and checks syntactic equality. This is not a proof of CIU for the example (that follows from Claim~3) but a validation that the supercompiler produces a residual whose normal form coincides with the expected optimised result.
