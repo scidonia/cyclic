@@ -53,9 +53,43 @@ Module BacklinkAdmissible.
       corresponds to the lexicographic product of the two rankings.
   *)
 
-  (** Per-type progress budget. Initially a placeholder counting ALL
-      progress edges; will be refined to count per inductive type. *)
-  Definition per_type_rank (b : SC.cfg_builder) (I : nat) (v : nat) : nat := 0.
+  (** Per-type progress budget. Walks the forward-edges graph from root
+      (vertex 0) to v, counting progress edges that split on inductive I. *)
+  Fixpoint count_progress_edges
+      (b : SC.cfg_builder) (I : nat) (v w : nat) (depth : nat) : option nat :=
+    match depth with
+    | 0 => None
+    | S depth' =>
+        if Nat.eqb v w then Some 0
+        else
+          let succs := SC.succs_of b v in
+          let self_progress :=
+            if SC.is_progress_vertex b v then
+              match SC.lookup_label b v with
+              | Some (C.jTy _ (tCase I' (tVar _) _ _) _) =>
+                  if Nat.eqb I I' then 1 else 0
+              | _ => 0
+              end
+            else 0
+          in
+          let fix try_succs (ws : list nat) : option nat :=
+            match ws with
+            | [] => None
+            | w' :: ws' =>
+                match count_progress_edges b I w' w depth' with
+                | Some n => Some (self_progress + n)
+                | None => try_succs ws'
+                end
+            end
+          in
+          try_succs succs
+    end.
+
+  Definition per_type_rank (b : SC.cfg_builder) (I : nat) (v : nat) : nat :=
+    match count_progress_edges b I 0 v (SC.cb_next b) with
+    | Some n => n
+    | None => SC.cb_next b  (* unreachable — max *)
+    end.
 
   (** Extract the inductive type being split at a progress vertex.
       Returns Some I if v is a case-split on inductive I, None otherwise. *)
