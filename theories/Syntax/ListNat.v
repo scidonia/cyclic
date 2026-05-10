@@ -658,7 +658,7 @@ Module ListNat.
               tLam expr_ty (         (* tVar 0 = e2, tVar 1 = e1, tVar 2 = code, tVar 3 = e, tVar 4 = self *)
                 tApp (tApp (tVar 4) (tVar 0))
                      (tApp (tApp (tVar 4) (tVar 1))
-                            (cons Examples.zero (tVar 2)))
+                           (cons 0 (tVar 2)))
               ))
           ]))).
 

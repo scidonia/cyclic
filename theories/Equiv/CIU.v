@@ -71,7 +71,7 @@ Proof.
   (* By determinism of CBN, the only way tApp... reaches a value is via beta.
      Use steps_decomp to peel off step_app1 -> eventually step_beta. *)
   revert t a Hsteps Hval.
-  refine (clos_refl_trans_ind tm step _ (fun w =>
+  refine (clos_refl_trans_2_ind_old tm step _ (fun w =>
     forall t0 a0, w = tApp t0 a0 -> value v ->
     exists A body, terminates_to t0 (tLam A body) /\ terminates_to (subst0 a0 body) v) _ _).
   - intros y Hstep IH t0 a0 Heq Hv. subst.

@@ -37,12 +37,48 @@ Inductive step : tm -> tm -> Prop :=
 | step_case_scrut I scrut scrut' C brs :
     step scrut scrut' ->
     step (tCase I scrut C brs) (tCase I scrut' C brs)
-| step_case_roll I c args C brs br :
-    branch brs c = Some br ->
-    step (tCase I (tRoll I c args) C brs) (apps br args).
+ | step_case_roll I c args C brs br :
+     branch brs c = Some br ->
+     step (tCase I (tRoll I c args) C brs) (apps br args).
+
+Inductive clos_refl_trans_2 {A : Type} (R : relation A) (x : A) : A -> Prop :=
+  | rt2_step : forall y, R x y -> clos_refl_trans_2 R x y
+  | rt2_refl : clos_refl_trans_2 R x x
+  | rt2_trans : forall y z,
+      clos_refl_trans_2 R x y -> clos_refl_trans_2 R y z -> clos_refl_trans_2 R x z.
+
+Lemma clos_refl_trans_2_ind_old (A : Type) (R : relation A) (x : A) (P : A -> Prop) :
+  P x ->
+  (forall y z, clos_refl_trans_2 R x y -> R y z -> P y -> P z) ->
+  forall y, clos_refl_trans_2 R x y -> P y.
+Proof.
+  intros Hbase Hstep y Hclos.
+  refine ((fix go a b (H : clos_refl_trans_2 R a b) {struct H} :
+    clos_refl_trans_2 R x a -> P a -> P b :=
+    _) x y Hclos (@rt2_refl A R x) Hbase).
+  intros Hxa Pa. destruct H as [b' Hstep_ab | | m n H1 H2].
+  - exact (Hstep a b' Hxa Hstep_ab Pa).
+  - exact Pa.
+  - pose (Pm := go a m H1 Hxa Pa).
+    exact (go m n H2 (@rt2_trans A R x a m Hxa H1) Pm).
+Defined.
+
+Lemma clos_refl_trans_2_to_builtin {A R x y} :
+  clos_refl_trans_2 R x y -> clos_refl_trans A R x y.
+Proof.
+  intro H.
+  refine ((fix go x' y' (Hst : clos_refl_trans_2 R x' y') {struct Hst} :
+    clos_refl_trans A R x' y' :=
+    match Hst with
+    | @rt2_step _ _ _ y'' Hs => @rt_step A R x' y'' Hs
+    | @rt2_refl _ _ _ => @rt_refl A R x'
+    | @rt2_trans _ _ _ y'' z'' H1 H2 =>
+        @rt_trans A R x' y'' z'' (go x' y'' H1) (go y'' z'' H2)
+    end) x y H).
+Qed.
 
 Definition steps : tm -> tm -> Prop :=
-  clos_refl_trans tm step.
+  clos_refl_trans_2 step.
 
 Inductive value : tm -> Prop :=
 | v_lam A t : value (tLam A t)
@@ -161,14 +197,14 @@ Qed.
 Lemma steps_step (t u : tm) : step t u -> steps t u.
 Proof.
   intro H.
-  apply rt_step.
+  apply rt2_step.
   exact H.
 Qed.
 
 Lemma steps_trans (t u v : tm) : steps t u -> steps u v -> steps t v.
 Proof.
   intros Htu Huv.
-  eapply rt_trans; eauto.
+  eapply rt2_trans; eauto.
 Qed.
 
 Lemma steps_app1 (t t' u : tm) : steps t t' -> steps (tApp t u) (tApp t' u).
@@ -176,13 +212,13 @@ Proof.
   intro Hsteps.
   revert u.
   induction Hsteps; intro u.
-  - (* rt_step *)
-    apply rt_step.
+  - (* rt2_step *)
+    apply rt2_step.
     eapply step_app1; eauto.
-  - (* rt_refl *)
-    apply rt_refl.
-  - (* rt_trans *)
-    eapply rt_trans.
+  - (* rt2_refl *)
+    apply rt2_refl.
+  - (* rt2_trans *)
+    eapply rt2_trans.
     + apply IHHsteps1.
     + apply IHHsteps2.
 Qed.
@@ -193,13 +229,13 @@ Proof.
   intro Hsteps.
   revert C brs.
   induction Hsteps; intros C0 brs0.
-  - (* rt_step *)
-    apply rt_step.
+  - (* rt2_step *)
+    apply rt2_step.
     eapply step_case_scrut; eauto.
-  - (* rt_refl *)
-    apply rt_refl.
-  - (* rt_trans *)
-    eapply rt_trans.
+  - (* rt2_refl *)
+    apply rt2_refl.
+  - (* rt2_trans *)
+    eapply rt2_trans.
     + apply IHHsteps1.
     + apply IHHsteps2.
 Qed.
@@ -236,18 +272,18 @@ Lemma steps_decomp (t u : tm) :
 Proof.
   intro H.
   induction H.
-  - (* rt_step *)
-    right. exists y. split; [exact H|apply rt_refl].
-  - (* rt_refl *)
+  - (* rt2_step *)
+    right. exists y. split; [exact H|apply rt2_refl].
+  - (* rt2_refl *)
     left. reflexivity.
-  - (* rt_trans *)
-    destruct IHclos_refl_trans1 as [->|[t1 [Hst Ht1u]]].
+  - (* rt2_trans *)
+    destruct IHclos_refl_trans_2_1 as [->|[t1 [Hst Ht1u]]].
     + (* t = y *)
-      destruct IHclos_refl_trans2 as [->|[t1 [Hst Ht1u]]].
+      destruct IHclos_refl_trans_2_2 as [->|[t1 [Hst Ht1u]]].
       * left. reflexivity.
       * right. exists t1. split; [exact Hst|exact Ht1u].
     + right. exists t1. split; [exact Hst|].
-      eapply rt_trans; eauto.
+      eapply rt2_trans; eauto.
 Qed.
 
 Lemma steps_to_value_unique (t u v : tm) :
@@ -256,15 +292,15 @@ Proof.
   intros Htv Hv Htu.
   revert v Htv Hv.
   induction Htu.
-  - (* rt_step *)
+  - (* rt2_step *)
     intros v Htv Hv.
     destruct (steps_decomp _ _ Htv) as [->|[t1 [Hst Ht1v]]].
     + exfalso. eapply value_no_step; eauto.
     + assert (y = t1) as -> by (eapply step_deterministic; eauto).
       exact Ht1v.
-  - (* rt_refl *)
+  - (* rt2_refl *)
     intros v Htv _. exact Htv.
-  - (* rt_trans *)
+  - (* rt2_trans *)
     intros v Htv Hv.
     pose proof (IHHtu1 v Htv Hv) as Hmv.
     apply IHHtu2; [exact Hmv|exact Hv].
@@ -365,10 +401,10 @@ Lemma steps_subst (σ : var -> tm) (t u : tm) :
 Proof.
   intro H.
   induction H.
-  - apply rt_step.
+  - apply rt2_step.
     now apply step_subst.
-  - apply rt_refl.
-  - eapply rt_trans; eauto.
+  - apply rt2_refl.
+  - eapply rt2_trans; eauto.
 Qed.
 
 (** Decomposition: if [tCase I scrut C brs] steps to a value [v],
@@ -382,25 +418,21 @@ Lemma steps_tCase_decompose (I : nat) (scrut C : tm) (brs : list tm) (v : tm) :
     steps (apps br args) v.
 Proof.
   intros Hval Hsteps.
-  (* Use [steps_decomp] to peel off [step_case_scrut] steps *)
-  revert scrut C brs Hsteps.
-  refine (clos_refl_trans_ind tm step _ (fun w =>
-    forall scrut0 C0 brs0, w = tCase I scrut0 C0 brs0 ->
-    value v -> exists c args br,
+  pose proof (clos_refl_trans_2_ind_old tm step (tCase I scrut C brs)
+    (fun w => forall scrut0 C0 brs0, w = tCase I scrut0 C0 brs0 ->
+      value v -> exists c args br,
       steps scrut0 (tRoll I c args) /\
       branch brs0 c = Some br /\
-      steps (apps br args) v) _ _).
-  - (* rt_step: step (tCase I scrut0 C0 brs0) y, and steps y v *)
-    intros y Hstep IH scrut0 C0 brs0 Heq Hv.
-    subst. inversion Hstep; subst; clear Hstep.
-    + (* step_case_scrut: tCase scrut0 → tCase scrut' *)
-      apply (IH scrut' C0 brs0 eq_refl Hv).
-    + (* step_case_roll: tCase (tRoll I c args) → apps br args *)
-      exists c, args, br.
-      split; [apply rt_refl|split; [exact H|exact H0]].
-  - (* rt_refl: tCase ... = v, impossible since tCase is never a value *)
-    intros scrut0 C0 brs0 Heq Hv.
-    subst. inversion Hv.
+      steps (apps br args) v)
+    _ _ v Hsteps scrut C brs eq_refl Hval) as Hgoal.
+  - intros Hv scrut0 C0 brs0 Heq.
+    inversion Heq; subst. inversion Hv.
+  - intros y z Hclos Hstep IH Hv scrut0 C0 brs0 Heq.
+    subst z. inversion Hstep; subst; clear Hstep.
+    + apply (IH Hv scrut' C0 brs0 eq_refl).
+    + exists c, args, br.
+      split; [apply rt2_refl|split; [exact H|exact H0]].
+  - exact Hgoal.
 Qed.
 
 (** Corollary for [terminates_to]. *)
