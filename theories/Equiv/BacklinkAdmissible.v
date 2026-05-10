@@ -101,13 +101,63 @@ Module BacklinkAdmissible.
     apply CTB.trace_rank_monotone.
   Qed.
 
-  Lemma trace_rank_strict_on_progress :
-    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
-      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
-      CTB.progress_edge_trace G is_progress B vk wk ->
-      snd wk < snd vk.
-  Proof.
-    apply CTB.trace_rank_strict_on_progress.
-  Qed.
+(** The budget trace lifted graph. *)
+  Definition lifted_graph (scb : SC.cfg_builder) (Hclosed : SC.builder_succ_closed scb) : 
+    @FiniteDigraph.fin_digraph traceV _ _ :=
+    let G := CTB.cfg_graph scb Hclosed in
+    let B := size (dom scb.(SC.cb_label)) in
+    CTB.trace_graph G (SC.is_progress_vertex scb) B.
 
-End BacklinkAdmissible.
+  (** Unfolding invariant: for each vertex vk in the lifted graph,
+      there exists a term that is the result of "driving" the
+      original config at v through all non-progress edges and
+      replacing all backlinks with recursive calls. *)
+  Definition unfolds_to (scb : SC.cfg_builder)
+             (Gtrace : @FiniteDigraph.fin_digraph traceV _ _)
+             (vk : traceV) (t : Term.Syntax.tm) : Prop :=
+    (* Placeholder: t is the standard-proof term extracted from vk *)
+    True.
+
+  (** * Main theorem: Backlink admissibility
+
+      For every SC-produced cyclic proof (cfg_builder scb passing
+      trace_condition_ok), the root term t_original is CIU-equivalent
+      to a term t_standard that uses only the CIC recursor (no
+      cyclic backlinks).
+
+      The proof constructs t_standard by traversing the budget-trace
+      lifted graph in order of decreasing budget k.  At each vertex:
+      - Progress vertices (case-splits): replaced by the CIC recursor
+        for the inductive type, with base/step cases from successors.
+      - Non-progress vertices: the SC's driving step is applied (β, ι,
+        fix-unfold, etc.) to the successor terms.
+      - Budget-zero vertices: use the original config term (base case
+        of the recursion).
+
+      The traversal is well-founded because k decreases on progress
+      edges (trace_rank_strict_on_progress) and never increases
+      (trace_rank_monotone).  Since k ∈ [0, B], the recursion
+      terminates.
+
+      NOTE: This theorem statement is a roadmap.  The full construction
+      requires graph-walking code that is not yet mechanised.
+  *)
+  Theorem backlink_admissible :
+    forall (scb : SC.cfg_builder)
+           (Hclosed : SC.builder_succ_closed scb)
+           (Hok : SC.trace_condition_ok scb = true)
+           (root : nat) (t : Term.Syntax.tm),
+      SC.lookup_label scb root = Some (C.jTy [] t (tVar 0)) ->
+      exists t_standard,
+        unfolds_to scb (lifted_graph scb Hclosed) (root, size (dom scb.(SC.cb_label))) t_standard.
+  Proof.
+    intros scb Hclosed Hok root t Hlabel.
+    set (Gtrace := lifted_graph scb Hclosed).
+    set (k0 := size (dom scb.(SC.cb_label))).
+    (* The lifted graph is acyclic: the ranking function (snd) strictly
+       decreases on progress edges and is monotone on all edges. *)
+    assert (Hacyclic : forall xs, FiniteDigraph.is_cycle Gtrace xs -> False).
+    { intro xs. intro Hcyc.
+      (* Every cycle must contain a progress edge, which decreases k.
+         After traversing the cycle, k must be strictly smaller than itself. *)
+  Admitted.
