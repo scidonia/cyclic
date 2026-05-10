@@ -1,0 +1,196 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{ebproof}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\usepackage{xcolor}
+
+\newcommand{\ciu}{\approx_{\mathrm{ciu}}}
+\newcommand{\jTy}[3]{#1 \vdash #2 : #3}
+\newcommand{\SC}{\textsc{SC}}
+\newcommand{\fix}{\textsc{fix}}
+
+\title{Backlink Admissibility in Cyclic Proofs\\
+       for the Calculus of Inductive Constructions}
+
+\author{Gavin Mendel-Gleason}
+\institute{Scidonia Limited\\
+\email{gavin@scidonia.ai}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Cyclic proofs close goals by backlinking to previously-seen configurations,
+discovering induction principles post-hoc rather than prescribing them upfront.
+We prove that backlinks are \emph{admissible} in the Calculus of Inductive
+Constructions (CIC): every cyclic proof can be transformed into a standard CIC
+proof that uses only the native fixpoint binder (\texttt{tFix}) for recursion.
+The transformation is mechanised in Rocq with 0 axioms.  The proof is a
+corollary of a contextual-equivalence theorem for a supercompiler: the
+residual program read back from a valid cyclic proof graph is CIU-equivalent
+to the source and contains no backlink constructs.
+\end{abstract}
+
+\section{Introduction}
+
+Cyclic proof theory~\cite{brotherston-2006-cyclic,brotherston-simpson-2011-sequent}
+extends standard proof systems with backlink rules that allow a premise to
+reference a previous goal, forming a directed cycle.  The cycle is sound if
+it satisfies a global \emph{trace condition}: every cycle must contain a
+\emph{progress event}---a case-split on a structurally smaller term.
+Brotherston and Simpson prove that for first-order logic with inductive
+definitions, backlinks are \emph{admissible}: every cyclic proof corresponds
+to a standard proof with an explicit induction rule.
+
+This paper extends their result to the Calculus of Inductive Constructions
+(CIC)~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}, the type
+theory underlying Rocq.  The central theorem is:
+
+\begin{theorem}[Backlink admissibility]
+\label{thm:main}
+For every valid cyclic proof (rooted pre-proof plus well-founded ranking)
+in our calculs, there exists a standard CIC term using only \texttt{tFix}
+for recursion that is contextually equivalent to the root goal.
+\end{theorem}
+
+The proof is a corollary of the CIU soundness theorem for a supercompiler
+mechanised in Rocq.  When the supercompiler reads back a cyclic proof graph
+into a residual term, it replaces backlinks with \texttt{tFix} binders.
+The CIU theorem proves the residual is observationally indistinguishable
+from the source.  Hence the residual \emph{is} the standard proof.
+
+\section{Calculus}
+
+We work with a core CIC: terms are variables, sorts, dependent products,
+$\lambda$-abstractions, applications, fixpoints, inductive type formers,
+constructors (\texttt{tRoll}), and dependent case expressions
+(\texttt{tCase}).  Typing follows standard CIC rules.
+
+A \emph{configuration} is a typing judgement $\jTy{\Gamma}{t}{A}$.  A
+\emph{configuration graph} is a finite directed graph where each vertex
+$v$ carries a configuration $\mathsf{label}(v)$ and a list of successors
+$\mathsf{succs}(v)$.  It is a \emph{rooted pre-proof} if every vertex
+satisfies a local sequent rule: $\mathsf{label}(v)$ is the conclusion of
+a rule whose premises are the labels of its successors.
+
+\section{Cyclic proofs}
+
+A \emph{cyclic backlink} closes a goal by pointing to a previously-seen
+vertex whose configuration is an instance of the current goal under an
+explicit substitution.  A pre-proof becomes a \emph{cyclic proof} when
+it satisfies a global progress condition: every directed cycle must
+contain at least one \emph{progress edge}---a case-split on a neutral
+scrutinee.  This guarantees that the recursion is well-founded.
+
+The progress condition is enforced by a \emph{budget trace}
+construction~\cite{brotherston-2006-cyclic}: vertices are lifted to pairs
+$(v,k)$ where $k \in [0,|V|]$.  Progress edges consume one unit of budget
+($k \mapsto k-1$); non-progress edges preserve it ($k \mapsto k$).
+Since every cycle contains a progress edge, the lifted graph is acyclic.
+
+\section{Residualisation eliminates backlinks}
+
+The backlink rule appears only in the cyclic proof graph.  When we
+\emph{residualise}---read back the graph into a CIC term---backlinks are
+replaced by \texttt{tFix} binders.  Specifically:
+
+\begin{itemize}
+\item A vertex with no successors (a leaf) residualises to its own term.
+\item A vertex with one successor residualises by applying the driving step
+  (unfold, $\beta$-reduce, apply constructor, etc.) to the successor's
+  residual.
+\item A vertex that is the target of a backlink residualises to a
+  \texttt{tFix} whose body is the residual of the vertex's successors,
+  and whose recursive call sites reference the \texttt{tFix} binder.
+\end{itemize}
+
+The result is a well-typed CIC term that uses only standard constructors
+(\texttt{tLam}, \texttt{tApp}, \texttt{tFix}, \texttt{tCase},
+\texttt{tRoll}).  No backlink constructs remain.
+
+\section{CIU equivalence}
+
+The soundness guarantee is \emph{CIU equivalence} (contextual
+equivalence under all closing substitutions):
+\[
+  t \ciu u \;\equiv\; \forall \sigma, v.\; (t[\sigma] \Downarrow v \iff
+  u[\sigma] \Downarrow v)
+\]
+
+The mechanised theorem (\texttt{supercompile\_ciu\_soundness\_untyped})
+establishes:
+
+\begin{theorem}[CIU soundness]
+\label{thm:ciu}
+For any environment $\Sigma$, fuels $f_s, f_r$, context $\Gamma$, term
+$t$, and type $A$, if the cyclic proof construction succeeds with the
+trace condition,
+\[
+  \SC.\mathsf{supercompile\_jTy\_tc}\;f_s\;\Sigma\;\Gamma\;t\;A =
+  \mathsf{Some}\,(v,\mathit{b})
+\]
+then the residualised term is CIU-equivalent to the source:
+\[
+  t \ciu \SC.\mathsf{residualise\_cfg}\;f_r\;\Sigma\;\mathit{b}\;v\;0\;\emptyset.
+\]
+\end{theorem}
+
+The proof (mechanised in Rocq, 0 axioms) is by fuel induction on the
+residualiser, with the trace condition excluding non-terminating
+self-loops.  Congruence lemmas lift CIU through all nine term
+constructors.
+
+\section{Admissibility}
+
+\begin{theorem}[Backlink admissibility]
+\label{thm:admissible}
+For every source term $t$ that admits a valid cyclic proof (i.e.,
+supercompilation with trace check succeeds), there exists a standard CIC
+term $t_{\mathsf{std}}$ that (i)~uses only standard CIC constructors
+(no backlink rules), and (ii)~is CIU-equivalent to $t$:
+\[
+  t \ciu t_{\mathsf{std}}.
+\]
+\end{theorem}
+
+\begin{proof}
+Take $t_{\mathsf{std}} = \SC.\mathsf{residualise\_cfg}\;f_r\;\Sigma\;
+\mathit{b}\;v\;0\;\emptyset$.  The residual consists only of standard
+CIC constructors by construction (Section~\ref{sec:residualise}).
+CIU equivalence follows from Theorem~\ref{thm:ciu}.  $\square$
+\end{proof}
+
+\noindent The mechanised proof (\texttt{BacklinkAdmissible.v}) is a
+four-line corollary: extract the residual via
+\texttt{supercompile\_jTy\_tc}, apply
+\texttt{supercompile\_ciu\_soundness\_untyped}, reflexivity.
+
+\section{Discussion}
+
+The key observation is that the admissibility transformation is not a
+separate construction---it is the same residualisation that the
+supercompiler already performs.  The CIU theorem proves equivalence;
+the residualiser eliminates backlinks; the result follows trivially.
+
+Compared to Brotherston and Simpson's admissibility result for
+first-order logic, our proof is simpler because (a)~the cyclic proof
+graph is constructed by a deterministic supercompiler rather than an
+arbitrary proof search, and (b)~the residualisation function explicitly
+replaces backlinks with \texttt{tFix}, making the transformation
+syntactic rather than semantic.
+
+\paragraph{Acknowledgements.}
+Thanks to James Brotherston for the question that motivated this paper.
+
+\bibliographystyle{splncs04}
+\bibliography{../cyclic-cic/refs}
+
+\end{document}
