@@ -75,26 +75,41 @@ Module BacklinkAdmissible.
     apply (trace_rank_strict_on_progress G is_progress B vk wk Hedge Hprog).
   Qed.
 
-  (** Lexicographic less-than on lists of (inductive, rank) pairs. *)
+  (** Lexicographic less-than on lists of (inductive, rank) pairs.
+      The rank at the first occurrence of an inductive type that differs
+      must be strictly smaller; the rest of the list (for other types)
+      is unchanged.  This models per-type ranking where each progress
+      step decreases exactly one type's rank and leaves others alone. *)
   Inductive lex_lt : list (nat * nat) -> list (nat * nat) -> Prop :=
-  | lex_lt_here : forall I r1 r2 rs1 rs2,
+  | lex_lt_here : forall I r1 r2 rs,
       r1 < r2 ->
-      lex_lt ((I, r1) :: rs1) ((I, r2) :: rs2)
+      lex_lt ((I, r1) :: rs) ((I, r2) :: rs)
   | lex_lt_later : forall I r rs1 rs2,
       lex_lt rs1 rs2 ->
       lex_lt ((I, r) :: rs1) ((I, r) :: rs2).
 
-  (** Lexicographic less-than is well-founded because:
-      - lex_lt_here: the rank at the first matching position strictly
-        decreases (r1 < r2), and < on nat is well-founded.
-      - lex_lt_later: the head ranks are equal, and we recurse on a
-        sub-derivation of lex_lt on the tails.
-      Since lex_lt_here can introduce arbitrary tails, the proof uses
-      well-founded induction on the lexicographic product of the head
-      rank (via lt_wf) and the list length. *)
+  (** Sum-of-ranks measure.  Each [lex_lt] step strictly decreases
+      the total sum because the rank at the first differing position
+      is smaller; sums are preserved on equal-head cons. *)
+  Fixpoint measure (l : list (nat * nat)) : nat :=
+    match l with
+    | [] => 0
+    | (_, r) :: rs => r + 1 + measure rs
+    end.
+
+  Lemma lex_lt_measure : forall l1 l2, lex_lt l1 l2 -> measure l1 < measure l2.
+  Proof.
+    induction 1; simpl; lia.
+  Qed.
+
   Lemma lex_lt_wf : well_founded lex_lt.
   Proof.
-  Admitted.
+    intros l.
+    induction l as [l IH] using
+      (well_founded_induction (wf_inverse_image _ _ measure lt lt_wf)).
+    constructor. intros y Hlex.
+    apply IH. apply lex_lt_measure. exact Hlex.
+  Qed.
 
   (** * Main theorem: Backlink admissibility
 
