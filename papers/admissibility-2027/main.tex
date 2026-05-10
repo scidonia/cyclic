@@ -28,7 +28,7 @@ Cyclic proofs close goals by backlinking to previously-seen configurations,
 discovering induction principles post-hoc rather than prescribing them upfront.
 We prove that backlinks are \emph{admissible} in the Calculus of Inductive
 Constructions (CIC): every valid cyclic proof can be read back to a standard CIC
-term that uses only the native fixpoint binder (\texttt{tFix}) for recursion
+term that uses only the native fixpoint binder ($\fix$) for recursion
 and is observationally indistinguishable from the root goal.  The proof is
 a direct corollary of a contextual-equivalence theorem mechanised in Rocq with
 0 axioms.
@@ -48,7 +48,7 @@ to a standard proof with an explicit induction rule.
 This paper extends their result to the Calculus of Inductive Constructions
 (CIC)~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}, the type
 theory underlying Rocq.  We prove that every rooted, ranked cyclic proof
-can be residualised to a standard CIC term using only \texttt{tFix} for
+can be residualised to a standard CIC term using only $\fix$ for
 recursion, and that the residual is observationally equivalent to the
 root goal.
 
@@ -111,16 +111,18 @@ following:
 \paragraph{Asynchronous rules (deterministic).} Applied eagerly.  Each
 reduces the goal to a single premise by one computation step:
 
+\medskip
 \begin{prooftree}
   \hypo{\jTy{\Gamma}{t[u/x]}{A}}
   \infer1[\beta]{\jTy{\Gamma}{(\lambda x{:}A.\,t)\;u}{A}}
 \end{prooftree}
-
+\hspace{2cm}
 \begin{prooftree}
   \hypo{\jTy{\Gamma}{t[\fix\,t/0]}{A}}
   \infer1[\textsc{fix}]{\jTy{\Gamma}{\fix\,t}{A}}
 \end{prooftree}
 
+\medskip
 \begin{prooftree}
   \hypo{\jTy{\Gamma}{\mathsf{apps}\;(\vec{b}[c])\;\vec{a}}{A}}
   \infer1[\iota]{\jTy{\Gamma}{\Case{I}{(\Roll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
@@ -130,6 +132,7 @@ reduces the goal to a single premise by one computation step:
 scrutinee $x$ creates one premise per constructor $c$ of $I$, each in
 an extended context with fresh constructor arguments $\vec{y}_c$:
 
+\medskip
 \begin{prooftree}
   \hypo{\jTy{\Gamma,\vec{y}_0}{t_0}{A}}
   \hypo{\cdots}
@@ -138,6 +141,7 @@ an extended context with fresh constructor arguments $\vec{y}_c$:
 \end{prooftree}
 
 \paragraph{Cyclic backlink (closure).}
+\medskip
 \begin{prooftree}
   \hypo{\Delta \vdash \sigma :_s \Gamma}
   \infer1[\textsc{back}]{\jTy{\Delta}{t}{A}}
@@ -159,20 +163,20 @@ We write $\mathcal{C}(b,v_0)$ for this property.
 The backlink rule appears only in the proof graph.  A \emph{residualisation}
 function $\mathcal{R}(b,v)$ reads back the graph into a CIC term by
 traversing the successors of $v$ and replacing backlinks with
-\texttt{tFix} binders:
+$\fix$ binders:
 
 \begin{itemize}
 \item A vertex with no successors returns its own term.
 \item A vertex with one successor applies the driving step (unfold,
   $\beta$-reduce, apply constructor) to the successor's residual.
-\item A vertex that is the target of a backlink becomes a \texttt{tFix}
+\item A vertex that is the target of a backlink becomes a $\fix$
   whose body is the residual of its successors, with recursive calls
-  referencing the \texttt{tFix} binder.
+  referencing the $\fix$ binder.
 \end{itemize}
 
 The result is a well-typed CIC term using only standard constructors
-(\texttt{tLam}, \texttt{tApp}, \texttt{tFix}, \texttt{tCase},
-\texttt{tRoll}).  No backlink constructs remain.
+($\lambda$, application, $\fix$, $\Case$,
+$\Roll$).  No backlink constructs remain.
 
 \section{CIU equivalence}
 
@@ -216,7 +220,7 @@ where $\ell(b,v) = \jTy{\Gamma}{t}{A}$.
 \end{theorem}
 
 \noindent In words: every rooted cyclic proof can be read back to a
-standard CIC term (using only \texttt{tFix} for recursion) that is
+standard CIC term (using only $\fix$ for recursion) that is
 observationally indistinguishable from the root goal.
 
 \begin{proof}
@@ -238,7 +242,7 @@ residualiser eliminates backlinks; the result follows trivially.
 Compared to Brotherston and Simpson's result for first-order logic, our
 proof is simpler because (a)~the graph is finite, and (b)~residualisation
 is a syntactic transformation that explicitly replaces backlinks with
-\texttt{tFix}, rather than requiring a semantic argument about proof
+$\fix$, rather than requiring a semantic argument about proof
 unfoldings.
 
 \paragraph{Acknowledgements.}

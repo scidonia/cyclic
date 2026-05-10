@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  10 MAY 2026 09:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  10 MAY 2026 09:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -727,6 +727,32 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 
 Title too long for running head. Please supply
 a shorter form with \titlerunning prior to \maketitle
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <9> on input line 31.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 31.
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.31 ...ses only the native fixpoint binder ($\fix
+                                                  $) for recursion
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.51 ...ed to a standard CIC term using only $\fix
+                                                  $ for
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
 ! Undefined control sequence.
 l.60 t,u,A,B &::=& x \mid \Sort
                                {i} \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t...
@@ -850,7 +876,7 @@ and I'll forget about whatever was undefined.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.116 ...{\jTy{\Gamma}{(\lambda x{:}A.\,t)\;u}{A}}
+l.117 ...{\jTy{\Gamma}{(\lambda x{:}A.\,t)\;u}{A}}
                                                   
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
@@ -858,7 +884,7 @@ you left one out. Proceed, with fingers crossed.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.116 ...{\jTy{\Gamma}{(\lambda x{:}A.\,t)\;u}{A}}
+l.117 ...{\jTy{\Gamma}{(\lambda x{:}A.\,t)\;u}{A}}
                                                   
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -869,7 +895,7 @@ my insertion and my current dilemma will both disappear.
 ! Undefined control sequence.
 <argument> t[\fix 
                   \,t/0]
-l.120   \hypo{\jTy{\Gamma}{t[\fix\,t/0]}{A}}
+l.121   \hypo{\jTy{\Gamma}{t[\fix\,t/0]}{A}}
                                             
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -880,7 +906,7 @@ and I'll forget about whatever was undefined.
 ! Undefined control sequence.
 <argument> \fix 
                 \,t
-l.121 ...1[\textsc{fix}]{\jTy{\Gamma}{\fix\,t}{A}}
+l.122 ...1[\textsc{fix}]{\jTy{\Gamma}{\fix\,t}{A}}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -894,7 +920,7 @@ Package microtype Info: Character `029' is missing
 ! Undefined control sequence.
 <argument> \Case 
                  {I}{(\Roll {I}{c}{\vec {a}})}{\kappa }{\vec {b}}
-l.126 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
+l.128 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -905,7 +931,7 @@ and I'll forget about whatever was undefined.
 ! Undefined control sequence.
 <argument> \Case {I}{(\Roll 
                             {I}{c}{\vec {a}})}{\kappa }{\vec {b}}
-l.126 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
+l.128 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -916,7 +942,7 @@ and I'll forget about whatever was undefined.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.126 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
+l.128 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
                                                   
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
@@ -924,7 +950,7 @@ you left one out. Proceed, with fingers crossed.
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.126 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
+l.128 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
                                                   
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -935,7 +961,7 @@ my insertion and my current dilemma will both disappear.
 ! Undefined control sequence.
 <argument> \Case 
                  {I}{x}{\kappa }{\vec {b}}
-l.137 ...\Gamma}{\Case{I}{x}{\kappa}{\vec{b}}}{A}}
+l.140 ...\Gamma}{\Case{I}{x}{\kappa}{\vec{b}}}{A}}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -943,7 +969,97 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-[2] [3] (./main.bbl) [4] (./main.aux)
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.166 $\fix
+           $ binders:
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+[2]
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.172 ... the target of a backlink becomes a $\fix
+                                                  $
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.174   referencing the $\fix
+                             $ binder.
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.178 ($\lambda$, application, $\fix
+                                    $, $\Case$,
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \Case 
+                      
+l.178 ($\lambda$, application, $\fix$, $\Case
+                                             $,
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \Roll 
+                      
+l.179 $\Roll
+            $).  No backlink constructs remain.
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.223 standard CIC term (using only $\fix
+                                         $ for recursion) that is
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+[3]
+! Undefined control sequence.
+<recently read> \fix 
+                     
+l.245 $\fix
+           $, rather than requiring a semantic argument about proof
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+(./main.bbl) [4] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -952,11 +1068,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 40A05C25CCDE2CF47D74D72E2CA4AB6F;488.
  ) 
 Here is how much of TeX's memory you used:
- 14418 strings out of 476106
- 226506 string characters out of 5793933
+ 14452 strings out of 476106
+ 226996 string characters out of 5793933
  1936975 words of memory out of 5000000
- 36027 multiletter control sequences out of 15000+600000
- 632794 words of font info for 151 fonts, out of 8000000 for 9000
+ 36051 multiletter control sequences out of 15000+600000
+ 640964 words of font info for 163 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  75i,11n,79p,1001b,545s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -972,10 +1088,10 @@ usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/
 public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/sh
 are/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (4 pages, 350371 bytes).
+Output written on main.pdf (4 pages, 348371 bytes).
 PDF statistics:
  169 PDF objects out of 1000 (max. 8388607)
  118 compressed objects within 2 object streams
  27 named destinations out of 1000 (max. 500000)
- 41993 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 46089 words of extra memory for PDF output out of 51595 (max. 10000000)
 
