@@ -93,44 +93,21 @@ Module BacklinkAdmissible.
     induction n as [|n IH] using (well_founded_induction lt_wf).
     intros a Hlen.
     constructor.
-    intros y Hlt.
-    inversion Hlt; subst.
-    - apply IH with (y := ((I, r2) :: rs2)).
-      + simpl. lia.
-      + reflexivity.
-    - assert (length rs2 < length ((I, r) :: rs2)) by (simpl; lia).
-      apply (IH (length rs2) H rs2).
-      * reflexivity.
-      * exact H0.
+  Lemma trace_rank_monotone :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
+      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
+      snd wk <= snd vk.
+  Proof.
+    apply CTB.trace_rank_monotone.
   Qed.
 
-  (** Build the lexicographic ranking from per-type ranks.
-      For now, a single-element list (degenerate lexicographic). *)
-  Definition lex_ranking (b : SC.cfg_builder) (v : nat) : list (nat * nat) :=
-    [(0, per_type_rank b 0 v)].
-
-  (** The composite ranking is well-founded because the budget
-      decreases on each progress edge. *)
-  Lemma ranking_decreases_on_progress :
-    forall b v1 v2,
-      SC.is_progress_vertex b v1 = true ->
-      In v2 (SC.succs_of b v1) ->
-      lex_lt (lex_ranking b v1) (lex_ranking b v2).
+  Lemma trace_rank_strict_on_progress :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
+      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
+      CTB.progress_edge_trace G is_progress B vk wk ->
+      snd wk < snd vk.
   Proof.
-    intros b v1 v2 Hprog Hin.
-    unfold lex_ranking.
-    apply lex_lt_here.
-    unfold per_type_rank.
-    apply budget_decreases_on_progress; assumption.
+    apply CTB.trace_rank_strict_on_progress.
   Qed.
-
-  (** * Main theorem (placeholder) *)
-  Theorem backlink_admissible :
-    forall (Σenv : Ty.env) (fuel : nat) (Γ : Ty.ctx) (t A : Term.Syntax.tm)
-           (v : nat) (b : SC.cfg_builder),
-      SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, b) ->
-      True.
-  Proof.
-  Admitted.
 
 End BacklinkAdmissible.
