@@ -102,11 +102,10 @@ a constructor, or a neutral term).
 \section{Cyclic sequent calculus}
 
 A \emph{configuration} is a typing judgement $\jTy{\Gamma}{t}{A}$.
-A \emph{configuration graph} is a tuple $(V, \ell, \sigma, v_0)$ where
-$V = \{0,\ldots,n-1\}$ is a finite set of vertices,
-$\ell : V \to \mathsf{Config}$ assigns a configuration to each vertex,
-$\sigma : V \to V^*$ assigns a (possibly empty) list of successors,
-and $v_0 \in V$ is the root.
+A \emph{configuration graph} $b$ is a finite structure with
+vertices $V = \{0,\ldots,n-1\}$, a labelling function
+$\ell(b,\cdot) : V \to \mathsf{Config}$, a successor function
+$\sigma(b,\cdot) : V \to V^*$, and a root vertex $v_0 \in V$.
 A graph is a \emph{rooted pre-proof} if every vertex satisfies one of
 the local rules below (read bottom-up):
 
