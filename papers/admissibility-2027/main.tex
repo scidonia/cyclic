@@ -101,12 +101,14 @@ a constructor, or a neutral term).
 
 \section{Cyclic sequent calculus}
 
-Configurations are typing judgements $\jTy{\Gamma}{t}{A}$.
-A \emph{configuration graph} $b$ is a finite map from vertices
-$v \in \{0,\ldots,n-1\}$ to configurations $\ell(b,v)$ and successor
-lists $\sigma(b,v)$.  A graph is a \emph{rooted pre-proof} with root
-$v_0$ if every vertex satisfies a local sequent rule drawn from the
-following:
+A \emph{configuration} is a typing judgement $\jTy{\Gamma}{t}{A}$.
+A \emph{configuration graph} is a tuple $(V, \ell, \sigma, v_0)$ where
+$V = \{0,\ldots,n-1\}$ is a finite set of vertices,
+$\ell : V \to \mathsf{Config}$ assigns a configuration to each vertex,
+$\sigma : V \to V^*$ assigns a (possibly empty) list of successors,
+and $v_0 \in V$ is the root.
+A graph is a \emph{rooted pre-proof} if every vertex satisfies one of
+the local rules below (read bottom-up):
 
 \paragraph{Asynchronous rules (deterministic).} Applied eagerly.  Each
 reduces the goal to a single premise by one computation step:
@@ -129,14 +131,16 @@ reduces the goal to a single premise by one computation step:
 \end{prooftree}
 
 \paragraph{Synchronous rule (choice point).} A case-split on a neutral
-scrutinee $x$ creates one premise per constructor $c$ of $I$, each in
-an extended context with fresh constructor arguments $\vec{y}_c$:
+scrutinee $x$ creates one premise per constructor $c$ of $I$,
+each substituting the constructor pattern $\Roll{I}{c}{\vec{y}_c}$
+for the scrutinee in the $c$-th branch, under an extended context
+$\vec{y}_c$ of fresh variables for the constructor arguments:
 
 \medskip
 \begin{prooftree}
-  \hypo{\jTy{\Gamma,\vec{y}_0}{t_0}{A}}
+  \hypo{\jTy{\Gamma,\vec{y}_0}{b[0][\Roll{I}{0}{\vec{y}_0}/x]}{A}}
   \hypo{\cdots}
-  \hypo{\jTy{\Gamma,\vec{y}_n}{t_n}{A}}
+  \hypo{\jTy{\Gamma,\vec{y}_n}{b[n][\Roll{I}{n}{\vec{y}_n}/x]}{A}}
   \infer3[\textsc{split}]{\jTy{\Gamma}{\Case{I}{x}{\kappa}{\vec{b}}}{A}}
 \end{prooftree}
 
@@ -146,16 +150,23 @@ an extended context with fresh constructor arguments $\vec{y}_c$:
   \hypo{\Delta \vdash \sigma :_s \Gamma}
   \infer1[\textsc{back}]{\jTy{\Delta}{t}{A}}
 \end{prooftree}
-where $t$ is an instance of a previously-seen configuration
-$\jTy{\Gamma}{t_0}{A}$ under the explicit substitution $\sigma$.
+where there exists a vertex $v' \in V$ such that
+$\ell(b,v') = \jTy{\Gamma}{t_0}{A}$ and $t = t_0[\sigma]$ is the
+original goal under the substitution $\sigma$.
 
 \paragraph{Global progress condition.}
 A rooted pre-proof is a \emph{rooted cyclic proof} if every directed
-cycle contains at least one \textsc{split} edge.  This is witnessed by
-a budget-trace ranking: vertices are lifted to pairs $(v,k)$ where
-$k \in [0,|V|]$.  \textsc{split} edges consume budget ($k \mapsto k-1$);
-all other edges preserve it.  The lifted graph must be acyclic.
-We write $\mathcal{C}(b,v_0)$ for this property.
+cycle contains at least one \textsc{split} edge.  Formally, define the
+\emph{budget-trace} graph $(V \times [0,|V|], E_B)$ where
+$(v_1, k_1) \to (v_2, k_2)$ is an edge in $E_B$ iff $v_1 \to v_2$ is
+an edge in the original graph and either:
+\begin{itemize}
+\item $v_1 \to v_2$ is a \textsc{split} edge and $k_2 = k_1 - 1$;
+\item $v_1 \to v_2$ is any other edge and $k_2 = k_1$.
+\end{itemize}
+The graph is a valid cyclic proof iff the budget-trace graph is acyclic
+(starting from $(v_0, |V|)$).  We write $\mathcal{C}(b,v_0)$ for this
+property.
 
 \section{Residualisation}
 \label{sec:residualise}
@@ -163,15 +174,24 @@ We write $\mathcal{C}(b,v_0)$ for this property.
 The backlink rule appears only in the proof graph.  A \emph{residualisation}
 function $\mathcal{R}(b,v)$ reads back the graph into a CIC term by
 traversing the successors of $v$ and replacing backlinks with
-$\fix$ binders:
+$\fix$ binders.  Formally, $\mathcal{R}$ is defined by well-founded
+recursion on the budget trace:
 
 \begin{itemize}
-\item A vertex with no successors returns its own term.
-\item A vertex with one successor applies the driving step (unfold,
-  $\beta$-reduce, apply constructor) to the successor's residual.
-\item A vertex that is the target of a backlink becomes a $\fix$
-  whose body is the residual of its successors, with recursive calls
-  referencing the $\fix$ binder.
+\item If $v$ has no successors (leaf), $\mathcal{R}(b,v)$ returns the
+  term $t$ where $\ell(b,v) = \jTy{\Gamma}{t}{A}$.
+\item If $v$ has a single successor $w$ (asynchronous rule), then
+  $\mathcal{R}(b,v) = D(\mathcal{R}(b,w))$ where $D$ applies the inverse
+  of the driving step: re-abstracts $\beta$ reductions, re-applies the
+  fix binder, re-constructs the case-of-constructor.
+\item If $v$ has multiple successors $\vec{w}$ (split rule), each
+  branch is residualised independently and combined into a
+  $\Case$ application.
+\item If $v$ is the \emph{target} of a backlink (some vertex has
+  $v$ as its sole successor via a \textsc{back} edge), then
+  $\mathcal{R}(b,v) = \fix\, t_{\mathrm{body}}$ where
+  $t_{\mathrm{body}}$ is the residual of the backlink's source vertex
+  with de Bruijn index $0$ replaced by the recursive self-reference.
 \end{itemize}
 
 The result is a well-typed CIC term using only standard constructors
