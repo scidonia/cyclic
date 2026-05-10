@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  10 MAY 2026 08:30
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  10 MAY 2026 08:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1002,7 +1002,7 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 Title too long for running head. Please supply
 a shorter form with \titlerunning prior to \maketitle
 LaTeX Font Info:    Trying to load font information for OT1+lmss on input line 
-79.
+80.
 (/usr/share/texmf/tex/latex/lm/ot1lmss.fd
 File: ot1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -1016,35 +1016,24 @@ Package microtype Info: Loading generic protrusion settings for font family
 dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 137.
+(Font)              using `T1/lmr/m/scsl' instead on input line 138.
 
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 142.
+(Font)              using `T1/lmr/m/scsl' instead on input line 143.
 
 [2{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/en
 c/dvips/lm/lm-rm.enc}]
-
-LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 157.
-
-
-Overfull \hbox (71.02687pt too wide) detected at line 164
-[]\OML/lmm/m/it/10 :[] f[] ^^F ^^@ t A \OT1/lmr/m/n/10 = [] (\OML/lmm/m/it/10 v
-; \OT1/lmr/m/it/10 b\OT1/lmr/m/n/10 )  =[]\OMS/lmsy/m/n/10 )  9 \OML/lmm/m/it/1
-0 t[];  t \OMS/lmsy/m/n/10 ^^Y[] \OML/lmm/m/it/10 t[]  \OMS/lmsy/m/n/10 ^  []\O
-T1/lmr/m/n/10 (\OML/lmm/m/it/10 t[]\OT1/lmr/m/n/10 )\OML/lmm/m/it/10 :
- []
-
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
 
+
 LaTeX Warning: Reference `sec:residualise' on page 3 undefined on input line 17
-5.
+7.
 
 
-Overfull \hbox (29.86084pt too wide) in paragraph at lines 179--183
+Overfull \hbox (29.86084pt too wide) in paragraph at lines 181--185
 \T1/lmr/m/n/10 (-20) the resid-ual via \T1/lmtt/m/n/10 supercompile_jTy_tc\T1/l
 mr/m/n/10 (-20) , ap-ply \T1/lmtt/m/n/10 supercompile_ciu_soundness_untyped\T1/
 lmr/m/n/10 (-20) ,
@@ -1063,11 +1052,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 40A05C25CCDE2CF47D74D72E2CA4AB6F;488.
  ) 
 Here is how much of TeX's memory you used:
- 24723 strings out of 476106
- 454388 string characters out of 5793933
+ 24727 strings out of 476106
+ 454426 string characters out of 5793933
  1934975 words of memory out of 5000000
  46094 multiletter control sequences out of 15000+600000
- 666059 words of font info for 172 fonts, out of 8000000 for 9000
+ 666178 words of font info for 174 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,7n,107p,1001b,617s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1083,7 +1072,7 @@ mf/fonts/type1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri1
 /public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/s
 hare/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fon
 ts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (4 pages, 371503 bytes).
+Output written on main.pdf (4 pages, 370271 bytes).
 PDF statistics:
  171 PDF objects out of 1000 (max. 8388607)
  118 compressed objects within 2 object streams

@@ -61,11 +61,12 @@ in our calculs, there exists a standard CIC term using only \texttt{tFix}
 for recursion that is contextually equivalent to the root goal.
 \end{theorem}
 
-The proof is a corollary of the CIU soundness theorem for a supercompiler
-mechanised in Rocq.  When the supercompiler reads back a cyclic proof graph
-into a residual term, it replaces backlinks with \texttt{tFix} binders.
-The CIU theorem proves the residual is observationally indistinguishable
-from the source.  Hence the residual \emph{is} the standard proof.
+The proof is a corollary of the CIU soundness theorem mechanised in
+Rocq.  The cyclic proof graph $b$ is read back into a residual CIC term
+via a \emph{residualisation} function that replaces backlinks with
+\texttt{tFix} binders.  The CIU theorem proves the residual is
+observationally indistinguishable from the source.  Hence the residual
+\emph{is} the standard proof.
 
 \section{Calculus}
 
@@ -150,23 +151,24 @@ constructors.
 
 \section{Admissibility}
 
+Let $\mathcal{C}(b,v)$ denote that $b$ is a rooted, ranked cyclic proof
+with root $v$ (local rule satisfaction plus the budget-trace ranking of
+Section~3).
+
 \begin{theorem}[Backlink admissibility]
 \label{thm:admissible}
-$\forall\; \Sigma, f_s, f_r, \Gamma, t, A$,
 \[
-  \SC.\mathsf{supercompile\_jTy\_tc}\;f_s\;\Sigma\;\Gamma\;t\;A =
-  \mathsf{Some}\,(v,\mathit{b})
+  \forall\; b, v.\;
+  \mathcal{C}(b,v)
   \;\Longrightarrow\;
   \exists\, t_{\mathsf{std}},\;
-  t \ciu t_{\mathsf{std}}
+  \mathsf{label}(b,v) = \jTy{\Gamma}{t}{A}
   \;\land\;
-  \mathsf{is\_standard\_cic}(t_{\mathsf{std}}).
+  t \ciu t_{\mathsf{std}}.
 \]
-In words: every valid cyclic proof (a supercompilation run that passes
-the trace condition) yields a standard CIC term using only native
-constructors (\texttt{tLam}, \texttt{tApp}, \texttt{tFix},
-\texttt{tCase}, \texttt{tRoll}) that is observationally indistinguishable
-from the source.
+In words: every rooted cyclic proof in the sequent calculus can be
+read back to a standard CIC term (using only \texttt{tFix} for recursion)
+that is observationally indistinguishable from the root goal.
 \end{theorem}
 
 \begin{proof}
@@ -190,8 +192,8 @@ the residualiser eliminates backlinks; the result follows trivially.
 
 Compared to Brotherston and Simpson's admissibility result for
 first-order logic, our proof is simpler because (a)~the cyclic proof
-graph is constructed by a deterministic supercompiler rather than an
-arbitrary proof search, and (b)~the residualisation function explicitly
+graph is finite and constructed by a deterministic process rather than
+an arbitrary proof search, and (b)~the residualisation function explicitly
 replaces backlinks with \texttt{tFix}, making the transformation
 syntactic rather than semantic.
 
