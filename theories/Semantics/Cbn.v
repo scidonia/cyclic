@@ -418,21 +418,21 @@ Lemma steps_tCase_decompose (I : nat) (scrut C : tm) (brs : list tm) (v : tm) :
     steps (apps br args) v.
 Proof.
   intros Hval Hsteps.
-  pose proof (clos_refl_trans_2_ind_old tm step (tCase I scrut C brs)
-    (fun w => forall scrut0 C0 brs0, w = tCase I scrut0 C0 brs0 ->
-      value v -> exists c args br,
-      steps scrut0 (tRoll I c args) /\
-      branch brs0 c = Some br /\
-      steps (apps br args) v)
-    _ _ v Hsteps scrut C brs eq_refl Hval) as Hgoal.
-  - intros Hv scrut0 C0 brs0 Heq.
-    inversion Heq; subst. inversion Hv.
-  - intros y z Hclos Hstep IH Hv scrut0 C0 brs0 Heq.
-    subst z. inversion Hstep; subst; clear Hstep.
-    + apply (IH Hv scrut' C0 brs0 eq_refl).
-    + exists c, args, br.
-      split; [apply rt2_refl|split; [exact H|exact H0]].
-  - exact Hgoal.
+  refine (clos_refl_trans_2_ind_old tm step (tCase I scrut C brs)
+    (fun w => value w -> exists c args br,
+      steps scrut (tRoll I c args) /\
+      branch brs c = Some br /\
+      steps (apps br args) w) _ _ v Hsteps Hval).
+  - (* base case: P (tCase ...) = value (tCase ...) -> ... *)
+    intros Hv. inversion Hv.
+  - (* step case: P y -> step y z -> P z *)
+    intros y z Hclos Hstep H_IH Hvz.
+    inversion Hstep; subst; clear Hstep.
+    + (* step_case_scrut *)
+      refine (fun Hvz' => match Hvz' with end).
+    + (* step_case_roll *)
+      refine (fun Hvz' => _). inversion Hvz' || 
+        (exists c, args, br; split; [apply rt2_refl|split; [exact H|apply rt2_refl]]).
 Qed.
 
 (** Corollary for [terminates_to]. *)
