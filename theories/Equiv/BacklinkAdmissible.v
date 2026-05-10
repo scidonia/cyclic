@@ -2,6 +2,8 @@ From Stdlib Require Import List Bool Arith Lia Utf8.
 From stdpp Require Import gmap.
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Judgement Require Import Typing.
+From Cyclic.Graph Require Import FiniteDigraph.
+From Cyclic.Progress Require Import Ranking.
 From Cyclic.Transform Require Import Supercompile CyclicTraceConditionBudget SupercompilationCorrespondence.
 From Cyclic.Equiv Require Import CIU.
 Import Term.Syntax.
@@ -109,6 +111,111 @@ Module BacklinkAdmissible.
       (well_founded_induction (wf_inverse_image _ _ measure lt lt_wf)).
     constructor. intros y Hlex.
     apply IH. apply lex_lt_measure. exact Hlex.
+  Qed.
+
+  (** The global budget counter [k] embeds into the per-type ranking
+      as a singleton list [(0,k)].  Rank decreases become [lex_lt]
+      steps. *)
+  Definition singleton_rank (vk : traceV) : list (nat * nat) :=
+    [(0, snd vk)].
+
+  Lemma budget_decrease_is_lex_lt :
+    forall vk wk, snd wk < snd vk ->
+    lex_lt (singleton_rank wk) (singleton_rank vk).
+  Proof.
+    intros [v1 k1] [v2 k2] Hlt.
+    unfold singleton_rank. simpl.
+    apply lex_lt_here with (I := 0) (r1 := k2) (r2 := k1) (rs := []).
+    exact Hlt.
+  Qed.
+
+  Lemma trace_edge_respects_lex_lt :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat) vk wk,
+      FiniteDigraph.edge (CTB.trace_graph G is_progress B) vk wk ->
+      singleton_rank wk = singleton_rank vk \/
+      lex_lt (singleton_rank wk) (singleton_rank vk).
+  Proof.
+    intros G is_progress B vk wk Hedge.
+    pose proof (CTB.trace_edge_budget_le G is_progress B vk wk Hedge) as Hle.
+    destruct (Nat.eq_dec (snd wk) (snd vk)) as [Heq|Hneq].
+    - left. unfold singleton_rank. destruct vk as [v1 k1], wk as [v2 k2].
+      simpl in *. subst. auto.
+    - right.
+      assert (snd wk < snd vk) by lia.
+      apply budget_decrease_is_lex_lt. assumption.
+  Qed.
+
+  (** Prove that the trace graph satisfies the per-type lexicographic
+      ranking condition.  This is a restatement of the budget-trace
+      ranking using [lex_lt] on singleton lists rather than [lt] on
+      the bare counter. *)
+  Theorem per_type_ranking_condition :
+    forall (G : FiniteDigraph.fin_digraph) (is_progress : nat -> bool) (B : nat),
+      (forall xs, FiniteDigraph.is_cycle G xs ->
+        @Ranking.has_progress_edge nat _ _
+          (CTB.progress_edge_base G is_progress) xs) ->
+      @Ranking.ranking_condition traceV _ _
+        (CTB.trace_graph G is_progress B)
+        (CTB.progress_edge_trace G is_progress B)
+        (list (nat * nat)) lex_lt singleton_rank.
+  Proof.
+    intros G is_progress B Hcycle.
+    refine {| Ranking.rc_wf := lex_lt_wf;
+              Ranking.rc_monotone := _;
+              Ranking.rc_strict := _;
+              Ranking.rc_cycle_progress := _ |}.
+    - intros vk wk Hedge.
+      unfold singleton_rank.
+      pose proof (CTB.trace_edge_budget_le G is_progress B vk wk Hedge) as Hle.
+      destruct (Nat.eq_dec (snd wk) (snd vk)) as [Heq|Hneq].
+      + left. destruct vk as [v1 k1], wk as [v2 k2]. simpl in *. subst. auto.
+      + right. assert (snd wk < snd vk) by lia.
+        apply budget_decrease_is_lex_lt. assumption.
+    - intros vk wk Hedge Hprog.
+      unfold singleton_rank.
+      pose proof (CTB.rank_strict_on_progress_trace G is_progress B vk wk Hedge Hprog).
+      simpl in *. apply budget_decrease_is_lex_lt. exact H.
+    - intros xs Hcyc_trace.
+      exfalso.
+      eapply (CTB.trace_graph_has_no_cycles G is_progress B Hcycle xs Hcyc_trace).
+  Qed.
+
+  (** * Per-type ranking for a specific configuration graph
+   
+      A supercompiler [cfg_builder] carries per-type information via
+      [split_inductive].  This allows a refined ranking where each
+      inductive type has its own budget counter, implemented as the
+      lexicographic order [lex_lt] on lists of (type, budget) pairs.
+  
+      The global budget trace (singleton rank) is a special case.
+      A full per-type trace would track multiple (I, k) entries,
+      decreasing only the entry for the type being split.  We
+      provide the foundational [lex_lt_wf] and the embedding above
+      as the basis for that generalisation. *)
+
+  (** Build a per-type rank list from a [cfg_builder] vertex.
+      When [v] is a progress vertex splitting on type [I], the
+      list is [(I, k)]; otherwise it is [(0, k)]. *)
+  Definition rank_for_vertex (b : SC.cfg_builder) (vk : traceV) : list (nat * nat) :=
+    let '(v, k) := vk in
+    match split_inductive b v with
+    | Some I => [(I, k)]
+    | None => singleton_rank vk
+    end.
+
+  Lemma rank_for_vertex_respects_progress :
+    forall (b : SC.cfg_builder) (vk wk : traceV),
+      snd wk < snd vk ->
+      (exists I, split_inductive b (fst vk) = Some I /\
+                 lex_lt ([(I, snd wk)]) ([(I, snd vk)]))
+      \/ lex_lt (rank_for_vertex b wk) (rank_for_vertex b vk).
+  Proof.
+    intros b [v1 k1] [v2 k2] Hlt.
+    destruct (split_inductive b v1) as [I|] eqn:Hsplit.
+    - left. exists I. split; [exact Hsplit|].
+      apply lex_lt_here with (rs := []). exact Hlt.
+    - right. unfold rank_for_vertex. rewrite Hsplit.
+      apply budget_decrease_is_lex_lt. exact Hlt.
   Qed.
 
   (** * Main theorem: Backlink admissibility
