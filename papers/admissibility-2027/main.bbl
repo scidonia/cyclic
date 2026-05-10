@@ -15,6 +15,10 @@ Brotherston, J., Simpson, A.: Sequent calculi for induction and infinite
 Coquand, T., Huet, G.: The calculus of constructions. Information and
   Computation  \textbf{76}(2--3),  95--120 (1988)
 
+\bibitem{esop-2027}
+Mendel-Gleason, G.: Supercompilation corresponds to cyclic proof in the
+  calculus of inductive constructions (2025), under review
+
 \bibitem{paulin-mohring-1993-inductive}
 Paulin-Mohring, C.: Inductive definitions in the system {Coq}: Rules and
   properties. In: Typed Lambda Calculi and Applications. pp. 328--345. Springer

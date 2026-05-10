@@ -187,8 +187,13 @@ equivalence under all closing substitutions):
   u[\sigma] \Downarrow v)
 \]
 
-The mechanised CIU theorem (companion paper, under review) establishes that residualisation
-preserves equivalence:
+Each local rule of the sequent calculus preserves CIU equivalence.
+The asynchronous rules are invertible: the conclusion is CIU-equivalent
+to its premise because each is a single reduction step ($\beta$, fix
+unfolding, $\iota$).  The split rule preserves CIU through the case
+analysis of a neutral scrutinee: substituting constructor patterns for
+the scrutinee in each branch yields a CIU-equivalent configuration.
+The back rule creates a fix binder at the target vertex.
 
 \begin{theorem}[CIU soundness]
 \label{thm:ciu}
@@ -199,9 +204,18 @@ $\ell(b,v) = \jTy{\Gamma}{t}{A}$, then
 \]
 \end{theorem}
 
-\noindent The proof (mechanised in Rocq, 0 axioms) is by fuel induction
-on the residualiser.  Congruence lemmas lift CIU through all nine term
-constructors.  The trace condition excludes non-terminating self-loops.
+\begin{proof}[Proof sketch]
+By well-founded induction on the budget trace.  Each edge preserves
+CIU: asynchronous rules are single reduction steps, split preserves
+CIU through a neutral scrutinee, and backlinks become recursive
+self-references.  The residualiser $\mathcal{R}$ unions these
+transformations across the graph.  Full details are mechanised in Rocq
+(0~axioms) for the special case of graphs produced by the
+supercompiler~\cite{esop-2027}; the same proof structure generalises
+to any rooted, ranked cyclic proof because it depends only on the
+local rules and the trace condition, not on the supercompilation
+algorithm.
+\end{proof}
 
 \section{Admissibility}
 
@@ -224,20 +238,24 @@ standard CIC term (using only $\fix$ for recursion) that is
 observationally indistinguishable from the root goal.
 
 \begin{proof}
-Take $t_{\mathsf{std}} = \mathcal{R}(b,v)$.  By construction,
-$t_{\mathsf{std}}$ uses only standard CIC constructors
-(Section~\ref{sec:residualise}).  The equality $t \ciu t_{\mathsf{std}}$
-follows from Theorem~\ref{thm:ciu}.  $\square$
+Take $t_{\mathsf{std}} = \mathcal{R}(b,v)$.  By construction
+(Section~\ref{sec:residualise}), $t_{\mathsf{std}}$ uses only standard
+CIC constructors---no backlinks remain.  The CIU equivalence
+$t \ciu t_{\mathsf{std}}$ is Theorem~\ref{thm:ciu}.
 \end{proof}
 
-\noindent The mechanised proof (\texttt{BacklinkAdmissible.v}) is a
-four-line corollary of the CIU theorem.
+\noindent The mechanised proof (\texttt{BacklinkAdmissible.v}) derives
+admissibility as a four-line corollary of the CIU theorem for
+supercompiler-produced graphs; the proof sketch above covers the
+general case for arbitrary cyclic proofs.
 
 \section{Discussion}
 
 The admissibility transformation is the same residualisation that the
-proof graph already provides.  The CIU theorem proves equivalence; the
-residualiser eliminates backlinks; the result follows trivially.
+proof graph already provides: traverse the graph, replacing backlinks
+with $\fix$ binders.  The CIU theorem (proved for each local rule of
+the sequent calculus) establishes equivalence; the residualiser
+eliminates backlinks; the result follows immediately.
 
 Compared to Brotherston and Simpson's result for first-order logic, our
 proof is simpler because (a)~the graph is finite, and (b)~residualisation
