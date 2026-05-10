@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  10 MAY 2026 08:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  10 MAY 2026 08:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -574,8 +574,7 @@ LaTeX Font Info:    Trying to load font information for T1+lmr on input line 23
 
 (/usr/share/texmf/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-No file main.aux.
+) (./main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 23.
@@ -612,6 +611,7 @@ LaTeX Info: Redefining \showhyphens on input line 23.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
+
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
 (RS)
@@ -727,22 +727,6 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 
 Title too long for running head. Please supply
 a shorter form with \titlerunning prior to \maketitle
-
-LaTeX Warning: Citation `brotherston-2006-cyclic' on page 1 undefined on input 
-line 39.
-
-
-LaTeX Warning: Citation `brotherston-simpson-2011-sequent' on page 1 undefined 
-on input line 39.
-
-
-LaTeX Warning: Citation `coquand-huet-1988-coc' on page 1 undefined on input li
-ne 49.
-
-
-LaTeX Warning: Citation `paulin-mohring-1993-inductive' on page 1 undefined on 
-input line 49.
-
 ! Undefined control sequence.
 l.60 t,u,A,B &::=& x \mid \Sort
                                {i} \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t...
@@ -788,56 +772,8 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-
-LaTeX Warning: Citation `coquand-huet-1988-coc' on page 1 undefined on input li
-ne 69.
-
-
-LaTeX Warning: Citation ` paulin-mohring-1993-inductive' on page 1 undefined on
- input line 69.
-
-! Undefined control sequence.
-<recently read> \fix 
-                     
-l.79   $\fix
-            \,t \to t[\fix\,t/0]$.  (The binder 0 in $t$ refers to the
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-l.79   $\fix\,t \to t[\fix
-                          \,t/0]$.  (The binder 0 in $t$ refers to the
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-<recently read> \Case 
-                      
-l.83   $\Case
-             {I}{(\Roll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} \to
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-l.83   $\Case{I}{(\Roll
-                       {I}{c}{\vec{a}})}{\kappa}{\vec{b}} \to
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
 LaTeX Font Info:    Trying to load font information for OT1+lmss on input line 
-84.
+73.
 (/usr/share/texmf/tex/latex/lm/ot1lmss.fd
 File: ot1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -852,9 +788,49 @@ dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/sha
 re/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-m
 athsy.enc}]
 ! Undefined control sequence.
+<recently read> \fix 
+                     
+l.85   $\fix
+            \,t \to t[\fix\,t/0]$.  (The binder 0 in $t$ refers to the
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+l.85   $\fix\,t \to t[\fix
+                          \,t/0]$.  (The binder 0 in $t$ refers to the
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
 <recently read> \Case 
                       
 l.89   $\Case
+             {I}{(\Roll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} \to
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+l.89   $\Case{I}{(\Roll
+                       {I}{c}{\vec{a}})}{\kappa}{\vec{b}} \to
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<recently read> \Case 
+                      
+l.95   $\Case
              {I}{t}{\kappa}{\vec{b}} \to \Case{I}{t'}{\kappa}{\vec{b}}$.
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -863,49 +839,8 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 ! Undefined control sequence.
-l.89   $\Case{I}{t}{\kappa}{\vec{b}} \to \Case
+l.95   $\Case{I}{t}{\kappa}{\vec{b}} \to \Case
                                               {I}{t'}{\kappa}{\vec{b}}$.
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.108 ...\Gamma \vdash (\lambda x{:}A.\,t)\;u : A}
-                                                  
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.108 ...\Gamma \vdash (\lambda x{:}A.\,t)\;u : A}
-                                                  
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Undefined control sequence.
-\inserttext ->\Gamma \vdash t[\fix 
-                                   \,t/0] : A
-l.112   \hypo{\Gamma \vdash t[\fix\,t/0] : A}
-                                             
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-\inserttext ->\Gamma \vdash \fix 
-                                 \,t : A
-l.113 ...[\textsc{fix}]{\Gamma \vdash \fix\,t : A}
-                                                  
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -916,9 +851,31 @@ Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
 ! Undefined control sequence.
-\inserttext ->\Gamma \vdash \Case 
-                                  {I}{(\Roll {I}{c}{\vec {a}})}{\kappa }{\ve...
-l.118 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} : A}
+<argument> t[\fix 
+                  \,t/0]
+l.120   \jTy{\Gamma}{t[\fix\,t/0]}{A}
+                                     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<argument> \fix 
+                \,t
+l.122   \jTy{\Gamma}{\fix\,t}{A}
+                                 \\[4pt]
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+<argument> \Case 
+                 {I}{(\Roll {I}{c}{\vec {a}})}{\kappa }{\vec {b}}
+l.126 ...oll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -927,90 +884,43 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 ! Undefined control sequence.
-\inserttext ->\Gamma \vdash \Case {I}{(\Roll 
-                                             {I}{c}{\vec {a}})}{\kappa }{\ve...
-l.118 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} : A}
+<argument> \Case {I}{(\Roll 
+                            {I}{c}{\vec {a}})}{\kappa }{\vec {b}}
+l.126 ...oll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.118 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} : A}
-                                                  
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.118 ...ll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} : A}
-                                                  
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-
-Overfull \hbox (71.83723pt too wide) in paragraph at lines 105--120
- []\T1/lmr/m/it/10 (-20) Asynchronous rules (de-ter-min-is-tic).[] \T1/lmr/m/n/
-10 (-20) Ap-plied ea-gerly. []  []
- []
 
 ! Undefined control sequence.
-\inserttext ->\Gamma \vdash \Case 
-                                  {I}{x}{\kappa }{\vec {b}} : A
-l.125 ... \vdash \Case{I}{x}{\kappa}{\vec{b}} : A}
-                                                  
+<argument> \Case 
+                 {I}{x}{\kappa }{\vec {b}}
+l.141   }
+         
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-
-Overfull \hbox (28.54095pt too wide) in paragraph at lines 126--129
- []\T1/lmr/m/it/10 (-20) Synchronous rule (choice point).[] []
- []
-
-[2]
-
-LaTeX Warning: Reference `sec:residualise' on page 3 undefined on input line 21
-5.
-
-
-LaTeX Warning: Reference `thm:ciu' on page 3 undefined on input line 216.
-
-[3]
-No file main.bbl.
-[4] (./main.aux)
+[2] [3] (./main.bbl) [4] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 40A05C25CCDE2CF47D74D72E2CA4AB6F;488.
  ) 
 Here is how much of TeX's memory you used:
- 14411 strings out of 476106
- 226273 string characters out of 5793933
- 1936975 words of memory out of 5000000
- 36024 multiletter control sequences out of 15000+600000
- 645849 words of font info for 156 fonts, out of 8000000 for 9000
+ 14419 strings out of 476106
+ 226481 string characters out of 5793933
+ 1935975 words of memory out of 5000000
+ 36010 multiletter control sequences out of 15000+600000
+ 645069 words of font info for 163 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 75i,11n,79p,1001b,574s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,12n,79p,1001b,545s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/p
@@ -1024,10 +934,10 @@ usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/
 public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/sh
 are/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (4 pages, 343670 bytes).
+Output written on main.pdf (4 pages, 350181 bytes).
 PDF statistics:
- 156 PDF objects out of 1000 (max. 8388607)
- 108 compressed objects within 2 object streams
- 22 named destinations out of 1000 (max. 500000)
- 48137 words of extra memory for PDF output out of 51595 (max. 10000000)
+ 169 PDF objects out of 1000 (max. 8388607)
+ 118 compressed objects within 2 object streams
+ 27 named destinations out of 1000 (max. 500000)
+ 50185 words of extra memory for PDF output out of 51595 (max. 10000000)
 

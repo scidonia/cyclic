@@ -1,0 +1,23 @@
+\begin{thebibliography}{1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{brotherston-2006-cyclic}
+Brotherston, J.: Cyclic proofs for first-order logic with inductive
+  definitions. In: TABLEAUX (2006)
+
+\bibitem{brotherston-simpson-2011-sequent}
+Brotherston, J., Simpson, A.: Sequent calculi for induction and infinite
+  descent. In: LICS (2011)
+
+\bibitem{coquand-huet-1988-coc}
+Coquand, T., Huet, G.: The calculus of constructions. Information and
+  Computation  \textbf{76}(2--3),  95--120 (1988)
+
+\bibitem{paulin-mohring-1993-inductive}
+Paulin-Mohring, C.: Inductive definitions in the system {Coq}: Rules and
+  properties. In: Typed Lambda Calculi and Applications. pp. 328--345. Springer
+  (1993)
+
+\end{thebibliography}
