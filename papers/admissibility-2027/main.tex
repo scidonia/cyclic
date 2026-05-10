@@ -152,13 +152,21 @@ constructors.
 
 \begin{theorem}[Backlink admissibility]
 \label{thm:admissible}
-For every source term $t$ that admits a valid cyclic proof (i.e.,
-supercompilation with trace check succeeds), there exists a standard CIC
-term $t_{\mathsf{std}}$ that (i)~uses only standard CIC constructors
-(no backlink rules), and (ii)~is CIU-equivalent to $t$:
+$\forall\; \Sigma, f_s, f_r, \Gamma, t, A$,
 \[
-  t \ciu t_{\mathsf{std}}.
+  \SC.\mathsf{supercompile\_jTy\_tc}\;f_s\;\Sigma\;\Gamma\;t\;A =
+  \mathsf{Some}\,(v,\mathit{b})
+  \;\Longrightarrow\;
+  \exists\, t_{\mathsf{std}},\;
+  t \ciu t_{\mathsf{std}}
+  \;\land\;
+  \mathsf{is\_standard\_cic}(t_{\mathsf{std}}).
 \]
+In words: every valid cyclic proof (a supercompilation run that passes
+the trace condition) yields a standard CIC term using only native
+constructors (\texttt{tLam}, \texttt{tApp}, \texttt{tFix},
+\texttt{tCase}, \texttt{tRoll}) that is observationally indistinguishable
+from the source.
 \end{theorem}
 
 \begin{proof}
