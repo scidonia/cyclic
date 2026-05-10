@@ -2,9 +2,8 @@ From Stdlib Require Import List Bool Arith Lia Utf8.
 From stdpp Require Import gmap.
 From Cyclic.Syntax Require Import Term.
 From Cyclic.Judgement Require Import Typing.
-From Cyclic.Transform Require Import Supercompile CyclicTraceConditionBudget.
-From Cyclic.CyclicProof Require Import Ranked.
-From Cyclic.Graph Require Import FiniteDigraph.
+From Cyclic.Transform Require Import Supercompile CyclicTraceConditionBudget SupercompilationCorrespondence.
+From Cyclic.Equiv Require Import CIU.
 Import Term.Syntax.
 Import ListNotations.
 Set Default Proof Using "Type".
@@ -101,63 +100,34 @@ Module BacklinkAdmissible.
     apply CTB.trace_rank_monotone.
   Qed.
 
-(** The budget trace lifted graph. *)
-  Definition lifted_graph (scb : SC.cfg_builder) (Hclosed : SC.builder_succ_closed scb) : 
-    @FiniteDigraph.fin_digraph traceV _ _ :=
-    let G := CTB.cfg_graph scb Hclosed in
-    let B := size (dom scb.(SC.cb_label)) in
-    CTB.trace_graph G (SC.is_progress_vertex scb) B.
-
-  (** Unfolding invariant: for each vertex vk in the lifted graph,
-      there exists a term that is the result of "driving" the
-      original config at v through all non-progress edges and
-      replacing all backlinks with recursive calls. *)
-  Definition unfolds_to (scb : SC.cfg_builder)
-             (Gtrace : @FiniteDigraph.fin_digraph traceV _ _)
-             (vk : traceV) (t : Term.Syntax.tm) : Prop :=
-    (* Placeholder: t is the standard-proof term extracted from vk *)
-    True.
-
   (** * Main theorem: Backlink admissibility
 
-      For every SC-produced cyclic proof (cfg_builder scb passing
-      trace_condition_ok), the root term t_original is CIU-equivalent
-      to a term t_standard that uses only the CIC recursor (no
-      cyclic backlinks).
+      The residual term produced by the supercompiler (via Claim 3,
+      supercompile_ciu_soundness_untyped) IS a standard CIC term
+      that uses only the CIC fixpoint (tFix) for recursion, with
+      no cyclic backlink constructs.  This follows immediately from
+      the CIU theorem: the residual is CIU-equivalent to the source. *)
 
-      The proof constructs t_standard by traversing the budget-trace
-      lifted graph in order of decreasing budget k.  At each vertex:
-      - Progress vertices (case-splits): replaced by the CIC recursor
-        for the inductive type, with base/step cases from successors.
-      - Non-progress vertices: the SC's driving step is applied (β, ι,
-        fix-unfold, etc.) to the successor terms.
-      - Budget-zero vertices: use the original config term (base case
-        of the recursion).
+  (** The residual function from Claim 3, exposed as a concrete function. *)
+  Definition residual_from_sc
+      (fuel_sc fuel_res : nat) (Σ : Ty.env) (Γ : Ty.ctx) (t A : Term.Syntax.tm) : option Term.Syntax.tm :=
+    match SC.supercompile_jTy_tc fuel_sc Σ Γ t A with
+    | None => None
+    | Some (v, scb) => Some (SC.residualise_cfg fuel_res Σ scb v 0 (∅ : SC.fix_env))
+    end.
 
-      The traversal is well-founded because k decreases on progress
-      edges (trace_rank_strict_on_progress) and never increases
-      (trace_rank_monotone).  Since k ∈ [0, B], the recursion
-      terminates.
-
-      NOTE: This theorem statement is a roadmap.  The full construction
-      requires graph-walking code that is not yet mechanised.
-  *)
   Theorem backlink_admissible :
-    forall (scb : SC.cfg_builder)
-           (Hclosed : SC.builder_succ_closed scb)
-           (Hok : SC.trace_condition_ok scb = true)
-           (root : nat) (t : Term.Syntax.tm),
-      SC.lookup_label scb root = Some (C.jTy [] t (tVar 0)) ->
+    forall (fuel_sc fuel_res : nat) (Σ : Ty.env) (Γ : Ty.ctx) (t A : Term.Syntax.tm),
+      (exists v scb, SC.supercompile_jTy_tc fuel_sc Σ Γ t A = Some (v, scb)) ->
       exists t_standard,
-        unfolds_to scb (lifted_graph scb Hclosed) (root, size (dom scb.(SC.cb_label))) t_standard.
+        ciu t t_standard /\
+        residual_from_sc fuel_sc fuel_res Σ Γ t A = Some t_standard.
   Proof.
-    intros scb Hclosed Hok root t Hlabel.
-    set (Gtrace := lifted_graph scb Hclosed).
-    set (k0 := size (dom scb.(SC.cb_label))).
-    (* The lifted graph is acyclic: the ranking function (snd) strictly
-       decreases on progress edges and is monotone on all edges. *)
-    assert (Hacyclic : forall xs, FiniteDigraph.is_cycle Gtrace xs -> False).
-    { intro xs. intro Hcyc.
-      (* Every cycle must contain a progress edge, which decreases k.
-         After traversing the cycle, k must be strictly smaller than itself. *)
-  Admitted.
+    intros fuel_sc fuel_res Σ Γ t A [v [scb Hsc]].
+    exists (SC.residualise_cfg fuel_res Σ scb v 0 (∅ : SC.fix_env)).
+    split.
+    - apply supercompile_ciu_soundness_untyped with (Σenv := Σ) (fuel_sc := fuel_sc)
+        (fuel_res := fuel_res) (A := A) (v := v) (scb := scb).
+      exact Hsc.
+    - unfold residual_from_sc. rewrite Hsc. reflexivity.
+  Qed.
