@@ -1836,7 +1836,8 @@ Section ResidualiserTyping.
       sort level from each rule. For the [tFix] case, the rule already
       requires [has_type Σ Γ A (tSort i)] as a premise. *)
   Lemma residualise_cfg_root_typing (fuel : nat) (Σenv : Ty.env) (b : SC.cfg_builder)
-      (Γ : Ty.ctx) (t A : tm) (v : nat) (i : nat) :
+      (Γ : Ty.ctx) (t A : tm) (v : nat) (i : nat)
+      (Hclosed : Ty.closed_param_tys Σenv) :
     fuel > 0 ->
     SC.lookup_label b v = Some (C.jTy Γ t A) ->
     SC.lookup_succ b v = None \/ SC.lookup_succ b v = Some [] ->
@@ -1852,11 +1853,11 @@ Section ResidualiserTyping.
     - rewrite Hnone. cbn.
       eapply Ty.ty_fix.
       + exact HAi.
-      + apply Ty.has_type_weaken_head with (B := A). exact Hty.
+      + apply Ty.has_type_weaken_head with (B := A) (Hclosed := Hclosed). exact Hty.
     - rewrite Hempty. cbn.
       eapply Ty.ty_fix.
       + exact HAi.
-      + apply Ty.has_type_weaken_head with (B := A). exact Hty.
+      + apply Ty.has_type_weaken_head with (B := A) (Hclosed := Hclosed). exact Hty.
   Qed.
 
 End ResidualiserTyping.
