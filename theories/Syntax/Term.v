@@ -45,6 +45,7 @@ Module Syntax.
   Global Instance Ids_tm : Ids tm := tVar.
   Global Instance Rename_tm : Rename tm. derive. Defined.
   Global Instance Subst_tm : Subst tm. derive. Defined.
+  Arguments Subst_tm σ !t / .
   Global Instance SubstLemmas_tm : SubstLemmas tm. derive. Qed.
 
   Definition ids : var -> tm :=
