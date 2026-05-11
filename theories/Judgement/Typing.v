@@ -223,30 +223,23 @@ Module Typing.
         exact (IH _ _ _ B Htybr).
   Qed.
 
-  Lemma shift_up_eq (A : T.tm) (σ : var -> T.tm) :
-    A.[ren (+1)].[up σ] = A.[σ].[ren (+1)].
+  Lemma shift_sub_1_0_eq (x : var) : T.shift_sub 1 0 x = (+1) x.
   Proof.
-    asimpl.
-    apply (f_equal (fun (τ : var -> T.tm) => A.[τ])).
-    extensionality x.
-    unfold funcomp.
-    destruct x as [|x]; cbn.
-    - reflexivity.
-    - cbn. asimpl. reflexivity.
+    unfold T.shift_sub.
+    destruct (x <? 0) eqn:H; [exfalso; apply (Nat.ltb_lt x 0) in H; lia|].
+    change (x + 1) with (Nat.add x 1).
+    rewrite Nat.add_comm. reflexivity.
   Qed.
 
-  (** Substitution/renaming lemma: applying a well-typed substitution σ
-      from Γ to Δ preserves typing.
+  Lemma up_S_eq (σ : var -> T.tm) (x : var) :
+    up σ (S x) = (σ x).[ren (+1)].
+  Proof.
+    unfold up, Autosubst_Classes.up.
+    cbn.
+    rewrite rename_subst.
+    reflexivity.
+  Qed.
 
-      NOTE: Admitted pending Rocq 9 substitution composition fix.
-      The shifted-context Hsubst construction at binder position 0
-      requires proving [(T.shift 1 0 A).[up σ] = T.shift 1 0 (A.[σ])]
-      which no longer holds under Rocq 9's [scomp] (= [f >>> subst g])
-      composition semantics. The pointwise equality [up σ (S x) = (σ x).[ren (+1)]]
-      is true but [up] is marked [simpl never], preventing [asimpl] from reducing it.
-
-      The fix will likely involve a custom lemma using [unfold Autosubst_Classes.up].
-      See the [shift_up_simpl] proof attempt for the reduction structure. *)
   Lemma has_type_subst (Σenv : env) (Γ Δ : ctx) (σ : var -> T.tm) (t A : T.tm) :
     has_type Σenv Γ t A ->
     (forall x, match ctx_lookup Γ x with
