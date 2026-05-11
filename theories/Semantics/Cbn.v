@@ -80,6 +80,12 @@ Qed.
 Definition steps : tm -> tm -> Prop :=
   clos_refl_trans_2 step.
 
+(** Backward-compatible aliases for code that uses the built-in
+    [Relation_Operators.rt_step]/[rt_refl]/[rt_trans] to build [steps]. *)
+Notation rt_step := (@rt2_step tm step).
+Notation rt_refl := (@rt2_refl tm step).
+Notation rt_trans := (@rt2_trans tm step).
+
 Inductive value : tm -> Prop :=
 | v_lam A t : value (tLam A t)
 | v_roll I c args : value (tRoll I c args).
@@ -418,21 +424,42 @@ Lemma steps_tCase_decompose (I : nat) (scrut C : tm) (brs : list tm) (v : tm) :
     steps (apps br args) v.
 Proof.
   intros Hval Hsteps.
-  refine (clos_refl_trans_2_ind_old tm step (tCase I scrut C brs)
-    (fun w => value w -> exists c args br,
+  assert (Hreach :
+    (exists scrut', steps scrut scrut' /\ v = tCase I scrut' C brs) \/
+    (exists c args br,
       steps scrut (tRoll I c args) /\
       branch brs c = Some br /\
-      steps (apps br args) w) _ _ v Hsteps Hval).
-  - (* base case: P (tCase ...) = value (tCase ...) -> ... *)
-    intros Hv. inversion Hv.
-  - (* step case: P y -> step y z -> P z *)
-    intros y z Hclos Hstep H_IH Hvz.
-    inversion Hstep; subst; clear Hstep.
-    + (* step_case_scrut *)
-      refine (fun Hvz' => match Hvz' with end).
-    + (* step_case_roll *)
-      refine (fun Hvz' => _). inversion Hvz' || 
-        (exists c, args, br; split; [apply rt2_refl|split; [exact H|apply rt2_refl]]).
+      steps (apps br args) v)).
+  { refine (clos_refl_trans_2_ind_old tm step (tCase I scrut C brs)
+      (fun w =>
+        (exists scrut', steps scrut scrut' /\ w = tCase I scrut' C brs) \/
+        (exists c args br,
+          steps scrut (tRoll I c args) /\
+          branch brs c = Some br /\
+          steps (apps br args) w)) _ _ v Hsteps).
+    - left. exists scrut. split; [apply rt2_refl|reflexivity].
+    - intros y z _ Hstep H_IH.
+      destruct H_IH as [[scrut' [Hscrut ->]]|[c [args [br [Hscrut [Hbr Hbranch]]]]]].
+      + inversion Hstep; subst; clear Hstep.
+        * left.
+          match goal with
+          | Hs : step scrut' ?scrut'' |- _ =>
+              exists scrut''; split;
+              [eapply rt2_trans; [exact Hscrut|apply rt2_step; exact Hs]
+              |reflexivity]
+          end.
+        * right.
+          match goal with
+          | Hbr' : branch brs ?c = Some ?br |- _ =>
+              exists c, args, br; split;
+              [exact Hscrut|split; [exact Hbr'|apply rt2_refl]]
+          end.
+      + right. exists c, args, br. split; [exact Hscrut|split; [exact Hbr|]].
+        eapply rt2_trans; [exact Hbranch|].
+        apply rt2_step. exact Hstep. }
+  destruct Hreach as [[scrut' [_ Heq]]|[c [args [br [Hscrut [Hbr Hbranch]]]]]].
+  - subst v. inversion Hval.
+  - exists c, args, br. split; [exact Hscrut|split; [exact Hbr|exact Hbranch]].
 Qed.
 
 (** Corollary for [terminates_to]. *)
@@ -446,11 +473,8 @@ Proof.
   intros [Hsteps Hval].
   apply steps_tCase_decompose in Hsteps; [|exact Hval].
   destruct Hsteps as [c [args [br [Hscrut [Hb Hbranch]]]]].
-  exists c, args, br. split; [split|split].
-  - exact Hscrut.
-  - apply v_roll.
-  - exact Hb.
-  - exact Hbranch.
-  - exact Hval.
+  exists c, args, br. split.
+  - split; [exact Hscrut|apply v_roll].
+  - split; [exact Hb|split; [exact Hbranch|exact Hval]].
 Qed.
 

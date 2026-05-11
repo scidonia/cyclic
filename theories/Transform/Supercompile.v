@@ -424,6 +424,12 @@ Definition split_case_var_dep
            cs)
   end.
 
+(** Basic version of [split_case_var] (used by SequentDrivingRules). *)
+Definition split_case_var
+    (Σenv : Ty.env) (Γ : Ty.ctx) (ind : nat) (x : nat)
+    (Cmot : tm) (brs : list tm) (A : tm) : list config :=
+  split_case_var_dep Σenv Γ ind x Cmot brs A.
+
 Definition drive_step (Σenv : Ty.env) (j : config) : list config :=
   let j := canon_config (norm_config drive_norm_fuel Σenv j) in
   match j with

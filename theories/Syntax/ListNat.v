@@ -658,7 +658,7 @@ Module ListNat.
               tLam expr_ty (         (* tVar 0 = e2, tVar 1 = e1, tVar 2 = code, tVar 3 = e, tVar 4 = self *)
                 tApp (tApp (tVar 4) (tVar 0))
                      (tApp (tApp (tVar 4) (tVar 1))
-                           (cons 0 (tVar 2)))
+                           (cons Examples.zero (tVar 2)))
               ))
           ]))).
 
@@ -670,7 +670,7 @@ Module ListNat.
       (* tVar 0 = self *)
       tLam expr_ty (        (* tVar 0 = e, tVar 1 = self *)
         tCase 3 (tVar 0) Examples.nat_ty [
-          tLam Examples.nat_ty tVar 0;   (* const(n) → n *)
+          tLam Examples.nat_ty (tVar 0);   (* const(n) → n *)
           tLam expr_ty (                    (* tVar 0 = e1 *)
             tLam expr_ty (                   (* tVar 0 = e2, tVar 1 = e1, tVar 2 = e, tVar 3 = self *)
               tApp (tApp Examples.plus
@@ -707,14 +707,14 @@ Module ListNat.
                                          (tVar 0))
                             ))
                         ])
-                    ]) ;
+                    )] ;
                   (* head ≠ 0 → PUSH: exec code_tail (cons head stack) *)
                   tLam Examples.nat_ty ( (* tVar 0 = n, head=succ n *)
                     tApp (tApp (tVar 5) (tVar 1))
                          (cons (tVar 2) (tVar 3))
                   )
                 ]))
-            ]]))).
+            ]))).
 
   (** Convenience: list notation in the object language. *)
   Fixpoint list_lit (xs : list tm) : tm :=
