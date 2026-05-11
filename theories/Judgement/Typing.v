@@ -223,9 +223,30 @@ Module Typing.
         exact (IH _ _ _ B Htybr).
   Qed.
 
+  Lemma shift_up_eq (A : T.tm) (σ : var -> T.tm) :
+    A.[ren (+1)].[up σ] = A.[σ].[ren (+1)].
+  Proof.
+    asimpl.
+    apply (f_equal (fun (τ : var -> T.tm) => A.[τ])).
+    extensionality x.
+    unfold funcomp.
+    destruct x as [|x]; cbn.
+    - reflexivity.
+    - cbn. asimpl. reflexivity.
+  Qed.
+
   (** Substitution/renaming lemma: applying a well-typed substitution σ
       from Γ to Δ preserves typing.
-      NOTE: admitted pending Rocq 9 substitution composition fix. *)
+
+      NOTE: Admitted pending Rocq 9 substitution composition fix.
+      The shifted-context Hsubst construction at binder position 0
+      requires proving [(T.shift 1 0 A).[up σ] = T.shift 1 0 (A.[σ])]
+      which no longer holds under Rocq 9's [scomp] (= [f >>> subst g])
+      composition semantics. The pointwise equality [up σ (S x) = (σ x).[ren (+1)]]
+      is true but [up] is marked [simpl never], preventing [asimpl] from reducing it.
+
+      The fix will likely involve a custom lemma using [unfold Autosubst_Classes.up].
+      See the [shift_up_simpl] proof attempt for the reduction structure. *)
   Lemma has_type_subst (Σenv : env) (Γ Δ : ctx) (σ : var -> T.tm) (t A : T.tm) :
     has_type Σenv Γ t A ->
     (forall x, match ctx_lookup Γ x with
@@ -234,6 +255,7 @@ Module Typing.
       end) ->
     has_type Σenv Δ (t.[σ]) (A.[σ]).
   Proof. Admitted.
+
   (** Weakening at the head via [has_type_subst]. *)
   Lemma has_type_weaken_head (Σenv : env) (Γ : ctx) (t A B : T.tm) :
     has_type Σenv Γ t A ->
