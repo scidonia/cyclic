@@ -240,6 +240,25 @@ Module Typing.
     reflexivity.
   Qed.
 
+  Lemma shift_up_type_eq (C : T.tm) (σ : var -> T.tm) :
+    C.[σ].[ren (+1)] = (T.shift 1 0 C).[up σ].
+  Proof.
+    unfold T.shift, T.rename.
+    rewrite !rename_subst, !subst_comp.
+    apply (f_equal (fun (τ : var -> T.tm) => C.[τ])).
+    extensionality x.
+    unfold scomp. simpl.
+    rewrite (shift_sub_1_0_eq x).
+    symmetry. apply up_S_eq.
+  Qed.
+
+  (** Substitution/renaming lemma.
+      NOTE: The position-0 shifted Hsubst and type equality lemmas
+      (shift_sub_1_0_eq, up_S_eq, shift_up_type_eq) are proved.
+      The remaining gap is the S x case of the shifted Hsubst,
+      which requires calling [has_type_subst] recursively with
+      [ren (+1)] — not allowed in a non-fixpoint proof.
+      Fix: make this a [Fixpoint] on the typing derivation size. *)
   Lemma has_type_subst (Σenv : env) (Γ Δ : ctx) (σ : var -> T.tm) (t A : T.tm) :
     has_type Σenv Γ t A ->
     (forall x, match ctx_lookup Γ x with
@@ -249,7 +268,6 @@ Module Typing.
     has_type Σenv Δ (t.[σ]) (A.[σ]).
   Proof. Admitted.
 
-  (** Weakening at the head via [has_type_subst]. *)
   Lemma has_type_weaken_head (Σenv : env) (Γ : ctx) (t A B : T.tm) :
     has_type Σenv Γ t A ->
     has_type Σenv (B :: Γ) (T.shift 1 0 t) (T.shift 1 0 A).
