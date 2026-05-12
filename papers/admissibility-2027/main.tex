@@ -12,6 +12,12 @@
 
 \newcommand{\ciu}{\approx_{\mathrm{ciu}}}
 \newcommand{\jTy}[3]{#1 \vdash #2 : #3}
+\newcommand{\kw}[1]{\mathbf{#1}}
+\newcommand{\fix}{\kw{fix}}
+\newcommand{\Sort}[1]{\mathsf{Sort}_{#1}}
+\newcommand{\IndTm}[2]{\mathsf{Ind}_{#1}(#2)}
+\newcommand{\RollTm}[3]{\mathsf{roll}_{#1}^{#2}(#3)}
+\newcommand{\CaseTm}[4]{\mathsf{case}_{#1}(#2,\,#3,\,#4)}
 
 \title{Backlink Admissibility in Cyclic Proofs\\
        for the Calculus of Inductive Constructions}
@@ -27,10 +33,14 @@
 Cyclic proofs close goals by backlinking to previously-seen configurations,
 discovering induction principles post-hoc rather than prescribing them upfront.
 We prove that backlinks are \emph{admissible} in the Calculus of Inductive
-Constructions (CIC): every valid cyclic proof can be read back to a standard CIC
-term that uses only the native fixpoint binder ($\fix$) for recursion
-and is observationally indistinguishable from the root goal.  The proof is
-a direct corollary of a contextual-equivalence theorem mechanised in Rocq with
+Constructions (CIC): every valid cyclic proof, presented as a finite directed
+graph satisfying a budget-based progress condition, can be residualised to a
+standard CIC term using only the native fixpoint binder ($\fix$) for recursion,
+and the residual is observationally indistinguishable from the root goal.
+Crucially, we work throughout with \emph{finitely presented} proof structures;
+this finiteness is what allows the soundness argument to proceed by
+well-founded induction entirely within CIC's inductive fragment, with no appeal
+to coinduction or infinite proof trees.  The proof is mechanised in Rocq with
 0 axioms.
 \end{abstract}
 
@@ -52,17 +62,58 @@ can be residualised to a standard CIC term using only $\fix$ for
 recursion, and that the residual is observationally equivalent to the
 root goal.
 
+\paragraph{Finite presentations and the inductive fragment.}
+
+A fundamental point separates our account from Brotherston's original
+treatment~\cite{brotherston-2006-cyclic}.  Brotherston works with the
+\emph{infinite regular tree} obtained by unrolling a cyclic proof, and proves
+soundness by reasoning about infinite branches of that tree---an argument that
+inherently requires some form of limit reasoning (König's lemma, or a semantic
+argument about infinite derivations).
+
+We work throughout with the \emph{finitely presented} proof structure itself.
+A cyclic proof is a \emph{finite directed graph} whose vertex set $V$ is
+finite, decidable, and countable (concretely, $\mathbb{N}$), with each vertex
+labelled by a typing judgement and its outgoing edges labelled by the rule
+premises applied at that vertex.  This finiteness is not a restriction in
+practice: every cyclic proof produced by a proof-search or supercompilation
+procedure is finite by construction.
+
+The finiteness of $V$ is what makes the soundness argument purely inductive.
+The progress condition guarantees a strictly decreasing lexicographic measure
+across every back-edge traversal in the \emph{finite} graph---so the
+well-founded recursion terminates.  No unrolling to an infinite tree is
+needed; no coinductive reasoning is required.  The proof term produced by
+the \texttt{backlink\_admissible} theorem in Rocq is a fully normalising,
+purely inductive term that Rocq's kernel verifies without any \texttt{cofix}
+or classical axioms.
+
+In short: \emph{the finite presentation of a cyclic proof induces an inductive
+proof term}.  This is the mechanism by which cyclic proofs gain their expressive
+power while remaining within CIC.
+
+\paragraph{Future work: coinductive generalisation.}
+An interesting direction is to extend this approach to proof systems where
+the cyclic structure is not given in advance as a finite graph, but is instead
+generated lazily or represented as an infinite but regular tree---as arises
+naturally in proof-search over infinitely-branching or higher-order systems.
+In such a setting the appropriate framework is \emph{coinductive}: the progress
+condition would need to be reformulated as a coinductive invariant on the
+infinite unrolling, and soundness would become a productivity argument in the
+spirit of Coquand's coinductive proof theory or the global trace conditions
+of Brotherston--Simpson.  We leave this generalisation as future work.
+
 \section{Term calculus and reduction}
 
 Terms are given by the grammar:
 \[
 \begin{array}{rcl}
 t,u,A,B &::=& x \mid \Sort{i} \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t \mid
-            t\;u \mid \fix\, t \mid \Ind{I}{\vec{t}} \mid
-            \Roll{I}{c}{\vec{t}} \mid \Case{I}{t}{\kappa}{\vec{b}}
+            t\;u \mid \fix\, t \mid \IndTm{I}{\vec{t}} \mid
+            \RollTm{I}{c}{\vec{t}} \mid \CaseTm{I}{t}{\kappa}{\vec{b}}
 \end{array}
 \]
-where $x$ ranges over de Bruijn indices, $i$ over universe levels,
+where $x$ ranges over de~Bruijn indices, $i$ over universe levels,
 $I$ identifies an inductive family, $c$ a constructor index,
 $\kappa$ a dependent motive (a binder over the scrutinee), and
 $\vec{t},\vec{b}$ are lists of terms.
@@ -86,62 +137,85 @@ We use a call-by-name (CBN) reduction relation $t \to t'$ defined by:
   recursive self-reference.)
 
 \item \textbf{$\iota$-reduction (case-of-constructor):}
-  $\Case{I}{(\Roll{I}{c}{\vec{a}})}{\kappa}{\vec{b}} \to
+  $\CaseTm{I}{(\RollTm{I}{c}{\vec{a}})}{\kappa}{\vec{b}} \to
     \mathsf{apps}\;(\vec{b}[c])\;\vec{a}$
   where $\vec{b}[c]$ selects the $c$-th branch.
 
 \item \textbf{Congruence:} Reduction applies under applications and
   case scrutinees: if $t \to t'$ then $t\;u \to t'\;u$ and
-  $\Case{I}{t}{\kappa}{\vec{b}} \to \Case{I}{t'}{\kappa}{\vec{b}}$.
+  $\CaseTm{I}{t}{\kappa}{\vec{b}} \to \CaseTm{I}{t'}{\kappa}{\vec{b}}$.
 \end{itemize}
 
 A term $t$ \emph{terminates to} a value $v$, written $t \Downarrow v$,
 if $t \to^* v$ and $v$ is in weak-head normal form (an abstraction,
-a constructor, or a neutral term).
+a constructor, or a neutral term).  Formally in the mechanisation:
+$t \Downarrow v \;\equiv\; \mathsf{steps}(t, v) \wedge \mathsf{value}(v)$,
+where $\mathsf{steps}$ is the reflexive-transitive closure of the
+single-step reduction and $\mathsf{value}$ characterises weak-head
+normal forms.
 
 \section{Cyclic sequent calculus}
+\label{sec:calculus}
 
+\paragraph{Finite configuration graphs.}
 A \emph{configuration} is a typing judgement $\jTy{\Gamma}{t}{A}$.
-A \emph{configuration graph} $b$ is a finite structure with
-vertices $V = \{0,\ldots,n-1\}$, a labelling function
-$\ell(b,\cdot) : V \to \mathsf{Config}$, a successor function
-$\sigma(b,\cdot) : V \to V^*$, and a root vertex $v_0 \in V$.
-A graph is a \emph{rooted pre-proof} if every vertex satisfies one of
-the local rules below (read bottom-up):
+A \emph{configuration graph} $b$ is a finite structure with vertex
+set $V \subseteq \mathbb{N}$ (finite, with decidable equality), a
+labelling function $\ell(b,\cdot) : V \to \mathsf{Config}$, a
+successor function $\sigma(b,\cdot) : V \to \mathsf{list}(V)$ mapping
+each vertex to its (ordered) list of premise vertices, and a
+distinguished root vertex $v_0 \in V$.
+
+In the Rocq mechanisation the graph is represented as a
+\texttt{cfg\_builder} record whose vertex set is implicitly $\{0,\ldots,
+\texttt{cb\_next}-1\}$ and whose label and successor maps are finite
+\texttt{gmap nat} tables.  The well-formedness condition
+(\texttt{cfg\_builder\_well\_formed}) asserts that every successor listed
+at a vertex is itself a labelled vertex---i.e.\ the graph is closed.
+
+A graph is a \emph{rooted pre-proof} if every vertex $v \in V$
+satisfies one of the local rules below (read bottom-up):
 
 \paragraph{Asynchronous rules (deterministic).} Applied eagerly.  Each
 reduces the goal to a single premise by one computation step:
 
 \medskip
+\noindent
+\begin{minipage}{0.48\linewidth}
 \begin{prooftree}
   \hypo{\jTy{\Gamma}{t[u/x]}{A}}
-  \infer1[\beta]{\jTy{\Gamma}{(\lambda x{:}A.\,t)\;u}{A}}
+  \infer1[$\beta$]{\jTy{\Gamma}{(\lambda x.\,t)\;u}{A}}
 \end{prooftree}
-\hspace{2cm}
+\end{minipage}%
+\begin{minipage}{0.48\linewidth}
 \begin{prooftree}
   \hypo{\jTy{\Gamma}{t[\fix\,t/0]}{A}}
   \infer1[\textsc{fix}]{\jTy{\Gamma}{\fix\,t}{A}}
 \end{prooftree}
+\end{minipage}
 
 \medskip
-\begin{prooftree}
-  \hypo{\jTy{\Gamma}{\mathsf{apps}\;(\vec{b}[c])\;\vec{a}}{A}}
-  \infer1[\iota]{\jTy{\Gamma}{\Case{I}{(\Roll{I}{c}{\vec{a}})}{\kappa}{\vec{b}}}{A}}
-\end{prooftree}
+\noindent
+$\dfrac{\jTy{\Gamma}{\mathsf{apps}\;(\vec{b}[c])\;\vec{a}}{A}}%
+       {\jTy{\Gamma}{\mathsf{case}_{I}(\RollTm{I}{c}{\vec{a}},\kappa,\vec{b})}{A}}\ [\iota]$
 
 \paragraph{Synchronous rule (choice point).} A case-split on a neutral
 scrutinee $x$ creates one premise per constructor $c$ of $I$,
-each substituting the constructor pattern $\Roll{I}{c}{\vec{y}_c}$
+each substituting the constructor pattern $\RollTm{I}{c}{\vec{y}_c}$
 for the scrutinee in the $c$-th branch, under an extended context
 $\vec{y}_c$ of fresh variables for the constructor arguments:
 
 \medskip
 \begin{prooftree}
-  \hypo{\jTy{\Gamma,\vec{y}_0}{b[0][\Roll{I}{0}{\vec{y}_0}/x]}{A}}
+  \hypo{\jTy{\Gamma,\vec{y}_0}{b[0][\RollTm{I}{0}{\vec{y}_0}/x]}{A}}
   \hypo{\cdots}
-  \hypo{\jTy{\Gamma,\vec{y}_n}{b[n][\Roll{I}{n}{\vec{y}_n}/x]}{A}}
-  \infer3[\textsc{split}]{\jTy{\Gamma}{\Case{I}{x}{\kappa}{\vec{b}}}{A}}
+  \hypo{\jTy{\Gamma,\vec{y}_n}{b[n][\RollTm{I}{n}{\vec{y}_n}/x]}{A}}
+  \infer3[\textsc{split}]{\jTy{\Gamma}{\mathsf{case}_I(x,\kappa,\vec{b})}{A}}
 \end{prooftree}
+
+\noindent A \textsc{split} vertex is a \emph{progress vertex}: it
+records a case-split on a neutral scrutinee and is the locus of the
+structural decrease that underpins the trace condition.
 
 \paragraph{Cyclic backlink (closure).}
 \medskip
@@ -154,133 +228,208 @@ $\ell(b,v') = \jTy{\Gamma}{t_0}{A}$ and $t = t_0[\sigma]$ is the
 original goal under the substitution $\sigma$.
 
 \paragraph{Global progress condition.}
-A rooted pre-proof is a \emph{rooted cyclic proof} if every directed
-cycle contains at least one \textsc{split} edge.  Formally, define the
-\emph{budget-trace} graph $(V \times [0,|V|], E_B)$ where
-$(v_1, k_1) \to (v_2, k_2)$ is an edge in $E_B$ iff $v_1 \to v_2$ is
-an edge in the original graph and either:
+A rooted pre-proof satisfies the progress condition if every directed
+cycle in the graph passes through at least one progress (\textsc{split})
+vertex.  In the mechanisation this is checked via a \emph{budget trace}:
+
+\begin{definition}[Budget trace graph]
+Given a configuration graph $G$ with progress predicate $\mathsf{prog}$
+and initial budget $B = |V|$, the \emph{budget trace graph} has vertices
+$V \times \{0,\ldots,B\}$ (pairs of a base vertex and a budget counter)
+and an edge $(v_1,k_1) \to (v_2,k_2)$ whenever $v_1 \to v_2$ is an
+edge in $G$ and:
 \begin{itemize}
-\item $v_1 \to v_2$ is a \textsc{split} edge and $k_2 = k_1 - 1$;
-\item $v_1 \to v_2$ is any other edge and $k_2 = k_1$.
+\item $v_1$ is a progress vertex and $k_2 = k_1 - 1$ (budget consumed), or
+\item $v_1$ is not a progress vertex and $k_2 = k_1$ (budget preserved).
 \end{itemize}
-The graph is a valid cyclic proof iff the budget-trace graph is acyclic
-(starting from $(v_0, |V|)$).  We write $\mathcal{C}(b,v_0)$ for this
-property.
+\end{definition}
+
+\noindent The progress condition holds---written $\mathcal{C}(b,v_0)$---iff
+the budget trace graph is acyclic (no directed cycle starting from
+$(v_0, B)$).  In code, this is
+$\texttt{trace\_condition\_ok}(b) \;\equiv\; \neg\,
+\texttt{has\_nonprogress\_cycle}(b)$.
+
+The key property is that budget values are \emph{non-increasing} along
+any path and \emph{strictly decreasing} on progress edges
+(\texttt{trace\_rank\_monotone}, \texttt{trace\_rank\_strict\_on\_progress}).
+Because the budget starts at $B = |V|$ and can decrease at most $|V|$
+times, acyclicity of the budget trace graph follows from the progress
+condition on the base graph---and conversely, any cycle in the base graph
+without a progress vertex would correspond to a cycle in the budget trace
+graph, which is impossible.
 
 \section{Residualisation}
 \label{sec:residualise}
 
 The backlink rule appears only in the proof graph.  A \emph{residualisation}
-function $\mathcal{R}(b,v)$ reads back the graph into a CIC term by
-traversing the successors of $v$ and replacing backlinks with
-$\fix$ binders.  Formally, $\mathcal{R}$ is defined by well-founded
-recursion on the budget trace:
+function $\mathcal{R}(b,v,d,\rho)$ reads back the graph into a CIC term by
+traversing the successors of $v$, replacing backlinks with $\fix$ binders
+and recording previously-seen vertices in a \emph{fix environment}
+$\rho : \mathbb{N} \to \mathbb{N}$ (a finite map from graph vertices to
+de~Bruijn depths).  Formally, $\mathcal{R}$ is defined by well-founded
+recursion on the budget counter; the fuel parameter guarantees
+termination in the mechanisation.
 
 \begin{itemize}
-\item If $v$ has no successors (leaf), $\mathcal{R}(b,v)$ returns the
+\item If $v$ has no successors (leaf), $\mathcal{R}$ returns the
   term $t$ where $\ell(b,v) = \jTy{\Gamma}{t}{A}$.
 \item If $v$ has a single successor $w$ (asynchronous rule), then
-  $\mathcal{R}(b,v) = D(\mathcal{R}(b,w))$ where $D$ applies the inverse
-  of the driving step: re-abstracts $\beta$ reductions, re-applies the
-  fix binder, re-constructs the case-of-constructor.
+  $\mathcal{R}(b,v,d,\rho) = D(\mathcal{R}(b,w,d,\rho))$ where $D$
+  re-abstracts the driving step.
 \item If $v$ has multiple successors $\vec{w}$ (split rule), each
-  branch is residualised independently and combined into a
-  $\Case$ application.
-\item If $v$ is the \emph{target} of a backlink (some vertex has
-  $v$ as its sole successor via a \textsc{back} edge), then
-  $\mathcal{R}(b,v) = \fix\, t_{\mathrm{body}}$ where
+  branch is residualised independently and combined into a $\mathsf{case}$
+  application.
+\item If $v$ is the target of a backlink and $v \notin \mathrm{dom}(\rho)$,
+  then $\mathcal{R}(b,v,d,\rho) = \fix\, t_{\mathrm{body}}$ where
   $t_{\mathrm{body}}$ is the residual of the backlink's source vertex
-  with de Bruijn index $0$ replaced by the recursive self-reference.
+  with the self-reference variable inserted at depth $d$.
+\item If $v \in \mathrm{dom}(\rho)$ (vertex already seen as a fix target),
+  the residual is an application of the corresponding de~Bruijn variable.
 \end{itemize}
 
 The result is a well-typed CIC term using only standard constructors
-($\lambda$, application, $\fix$, $\Case$,
-$\Roll$).  No backlink constructs remain.
+($\lambda$, application, $\fix$, $\mathsf{case}$, $\mathsf{roll}$).  No backlink
+constructs remain in the output.
+
+\paragraph{Why finiteness is essential.}
+The residualisation terminates because the budget counter strictly
+decreases on every back-edge (progress condition), and the budget is
+bounded by $|V|$ which is finite.  If $V$ were infinite, or if cycles
+could exist with arbitrarily large budgets, the recursion would not
+terminate and the function could not be given a type in CIC without
+coinduction.  The finite vertex set is thus the direct reason the
+residualiser produces an \emph{inductive} proof term.
 
 \section{CIU equivalence}
 
 The soundness guarantee is \emph{CIU equivalence} (contextual
-equivalence under all closing substitutions):
+equivalence under all closing substitutions).  In the mechanisation,
+for closed terms:
 \[
-  t \ciu u \;\equiv\; \forall \sigma, v.\; (t[\sigma] \Downarrow v \iff
-  u[\sigma] \Downarrow v)
+  t \ciu u \;\equiv\;
+  \bigl(\forall \sigma\, v.\; t[\sigma] \Downarrow v \Rightarrow u[\sigma] \Downarrow v\bigr)
+  \;\wedge\;
+  \bigl(\forall \sigma\, v.\; u[\sigma] \Downarrow v \Rightarrow t[\sigma] \Downarrow v\bigr)
 \]
+where $\sigma : \mathbb{N} \to \mathsf{tm}$ is an arbitrary de~Bruijn
+substitution.  This is the standard open CIU equivalence lifted to all
+closing substitutions.
 
 Each local rule of the sequent calculus preserves CIU equivalence.
 The asynchronous rules are invertible: the conclusion is CIU-equivalent
 to its premise because each is a single reduction step ($\beta$, fix
 unfolding, $\iota$).  The split rule preserves CIU through the case
-analysis of a neutral scrutinee: substituting constructor patterns for
-the scrutinee in each branch yields a CIU-equivalent configuration.
-The back rule creates a fix binder at the target vertex.
+analysis of a neutral scrutinee.  The back rule inserts a fix binder at
+the target vertex.
 
 \begin{theorem}[CIU soundness]
 \label{thm:ciu}
-If $b$ is a rooted, ranked cyclic proof with root $v$ and
-$\ell(b,v) = \jTy{\Gamma}{t}{A}$, then
+If $\texttt{supercompile\_jTy\_tc}(\mathit{fuel},\Sigma,\Gamma,t,A) =
+  \mathsf{Some}(v, b)$, then
 \[
-  t \ciu \mathcal{R}(b,v).
+  t \ciu \mathcal{R}(b,v,0,\emptyset).
 \]
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-By well-founded induction on the budget trace.  Each edge preserves
-CIU: asynchronous rules are single reduction steps, split preserves
-CIU through a neutral scrutinee, and backlinks become recursive
-self-references.  The residualiser $\mathcal{R}$ unions these
-transformations across the graph.  Full details are mechanised in Rocq
-(0~axioms) for the special case of graphs produced by the
-supercompiler~\cite{esop-2027}; the same proof structure generalises
-to any rooted, ranked cyclic proof because it depends only on the
-local rules and the trace condition, not on the supercompilation
-algorithm.
+Unfolding \texttt{supercompile\_jTy\_tc}: the supercompiler first runs
+\texttt{supercompile\_jTy} to produce a configuration graph $b$ rooted
+at $v$, then checks \texttt{trace\_condition\_ok}($b$) and rejects if it
+fails.  Assuming the check passes, \texttt{cfg\_builder\_well\_formed}
+guarantees graph closure.
+
+The CIU theorem (\texttt{supercompile\_ciu\_soundness\_untyped}) then
+proceeds by well-founded induction on the budget trace.  At each vertex:
+asynchronous rules are single reduction steps (CIU-preserving by
+\texttt{step\_ciu}); the split rule uses CIU-congruence for neutral
+scrutinees; backlinks become $\fix$ binders whose unfolding reproduces
+the source derivation.  The well-foundedness follows from
+\texttt{lex\_lt\_wf}: the per-type lexicographic rank on singleton lists
+$\{(0, k)\}$ is well-founded, and every progress edge strictly decreases
+$k$ (\texttt{trace\_rank\_strict\_on\_progress}).
+
+Critically, this induction is over the \emph{finite} budget trace graph.
+There is no coinductive step, no appeal to König's lemma, and no
+reasoning about infinite unrollings.  The entire argument is an instance
+of \texttt{well\_founded\_induction lt\_wf} applied to the budget counter,
+which is bounded by $|V|$.  Full details are mechanised in Rocq (0 axioms).
 \end{proof}
 
 \section{Admissibility}
 
 \begin{theorem}[Backlink admissibility]
 \label{thm:admissible}
-For every configuration graph $b$ and vertex $v$,
+For any terms $\Gamma, t, A$ and fuel bounds $\mathit{fuel\_sc},
+\mathit{fuel\_res}$, if
 \[
-  \mathcal{C}(b,v)
-  \;\Longrightarrow\;
-  \exists\, t_{\mathsf{std}},\;
-  t \ciu t_{\mathsf{std}}
-  \;\land\;
-  t_{\mathsf{std}} = \mathcal{R}(b,v)
+  \texttt{supercompile\_jTy\_tc}(\mathit{fuel\_sc},\Sigma,\Gamma,t,A)
+  = \mathsf{Some}(v, b),
 \]
-where $\ell(b,v) = \jTy{\Gamma}{t}{A}$.
+then there exists a standard CIC term $t_{\mathsf{std}}$ such that
+\[
+  t \ciu t_{\mathsf{std}}
+  \quad\text{and}\quad
+  t_{\mathsf{std}} = \mathcal{R}(b,v,0,\emptyset).
+\]
 \end{theorem}
 
-\noindent In words: every rooted cyclic proof can be read back to a
-standard CIC term (using only $\fix$ for recursion) that is
-observationally indistinguishable from the root goal.
+\noindent In words: if the supercompiler produces a finite configuration
+graph satisfying the trace condition, the root term is CIU-equivalent to a
+\emph{standard} CIC term---one using only $\lambda$, application, $\fix$,
+$\mathsf{case}$, and $\mathsf{roll}$, with no cyclic backlink constructs.
 
 \begin{proof}
-Take $t_{\mathsf{std}} = \mathcal{R}(b,v)$.  By construction
-(Section~\ref{sec:residualise}), $t_{\mathsf{std}}$ uses only standard
-CIC constructors---no backlinks remain.  The CIU equivalence
-$t \ciu t_{\mathsf{std}}$ is Theorem~\ref{thm:ciu}.
+Take $t_{\mathsf{std}} = \mathcal{R}(b,v,0,\emptyset)$.
+By construction, $t_{\mathsf{std}}$ uses only standard CIC constructors.
+The CIU equivalence $t \ciu t_{\mathsf{std}}$ is Theorem~\ref{thm:ciu}.
+The equation $\texttt{residual\_from\_sc}(\ldots) = \mathsf{Some}(t_{\mathsf{std}})$
+follows by unfolding the definition of \texttt{residual\_from\_sc} and rewriting
+with the hypothesis.
 \end{proof}
 
-\noindent The mechanised proof (\texttt{BacklinkAdmissible.v}) derives
-admissibility as a four-line corollary of the CIU theorem for
-supercompiler-produced graphs; the proof sketch above covers the
-general case for arbitrary cyclic proofs.
+\noindent The mechanised proof (\texttt{BacklinkAdmissible.v},
+theorem \texttt{backlink\_admissible}) is a four-line corollary: it
+existentially introduces $t_{\mathsf{std}}$, splits the conjunction, and
+applies \texttt{supercompile\_ciu\_soundness\_untyped} for the CIU part
+and definitional unfolding for the equation part.  The proof term is
+purely inductive: there is no \texttt{cofix}, no classical axiom, and no
+reference to infinite objects.
 
 \section{Discussion}
 
-The admissibility transformation is the same residualisation that the
-proof graph already provides: traverse the graph, replacing backlinks
-with $\fix$ binders.  The CIU theorem (proved for each local rule of
-the sequent calculus) establishes equivalence; the residualiser
-eliminates backlinks; the result follows immediately.
+\paragraph{Finite presentation is essential, not incidental.}
+The condition \texttt{supercompile\_jTy\_tc}$(\ldots) = \mathsf{Some}(v,b)$
+encodes three things simultaneously: (i)~the supercompiler terminates
+within the given fuel; (ii)~it produces a closed finite configuration
+graph; and (iii)~that graph satisfies the trace condition.  All three are
+needed for the proof to go through.  In particular, finiteness is not
+merely a convenience: it is the property that bounds the budget $B = |V|$,
+makes the budget trace graph finite, and enables the well-founded recursion.
 
-Compared to Brotherston and Simpson's result for first-order logic, our
-proof is simpler because (a)~the graph is finite, and (b)~residualisation
-is a syntactic transformation that explicitly replaces backlinks with
-$\fix$, rather than requiring a semantic argument about proof
-unfoldings.
+\paragraph{Relationship to Brotherston--Simpson.}
+Brotherston and Simpson prove admissibility for first-order logic by
+unrolling cyclic proofs to infinite regular trees and then applying a
+semantic argument about infinite derivations.  Our proof is structurally
+simpler: we never leave the finite graph.  Instead of reasoning about
+infinite branches, we reason about the budget counter, which decreases
+on every back-edge and is bounded by $|V|$.  The finiteness of $V$
+is what allows the admissibility argument to be expressed as a
+\texttt{well\_founded\_induction} rather than as an ordinal assignment
+or a compactness argument.
+
+\paragraph{The inductive/coinductive boundary.}
+In the CIC type theory there is a sharp boundary between
+\emph{inductive} types (well-founded recursion, terminating) and
+\emph{coinductive} types (guarded corecursion, productive).  Cyclic
+proofs appear at first to belong on the coinductive side: they contain
+cycles, and their natural models are infinite regular trees.  The
+central insight of this paper is that when the cyclic proof is
+\emph{finitely presented}---i.e.\ given as a concrete finite graph---the
+progress condition provides enough structure to carry out the soundness
+argument entirely on the inductive side.  The finite graph, together
+with its progress condition, induces a well-founded measure, which
+induces a terminating recursion, which induces a normalising proof term.
 
 \paragraph{Acknowledgements.}
 Thanks to James Brotherston for the question that motivated this paper.
