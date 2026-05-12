@@ -1,111 +1,57 @@
 \section{Term calculus}
 \label{sec:calculus}
 
-The source language is the Calculus of Constructions extended with inductive types and fixpoints. Terms follow the grammar:
+Terms are:
 \[
-\begin{array}{rcl}
- t, A, B &::=& \Var{x} \mid \Sort{i} \mid \PiTy{A}{B} \mid \Lam{A}{t}
-                \mid \App{t}{u} \mid \Fix{A}{t} \\
-         &\mid& \Ind{I}{\vec{a}} \mid \Roll{I}{c}{\vec{a}}
-                \mid \Case{I}{t}{C}{\vec{b}}
+t,A ::= x \mid \star_i \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t \mid t\,u \mid \mu x{:}A.\,t \mid I\,\vec{a} \mid c\,\vec{a} \mid [t\mid\vec{b}]^I_C
+\]
+where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
+fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a constructor,
+and $[t\mid\vec{b}]^I_C$ elimination with motive $C$.
+Overlined letters $\vec{a},\vec{b}$ denote vectors of terms.
+Contexts $\Gamma$ are type lists; $\Sigma$ records inductive signatures.
+
+\paragraph{Typing.}
+$\Sigma;\Gamma\vdash t:A$ is standard for
+CIC~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive};
+$\Sigma$ is implicit below, $\uparrow$ denotes shift.
+\[
+\begin{array}{c@{\quad}c}
+\dfrac{}{\Gamma\vdash x:A}\;{\scriptstyle(\textsc{Var})}\;(\Gamma(x){=}A)
+&
+\dfrac{}{\Gamma\vdash\star_i:\star_{i+1}}\;{\scriptstyle(\textsc{Sort})}
+\\[10pt]
+\dfrac{A:\star_i\quad A{::}\Gamma\vdash B:\star_j}%
+      {\Gamma\vdash\Pi x{:}A.B:\star_{\max(i,j)}}\;{\scriptstyle(\Pi)}
+&
+\dfrac{A:\star_i\quad A{::}\Gamma\vdash t:B}%
+      {\Gamma\vdash\lambda x{:}A.t:\Pi x{:}A.B}\;{\scriptstyle(\lambda)}
+\\[10pt]
+\dfrac{t:\Pi x{:}A.B\quad u:A}%
+      {\Gamma\vdash t\,u:B[u/x]}\;{\scriptstyle(@)}
+&
+\dfrac{A:\star_i\quad A{::}\Gamma\vdash t:A\uparrow}%
+      {\Gamma\vdash\mu x{:}A.t:A}\;{\scriptstyle(\mu)}
+\\[10pt]
+\multicolumn{2}{c}{%
+  \dfrac{t:I\,\vec\delta\quad
+         x{:}I\,\vec\delta,\Gamma\vdash C:\star_i\quad
+         b_c:\Pi\vec\tau_c.\,C[c\,\vec y/x]\;\forall c}%
+        {\Gamma\vdash[t\mid\vec b]^I_C:C[t/x]}\;{\scriptstyle(\textsc{Case})}
+}
 \end{array}
 \]
-where $x$ ranges over de~Bruijn indices, $\Sort{i}$ is the universe hierarchy,
-$\PiTy{A}{B}$ is the dependent function type, $\Lam{A}{t}$ is lambda
-abstraction, $\App{t}{u}$ is application, $\Fix{A}{t}$ is a recursive
-definition (recursive call bound at de~Bruijn index 0), $\Ind{I}{\vec{a}}$
-is an applied inductive type, $\Roll{I}{c}{\vec{a}}$ is a constructor
-application, and $\Case{I}{t}{C}{\vec{b}}$ is dependent pattern matching
-with motive $C$.  Contexts $\ctx$ are lists of types; the global
-environment $\env$ records inductive definitions.
+\noindent Plus rules for inductive formation and construction
+following~\cite{paulin-mohring-1993-inductive}.
 
-\paragraph{Typing (compact).}
-The judgement $\hastype{\env}{\ctx}{t}{A}$ is standard for CIC with
-inductives~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}.
-Conversion uses $\beta$-convertibility.  The core rules (Figure~\ref{fig:typing})
-are:
-
-\bigskip
-\noindent
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\ctx(x)=A$}
-  \RightLabel{\scriptsize (TyVar)}
-  \UnaryInfC{$\hastype{\env}{\ctx}{\Var{x}}{A}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{}
-  \RightLabel{\scriptsize (TySort)}
-  \UnaryInfC{$\hastype{\env}{\ctx}{\Sort{i}}{\Sort{i+1}}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{A{::}\ctx}{B}{\Sort{j}}$}
-  \RightLabel{\scriptsize (TyPi)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\PiTy{A}{B}}{\Sort{\max(i,j)}}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{A{::}\ctx}{t}{B}$}
-  \RightLabel{\scriptsize (TyLam)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\Lam{A}{t}}{\PiTy{A}{B}}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{t}{\PiTy{A}{B}}$}
-  \AxiomC{$\hastype{\env}{\ctx}{u}{A}$}
-  \RightLabel{\scriptsize (TyApp)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\App{t}{u}}{B[u/]}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{A{::}\ctx}{t}{A\uparrow}$}
-  \RightLabel{\scriptsize (TyFix)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\Fix{A}{t}}{A}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{t}{\Ind{I}{\vec{\delta}}}$}
-  \AxiomC{$\hastype{\env}{\ctx,\,x{:}\Ind{I}{\vec{\delta}}}{C}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{\ctx}{b_c}{\Pi\vec{\tau}_c.\,C[\Roll{I}{c}{\vec{y}}/x]}$ per $c$}
-  \RightLabel{\scriptsize (TyCase)}
-  \TrinaryInfC{$\hastype{\env}{\ctx}{\Case{I}{t}{C}{\vec{b}}}{C[t/x]}$}
-\end{prooftree}
-
-\noindent plus (TyInd) and (TyRoll) which follow the inductive family
-structure~\cite{paulin-mohring-1993-inductive} as formalised in the
-mechanisation.
-
-\paragraph{Operational semantics.}
-We use call-by-name (CBN) weak-head reduction with three rules:
-\[
-\App{(\Lam{A}{t})}{u} \step t[u/] \qquad
-\Fix{A}{t} \step t[\Fix{A}{t}/] \qquad
-\Case{I}{(\Roll{I}{c}{\vec{a}})}{C}{\vec{b}} \step b_c\,\vec{a}
-\]
-plus congruence for reduction in the function position of application and
-the scrutinee of case expressions.  Under CBN, arguments are never
-evaluated before substitution; reduction does not proceed under binders.
-The reflexive-transitive closure is written $\steps$.
+\paragraph{Reduction.}
+CBN weak-head: $(\lambda x{:}A.t)\,u\to t[u/x]$,\;
+$\mu x{:}A.t\to t[\mu x{:}A.t/x]$,\;
+$[c\,\vec a\mid\vec b]^I_C\to b_c\,\vec a$,
+plus congruence under application and case scrutinee.
+$\to^*$ is $\steps$; $t\Downarrow v$ means $t\steps v$, $v$ a value.
 
 \paragraph{Observational equivalence.}
-We use CIU (Closed Instantiations of Uses) equivalence: $t \approx u$ iff
-for all closing substitutions $\sigma$ and CBN values $v$, $t[\sigma]$
-terminates to $v$ exactly when $u[\sigma]$ does.  This captures the standard
-notion of contextual equivalence for CBN and is the correctness criterion
-for our supercompilation pipeline (Claim~3).
+$t\approx u$ iff for all closing $\sigma$ and values $v$,
+$t[\sigma]\Downarrow v\Leftrightarrow u[\sigma]\Downarrow v$
+(CIU; Claim~3 criterion).

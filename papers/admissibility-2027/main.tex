@@ -102,126 +102,58 @@ of Brotherston--Simpson.  We leave this generalisation as future work.
 
 \section{Term calculus and typing}
 
-\paragraph{Term syntax.}
-Terms are given by the grammar:
+\paragraph{Terms.}
 \[
-\begin{array}{rcl}
- t, A, B &::=& \Var{x} \mid \Sort{i} \mid \PiTy{A}{B} \mid \Lam{A}{t}
-                \mid \App{t}{u} \mid \Fix{A}{t} \\
-         &\mid& \Ind{I}{\vec{a}} \mid \Roll{I}{c}{\vec{a}}
-                \mid \Case{I}{t}{C}{\vec{b}}
+t,A ::= x \mid \star_i \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t
+        \mid t\,u \mid \mu x{:}A.\,t \mid I\,\vec{a} \mid c\,\vec{a}
+        \mid [t\mid\vec{b}]^I_C
+\]
+where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
+fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a
+constructor, and $[t\mid\vec{b}]^I_C$ elimination with motive $C$.
+Overlined letters $\vec{a},\vec{b}$ denote (possibly empty) vectors of terms.
+Contexts $\Gamma$ are type lists; $\Sigma$ records inductive signatures.
+
+\paragraph{Typing.}
+$\Sigma;\Gamma\vdash t:A$ is standard for
+CIC~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive};
+$\Sigma$ is implicit below, $\uparrow$ denotes shift.
+
+\[
+\begin{array}{c@{\quad}c}
+\dfrac{}{\Gamma\vdash x:A}\;{\scriptstyle(\textsc{Var})}\;(\Gamma(x){=}A)
+&
+\dfrac{}{\Gamma\vdash\star_i:\star_{i+1}}\;{\scriptstyle(\textsc{Sort})}
+\\[10pt]
+\dfrac{A:\star_i\quad A{::}\Gamma\vdash B:\star_j}%
+      {\Gamma\vdash\Pi x{:}A.B:\star_{\max(i,j)}}\;{\scriptstyle(\Pi)}
+&
+\dfrac{A:\star_i\quad A{::}\Gamma\vdash t:B}%
+      {\Gamma\vdash\lambda x{:}A.t:\Pi x{:}A.B}\;{\scriptstyle(\lambda)}
+\\[10pt]
+\dfrac{t:\Pi x{:}A.B\quad u:A}%
+      {\Gamma\vdash t\,u:B[u/x]}\;{\scriptstyle(@)}
+&
+\dfrac{A:\star_i\quad A{::}\Gamma\vdash t:A\uparrow}%
+      {\Gamma\vdash\mu x{:}A.t:A}\;{\scriptstyle(\mu)}
+\\[10pt]
+\multicolumn{2}{c}{%
+  \dfrac{t:I\,\vec\delta\quad
+         x{:}I\,\vec\delta,\Gamma\vdash C:\star_i\quad
+         b_c:\Pi\vec\tau_c.\,C[c\,\vec y/x]\;\forall c}%
+        {\Gamma\vdash[t\mid\vec b]^I_C:C[t/x]}\;{\scriptstyle(\textsc{Case})}
+}
 \end{array}
 \]
-where $x$ ranges over de~Bruijn indices, $i$ over universe levels,
-$I$ identifies an inductive family, $c$ a constructor index,
-$C$ a dependent motive, and $\vec{a},\vec{b}$ are lists of terms.
+plus (TyInd) and (TyRoll)
+following~\cite{paulin-mohring-1993-inductive}.
 
-\paragraph{Typing (compact).}
-A typing environment $\env$ stores inductive signatures.
-A context $\ctx$ is a list of types.
-The judgement $\hastype{\env}{\ctx}{t}{A}$ is standard for CIC with
-inductives~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}.
-The core rules are summarised in Figure~\ref{fig:typing}.
-
-\begin{figure}[t]
-\centering
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\ctx(x)=A$}
-  \RightLabel{\scriptsize (TyVar)}
-  \UnaryInfC{$\hastype{\env}{\ctx}{\Var{x}}{A}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{}
-  \RightLabel{\scriptsize (TySort)}
-  \UnaryInfC{$\hastype{\env}{\ctx}{\Sort{i}}{\Sort{i+1}}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{A{::}\ctx}{B}{\Sort{j}}$}
-  \RightLabel{\scriptsize (TyPi)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\PiTy{A}{B}}{\Sort{\max(i,j)}}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{A{::}\ctx}{t}{B}$}
-  \RightLabel{\scriptsize (TyLam)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\Lam{A}{t}}{\PiTy{A}{B}}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{t}{\PiTy{A}{B}}$}
-  \AxiomC{$\hastype{\env}{\ctx}{u}{A}$}
-  \RightLabel{\scriptsize (TyApp)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\App{t}{u}}{B[u/0]}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{A}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{A{::}\ctx}{t}{A\uparrow}$}
-  \RightLabel{\scriptsize (TyFix)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\Fix{A}{t}}{A}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\env(I)=\Sigma_I$}
-  \RightLabel{\scriptsize (TyInd)}
-  \UnaryInfC{$\hastype{\env}{\ctx}{\Ind{I}{\vec{a}}}{\Sort{\ell}}$}
-\end{prooftree}
-\end{minipage}%
-\begin{minipage}{0.48\linewidth}
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{a_i}{\tau_{c,i}}$ for each}
-  \AxiomC{$\hastype{\env}{\ctx}{r_j}{\Ind{I}{}}$ for each re}
-  \RightLabel{\scriptsize (TyRoll)}
-  \BinaryInfC{$\hastype{\env}{\ctx}{\Roll{I}{c}{\vec{a}}}{\Ind{I}{\vec{\alpha}}}$}
-\end{prooftree}
-\end{minipage}
-
-\bigskip
-
-\begin{prooftree}
-  \AxiomC{$\hastype{\env}{\ctx}{t}{\Ind{I}{\vec{\delta}}}$}
-  \AxiomC{$\hastype{\env}{\ctx,\,x{:}\Ind{I}{\vec{\delta}}}{C}{\Sort{i}}$}
-  \AxiomC{$\hastype{\env}{\ctx}{b_c}{\Pi\vec{\tau}_c.\,C[\Roll{I}{c}{\vec{y}}/x]}$  for each $c$}
-  \RightLabel{\scriptsize (TyCase)}
-  \TrinaryInfC{$\hastype{\env}{\ctx}{\Case{I}{t}{C}{\vec{b}}}{C[t/x]}$}
-\end{prooftree}
-\caption{Core typing rules of CIC with inductives.}
-\label{fig:typing}
-\end{figure}
-
-\paragraph{Operational semantics.}
-We use a call-by-name (CBN) weak-head reduction $\step$ defined by:
-\[
-\App{(\Lam{A}{t})}{u} \step t[u/0] \qquad
-\Fix{A}{t} \step t[\Fix{A}{t}/0] \qquad
-\Case{I}{(\Roll{I}{c}{\vec{a}})}{C}{\vec{b}} \step
-  \mathit{apps}\;(\vec{b}_c)\,\vec{a}
-\]
-plus congruence under $\App{}{}$ and $\Case{}{}{}{}$ scrutinee position.
-We write $\steps$ for the reflexive-transitive closure of $\step$, and
-$t \Downarrow v$ for $t \steps v$ with $v$ a value (abstraction or
-constructor). Multi-argument application $\mathit{apps}\;t\;[u_1,\dots,u_n]$
-applies $t$ to each $u_i$ in turn.
+\paragraph{Reduction.}
+CBN weak-head: $(\lambda x{:}A.t)\,u\step t[u/x]$,\;
+$\mu x{:}A.t\step t[\mu x{:}A.t/x]$,\;
+$[c\,\vec{a}\mid\vec{b}]^I_C\step b_c\,\vec{a}$,
+plus congruence under application and case scrutinee.
+$\steps$ is the closure; $t\Downarrow v$ means $t\steps v$ with $v$ a value.
 
 \section{Cyclic sequent calculus}
 \label{sec:calculus}
@@ -246,16 +178,16 @@ reduces the goal to a single premise.
 \noindent
 \begin{minipage}{0.48\linewidth}
 \begin{prooftree}
-  \AxiomC{$\tconf{\Gamma}{t[u/0]}{A}$}
+  \AxiomC{$\tconf{\Gamma}{t[u/x]}{A}$}
   \RightLabel{\scriptsize ($\beta$)}
-  \UnaryInfC{$\tconf{\Gamma}{\App{(\Lam{A}{t})}{u}}{A}$}
+  \UnaryInfC{$\tconf{\Gamma}{(\lambda x{:}A.\,t)\,u}{A}$}
 \end{prooftree}
 \end{minipage}%
 \begin{minipage}{0.48\linewidth}
 \begin{prooftree}
-  \AxiomC{$\tconf{\Gamma}{t[\Fix{A}{t}/0]}{A}$}
-  \RightLabel{\scriptsize (fix)}
-  \UnaryInfC{$\tconf{\Gamma}{\Fix{A}{t}}{A}$}
+  \AxiomC{$\tconf{\Gamma}{t[\mu x{:}A.\,t/x]}{A}$}
+  \RightLabel{\scriptsize ($\mu$)}
+  \UnaryInfC{$\tconf{\Gamma}{\mu x{:}A.\,t}{A}$}
 \end{prooftree}
 \end{minipage}
 
@@ -263,9 +195,9 @@ reduces the goal to a single premise.
 \noindent
 \begin{minipage}{\linewidth}
 \begin{prooftree}
-  \AxiomC{$\tconf{\Gamma}{\mathit{apps}\;(\vec{b}_c)\;\vec{a}}{A}$}
+  \AxiomC{$\tconf{\Gamma}{b_c\,\vec{a}}{A}$}
   \RightLabel{\scriptsize ($\iota$)}
-  \UnaryInfC{$\tconf{\Gamma}{\Case{I}{(\Roll{I}{c}{\vec{a}})}{C}{\vec{b}}}{A}$}
+  \UnaryInfC{$\tconf{\Gamma}{[c\,\vec{a}\mid\vec{b}]^I_C}{A}$}
 \end{prooftree}
 \end{minipage}
 
@@ -277,11 +209,11 @@ substituting the constructor pattern into the $c$-th branch:
 \noindent
 \begin{minipage}{\linewidth}
 \begin{prooftree}
-  \AxiomC{$\tconf{\Gamma,\vec{y}_0}{b_0[\Roll{I}{0}{\vec{y}_0}/x]}{A}$}
+  \AxiomC{$\tconf{\Gamma,\vec{y}_0}{b_0[0\,\vec{y}_0/x]}{A}$}
   \AxiomC{$\cdots$}
-  \AxiomC{$\tconf{\Gamma,\vec{y}_n}{b_n[\Roll{I}{n}{\vec{y}_n}/x]}{A}$}
+  \AxiomC{$\tconf{\Gamma,\vec{y}_n}{b_n[n\,\vec{y}_n/x]}{A}$}
   \RightLabel{\scriptsize (split)}
-  \TrinaryInfC{$\tconf{\Gamma}{\Case{I}{x}{C}{\vec{b}}}{A}$}
+  \TrinaryInfC{$\tconf{\Gamma}{[x\mid\vec{b}]^I_C}{A}$}
 \end{prooftree}
 \end{minipage}
 \medskip
@@ -339,33 +271,27 @@ acyclicity of the budget trace follows from the progress condition
 
 The backlink rule appears only in the proof graph.  A \emph{residualisation}
 function $\mathcal{R}(b,v,d,\rho)$ reads back the graph into a CIC term by
-traversing the successors of $v$, replacing backlinks with $\Fix{}{}$
-binders and recording previously-seen vertices in a \emph{fix environment}
-$\rho : \mathbb{N} \to \mathbb{N}$ (a finite map from graph vertices to
-de~Bruijn depths).  Formally, $\mathcal{R}$ is defined by well-founded
-recursion on the budget counter; the fuel parameter guarantees
-termination in the mechanisation.
+traversing the successors of $v$, replacing backlinks with $\mu$ binders
+and recording previously-seen vertices in a \emph{fix environment}
+$\rho : \mathbb{N} \to \mathbb{N}$ (graph vertices to de~Bruijn depths).
+$\mathcal{R}$ is defined by well-founded recursion on the budget counter.
 
 \begin{itemize}
-\item \textbf{Leaf} ($v$ has no successors): returns $t$ where
-  $\ell(b,v) = \tconf{\Gamma}{t}{A}$.
-\item \textbf{Asynchronous} ($v$ has a single successor $w$):
+\item \textbf{Leaf}: returns $t$ where $\ell(b,v) = \tconf{\Gamma}{t}{A}$.
+\item \textbf{Asynchronous} (single successor $w$):
   $\mathcal{R}(b,v,d,\rho) = D(\mathcal{R}(b,w,d,\rho))$ where $D$
-  re-abstracts the driving step ($\beta$, fix-unfold, $\iota$).
-\item \textbf{Split} ($v$ has multiple successors $\vec{w}$):
-  each branch is residualised independently and combined into a
-  $\Case{}{}{}{}$ application.
-\item \textbf{Backlink} ($v$ is the target of a backlink, and
-  $v \notin \mathrm{dom}(\rho)$): inserts a $\Fix{A}{t}$ binder where
-  $t$ is the residual of the backlink's source vertex with the
-  recursive self-reference variable at depth $d$.
-\item \textbf{Already seen} ($v \in \mathrm{dom}(\rho)$): returns an
-  application of the corresponding de~Bruijn variable.
+  re-abstracts the driving step ($\beta$, $\mu$-unfold, $\iota$).
+\item \textbf{Split} (multiple successors): each branch residualised
+  independently, combined into $[\cdot\mid\vec{b}]^I_C$.
+\item \textbf{Backlink} ($v \notin \mathrm{dom}(\rho)$): inserts
+  $\mu x{:}A.\,t$ where $t$ residualises the source with $x$ as
+  self-reference.
+\item \textbf{Already seen} ($v \in \mathrm{dom}(\rho)$): returns the
+  corresponding de~Bruijn variable.
 \end{itemize}
 
-The result is a well-typed CIC term using only standard constructors
-($\lambda$, application, $\Fix{}{}$, $\Case{}{}{}{}$, $\Roll{}{}{}$).
-No backlink constructs remain.
+The result uses only $\lambda$, application, $\mu$, $[\cdot\mid\vec{b}]^I_C$,
+and $c\,\vec{a}$ — no backlink constructs remain.
 
 \paragraph{Why finiteness is essential.}
 The residualisation terminates because the budget counter strictly
@@ -391,7 +317,7 @@ substitutions.
 Each local rule preserves CIU equivalence.  The asynchronous rules are
 single reduction steps (CIU-preserving by \texttt{step\_ciu}); the split
 rule applies CIU-congruence for neutral scrutinees; the back rule becomes a
-$\Fix{}{}$ binder whose unfolding reproduces the source derivation.
+$\mu$ binder whose unfolding reproduces the source derivation.
 
 \begin{theorem}[CIU soundness]
 \label{thm:ciu}
@@ -436,8 +362,8 @@ then there exists a standard CIC term $t_{\mathsf{std}}$ such that
 
 \noindent In words: if the supercompiler produces a finite graph satisfying
 the trace condition, the root term is CIU-equivalent to a standard CIC term
-(using only $\lambda$, application, $\Fix{}{}$, $\Case{}{}{}{}$,
-$\Roll{}{}{}$), with no cyclic backlink constructs.
+(using only $\lambda$, application, $\mu$, $[\cdot\mid\vec{b}]^I_C$,
+and $c\,\vec{a}$), with no cyclic backlink constructs.
 
 \begin{proof}
 Take $t_{\mathsf{std}} = \mathcal{R}(b,v,0,\emptyset)$.
