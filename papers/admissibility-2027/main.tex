@@ -408,14 +408,6 @@ CIU equivalence is the $d{=}0$, $\rho{=}\emptyset$ case of
 Theorem~\ref{thm:ciu}.
 \end{proof}
 
-\noindent \textbf{Supercompiler corollary.}
-In the specific case where $b$ is produced by
-$\texttt{supercompile\_jTy\_tc}(\mathit{fuel\_sc},\Sigma,\Gamma,t,A)
-= \mathsf{Some}(v,b)$, the well-formedness and trace condition are
-discharged automatically (\texttt{cfg\_builder\_well\_formed},
-\texttt{trace\_condition\_ok}), giving the corollary
-\texttt{backlink\_admissible} in \texttt{BacklinkAdmissible.v}.
-
 The proof term is purely inductive (no \texttt{cofix}, no \texttt{Admitted}).
 The sole non-constructive ingredient is \emph{functional extensionality}
 ($\forall f\,g,\,(\forall x,\,f(x)=g(x))\Rightarrow f=g$), which enters
