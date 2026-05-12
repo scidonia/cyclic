@@ -101,6 +101,7 @@ spirit of Coquand's coinductive proof theory or the global trace conditions
 of Brotherston--Simpson.  We leave this generalisation as future work.
 
 \section{Term calculus and typing}
+\label{sec:terms}
 
 \paragraph{Terms.}
 \[
@@ -112,7 +113,24 @@ where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
 fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a
 constructor, and $[t\mid\vec{b}]^I_C$ elimination with motive $C$.
 Arrow-annotated letters $\vec{a},\vec{b}$ denote (possibly empty) vectors of terms.
-$\Sigma$ records inductive signatures.
+
+\paragraph{Inductive signatures.}
+$\Sigma$ maps each inductive type $I$ to a signature $\Sigma(I)
+= (\vec{P}, \vec{X}, \ell, \overline{\textit{ctor}})$ where $\vec{P}$
+are the uniform parameters (a telescope), $\vec{X}$ the index types,
+$\ell$ the universe level, and each constructor specification
+$\textit{ctor}$ carries:
+\begin{itemize}
+\item $\overline{\tau}_{\!\textit{par}}$ — the types of the
+  \emph{constructor parameters} (non-recursive arguments);
+\item $\overline{\rho}$ — which argument positions are recursive and
+  at what indices (a list of lists of naturals);
+\item $\overline{\textit{idx}}$ — the result indices.
+\end{itemize}
+The constructor parameter types $\overline{\tau}_{\!\textit{par}}$
+are the fixed types that the $\textsc{Roll}$ rule (below) uses to check
+each constructor argument.  In the mechanisation these are
+\texttt{SP.ctor\_param\_tys ctor} and \texttt{SP.ctor\_rec\_args ctor}.
 
 \paragraph{Contexts (telescopes).}
 A context $\Gamma$ is a \emph{dependent telescope}: a list of types
@@ -449,26 +467,34 @@ together with its progress condition, induces a well-founded measure, which
 induces a terminating recursion, which induces a normalising proof term.
 
 \paragraph{Parametric inductives and substitution.}
-The typing rule for constructors ($\mathsf{roll}$) uses
-\texttt{ctor\_param\_tys} directly from the global signature, as fixed
-closed terms.  For non-parametric inductives (Nat, Bool, etc.) this is
-correct: constructor parameter types are ground terms.  For parametric
-inductives (Vec, List), the constructor types reference the inductive
-parameters via de~Bruijn indices, making them not invariant under
-substitution.  The mechanisation captures this as the
-\texttt{closed\_param\_tys} side condition on the substitution lemma.
-This condition is standard: Paulin-Mohring's original formulation of
-inductive types~\cite{paulin-mohring-1993-inductive}
-defines constructor types as a telescope over the inductive parameters,
-and substitution-invariance corresponds to the uncurried (closed) form
-stored by Coq's kernel~\cite{barras-2010-coq-sets}.  The MetaCoq
-formalization~\cite{sozeau-etal-2020-metacoq,sozeau-etal-2023-metacoq-jar}
+The Roll rule checks constructor arguments against $\overline{\tau}_{\!\textit{par}}$,
+the parameter types stored directly in the inductive signature (see
+\S\ref{sec:terms}).  For non-parametric inductives (Nat, Bool, etc.)
+these are ground terms---invariant under renaming and substitution.
+For parametric inductives (Vec, List), $\overline{\tau}_{\!\textit{par}}$
+references the inductive parameters via de~Bruijn indices (e.g.\
+$\texttt{tVar}\,0$ for the first parameter).
+When the ambient context changes under substitution, these parameter
+types must also be renamed, but the Roll rule uses them unchanged.
+This is the origin of the \texttt{closed\_param\_tys} side condition on
+our substitution lemma: it asserts that every $\overline{\tau}_{\!\textit{par}}$
+in $\Sigma$ is substitution-invariant, which holds for non-parametric
+inductives but not for parametric ones.
+
+This condition is standard in CIC mechanisations.
+Paulin-Mohring's original formulation~\cite{paulin-mohring-1993-inductive}
+defines constructor types as a telescope over the inductive parameters:
+the parameters must be instantiated before the types become ground.
+Coq's kernel performs this substitution at inductive-definition time,
+so the stored signatures are already closed~\cite{barras-2010-coq-sets}.
+The MetaCoq formalization~\cite{sozeau-etal-2020-metacoq,sozeau-etal-2023-metacoq-jar}
 similarly carries a global-well-formedness predicate
-(\texttt {All\_local\_env\_over\_typing}) that ensures constructor types are
-closed under the parameter telescope before substitution is applied.
-Lifting this condition by threading the inductive parameter
-instantiation through \texttt{ty\_roll} is a planned refinement,
-following the approach of MetaCoq's \texttt{PCUICClosedTyp}.
+(\texttt{All\_local\_env\_over\_typing}) that enforces closed constructor
+types before substitution lemmas apply.
+Lifting our condition---by threading the inductive parameter
+instantiation through Roll and substituting it into
+$\overline{\tau}_{\!\textit{par}}$---is a planned refinement following
+MetaCoq's approach.
 
 \paragraph{Acknowledgements.}
 Thanks to James Brotherston for the question that motivated this paper.
