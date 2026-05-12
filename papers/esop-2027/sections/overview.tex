@@ -32,7 +32,15 @@ would otherwise diverge under evaluation.  The whistle ensures that
 folding \emph{will} eventually happen for any program with finitely many
 states; fuel ensures the process stops if it does not.
 
-Cyclic proofs require a \textbf{global trace condition} for soundness: every cycle must contain a \emph{progress event}---a case-split on a neutral scrutinee. This matches the termination discipline used in supercompilation: a recursive call must descend on a structurally smaller component. The budget trace construction (Claim~2) enforces this by assigning a decreasing rank to each progress edge.
+These two mechanisms (\textbf{whistle} and \textbf{fuel}) control the
+\emph{supercompiler's own termination}---they determine when to stop
+driving and produce a graph.  Once the graph is built, a separate
+validation phase checks the \textbf{global trace condition} for
+\emph{soundness of the resulting cyclic proof}: every cycle must contain
+a \emph{progress event}---a case-split on a neutral scrutinee.
+The budget trace construction (Claim~2) enforces this by assigning a
+decreasing rank to each progress edge.  Intuitively: the whistle
+\emph{creates} the cycles; the trace condition \emph{validates} them.
 
 A particularly striking consequence is that \textbf{induction principles are discovered post-hoc}. In traditional proofs, you must choose an induction scheme at the start. In cyclic proofs, the backlink itself \emph{is} the induction hypothesis, formed when search recognises that the current goal is an instance of a previous one. The cycle structure \emph{is} the induction principle, read off from the completed proof graph. This matches how supercompilation works: the residual program's recursive structure is discovered by the driving process, not prescribed in advance.
 
