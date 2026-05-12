@@ -40,8 +40,9 @@ and the residual is observationally indistinguishable from the root goal.
 Crucially, we work throughout with \emph{finitely presented} proof structures;
 this finiteness is what allows the soundness argument to proceed by
 well-founded induction entirely within CIC's inductive fragment, with no appeal
-to coinduction or infinite proof trees.  The proof is mechanised in Rocq with
-0 axioms.
+to coinduction or infinite proof trees.  The proof is mechanised in Rocq
+and relies only on \emph{functional extensionality}---a standard, widely-accepted
+axiom for CIC---with no other axioms or uses of \texttt{Admitted}.
 \end{abstract}
 
 \section{Introduction}
@@ -393,8 +394,14 @@ theorem \texttt{backlink\_admissible}) is a four-line corollary: it
 existentially introduces $t_{\mathsf{std}}$, splits the conjunction, and
 applies \texttt{supercompile\_ciu\_soundness\_untyped} for the CIU part
 and definitional unfolding for the equation part.  The proof term is
-purely inductive: there is no \texttt{cofix}, no classical axiom, and no
-reference to infinite objects.
+purely inductive: there is no \texttt{cofix}, no \texttt{Admitted}, and
+no classical axiom.  The sole non-constructive ingredient is
+\emph{functional extensionality}
+($\forall f\,g,\, (\forall x,\, f(x)=g(x)) \Rightarrow f=g$),
+which enters via Autosubst's substitution lemmas and our new typing
+substitution proofs.  This axiom is standard and widely accepted in CIC
+mechanisations; it does not affect the computational content of the proof
+term.
 
 \section{Discussion}
 
