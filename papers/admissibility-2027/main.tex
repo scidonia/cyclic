@@ -111,8 +111,40 @@ t,A ::= x \mid \star_i \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t
 where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
 fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a
 constructor, and $[t\mid\vec{b}]^I_C$ elimination with motive $C$.
-Overlined letters $\vec{a},\vec{b}$ denote (possibly empty) vectors of terms.
-Contexts $\Gamma$ are type lists; $\Sigma$ records inductive signatures.
+Arrow-annotated letters $\vec{a},\vec{b}$ denote (possibly empty) vectors of terms.
+$\Sigma$ records inductive signatures.
+
+\paragraph{Contexts (telescopes).}
+A context $\Gamma$ is a \emph{dependent telescope}: a list of types
+where each entry may depend on all earlier variables.
+Formally $\Gamma ::= \cdot \mid \Gamma, A$
+with shift-aware de~Bruijn lookup:
+\[
+\dfrac{}{\cdot\ \mathsf{ctx}}\;{\scriptstyle(\textsc{CtxNil})}
+\qquad
+\dfrac{\Gamma\ \mathsf{ctx}\quad \Gamma\vdash A:\star_i}{\Gamma,A\ \mathsf{ctx}}\;{\scriptstyle(\textsc{CtxCons})}
+\]
+Variable $x$ in $\Gamma = A_n,\dots,A_0$ has type
+$\Gamma(x) = A_x\uparrow^{x+1}$, i.e.\ $A_x$ shifted to account for the
+$x{+}1$ binders between $A_x$ and the use site.
+In the mechanisation \texttt{ctx} is \texttt{list T.tm} with
+\texttt{ctx\_lookup} applying \texttt{T.shift~1~0} at each recursive step.
+
+\paragraph{Substitution formation.}
+The judgement $\Delta\vdash\sigma:\Gamma$ (written \texttt{has\_subst} in the
+mechanisation) says that the list $\sigma=[u_0,\dots,u_{n-1}]$ is a
+well-typed simultaneous substitution from $\Gamma$ into $\Delta$:
+\[
+\dfrac{}{\Delta\vdash[\,]:\cdot}\;{\scriptstyle(\textsc{SubNil})}
+\qquad
+\dfrac{\Delta\vdash\sigma:\Gamma\quad \Delta\vdash u:\sigma(A\uparrow)}%
+      {\Delta\vdash u{::}\sigma:\Gamma,A}\;{\scriptstyle(\textsc{SubCons})}
+\]
+where $\sigma(A\uparrow) = \texttt{subst\_list}\;\sigma\;(A\uparrow)$
+substitutes the already-accumulated $\sigma$ into $A$ (shifted once).
+Applying $\sigma$ to a term $t$ under $\Gamma$ yields a well-typed term
+under $\Delta$ (the substitution lemma,
+\texttt{has\_type\_subst}).
 
 \paragraph{Typing.}
 $\Sigma;\Gamma\vdash t:A$ is standard for
@@ -124,19 +156,26 @@ $\Sigma$ is implicit below, $\uparrow$ denotes shift.
 \dfrac{}{\Gamma\vdash x:A}\;{\scriptstyle(\textsc{Var})}\;(\Gamma(x){=}A)
 &
 \dfrac{}{\Gamma\vdash\star_i:\star_{i+1}}\;{\scriptstyle(\textsc{Sort})}
-\\[10pt]
+\\[14pt]
 \dfrac{A:\star_i\quad A{::}\Gamma\vdash B:\star_j}%
       {\Gamma\vdash\Pi x{:}A.B:\star_{\max(i,j)}}\;{\scriptstyle(\Pi)}
 &
 \dfrac{A:\star_i\quad A{::}\Gamma\vdash t:B}%
       {\Gamma\vdash\lambda x{:}A.t:\Pi x{:}A.B}\;{\scriptstyle(\lambda)}
-\\[10pt]
+\\[14pt]
 \dfrac{t:\Pi x{:}A.B\quad u:A}%
       {\Gamma\vdash t\,u:B[u/x]}\;{\scriptstyle(@)}
 &
 \dfrac{A:\star_i\quad A{::}\Gamma\vdash t:A\uparrow}%
       {\Gamma\vdash\mu x{:}A.t:A}\;{\scriptstyle(\mu)}
-\\[10pt]
+\\[14pt]
+\dfrac{\Sigma(I)=\Sigma_I}%
+      {\Gamma\vdash I:\star_{\ell(\Sigma_I)+1}}\;{\scriptstyle(\textsc{Ind})}
+&
+\dfrac{\Sigma(I){=}\Sigma_I\quad \Sigma_I(c){=}\tau_c\quad
+       a_i:\tau_{c,i}\;\forall i\quad r_j:I\;\forall j}%
+      {\Gamma\vdash c\,\vec a:I}\;{\scriptstyle(\textsc{Roll})}
+\\[14pt]
 \multicolumn{2}{c}{%
   \dfrac{t:I\,\vec\delta\quad
          x{:}I\,\vec\delta,\Gamma\vdash C:\star_i\quad
@@ -145,8 +184,6 @@ $\Sigma$ is implicit below, $\uparrow$ denotes shift.
 }
 \end{array}
 \]
-plus (TyInd) and (TyRoll)
-following~\cite{paulin-mohring-1993-inductive}.
 
 \paragraph{Reduction.}
 CBN weak-head: $(\lambda x{:}A.t)\,u\step t[u/x]$,\;
