@@ -12,10 +12,10 @@ The asynchronous rules are deterministic and invertible. They correspond to CBN 
 The synchronous rule introduces choice by analyzing a neutral variable:
 
 \begin{center}
-\AxiomC{$\Gamma \vdash b_0 : C[\Roll{I}{0}{}/]$}
+\AxiomC{$\Gamma \vdash b_0 : C[0\,]/]$}
 \AxiomC{$\cdots$}
-\AxiomC{$\Gamma \vdash b_{n-1} : C[\Roll{I}{n-1}{}/]$}
-\TrinaryInfC{$\Gamma, x : \Ind{I}{\vec{a}} \vdash \Case{I}{x}{C}{\vec{b}} : C[x/]$}
+\AxiomC{$\Gamma \vdash b_{n-1} : C[(n{-}1)\,/]$}
+\TrinaryInfC{$\Gamma, x : I \vdash [x\mid\vec{b}]^I_C : C[x/]$}
 \DisplayProof
 \quad (\textsc{split-case-var})
 \end{center}
