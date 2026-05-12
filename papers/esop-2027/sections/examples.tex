@@ -24,7 +24,7 @@ The supercompiler proceeds as follows:
 
 \item \textbf{Drive (unfold):} Unfold \texttt{length} and \texttt{map} fixpoint definitions, exposing:
 \[
-\lambda f.\, \lambda l.\, \mathtt{case}\,l\,\mathtt{of}\,\{\, \mathtt{nil} \to \cdots \mid \mathtt{cons}\,x\,xs \to \cdots \,\}
+\lambda f.\, \lambda l.\, \langle l \mid \mathtt{nil} \to \cdots;\; \mathtt{cons}\,x\,xs \to \cdots \rangle
 \]
 
 \item \textbf{Split (case analysis):} Split on the neutral variable $l$, creating two branches:
@@ -42,7 +42,7 @@ The supercompiler proceeds as follows:
 
 \item \textbf{Result:} The residual term is:
 \[
-\lambda f.\, \lambda l.\, \mathtt{case}\,l\,\mathtt{of}\,\{\, \mathtt{nil} \to 0 \mid \mathtt{cons}\,x\,xs \to \mathtt{succ}\,(\mathtt{REC}\,f\,xs) \,\}
+\lambda f.\, \lambda l.\, \langle l \mid \mathtt{nil} \to 0;\; \mathtt{cons}\,x\,xs \to \mathtt{succ}\,(\mathtt{REC}\,f\,xs) \rangle
 \]
 where $\mathtt{REC}$ is the recursive call.
 \end{enumerate}
