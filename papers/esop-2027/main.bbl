@@ -55,6 +55,10 @@ Krustev, D.N.: A supercompiler assisting its own formal verification. In: Fifth
 Leuschel, M.: Homeomorphic embedding for online termination of partial
   deduction. In: Logic-Based Program Synthesis and Transformation (2002)
 
+\bibitem{admissibility-2027}
+Mendel-Gleason, G.: Backlink admissibility in cyclic proofs for the calculus of
+  inductive constructions. In: Submitted (2027)
+
 \bibitem{miller-2004-forum}
 Miller, D., Saurin, A.: From proofs to focused proofs: A modular proof of
   focalization in linear logic. In: Computer Science Logic (CSL). pp. 405--419.
@@ -78,6 +82,11 @@ S{\o}rensen, M.H., Gl{\"u}ck, R.: An introduction to supercompilation. In:
 S{\o}rensen, M.H., Gl{\"u}ck, R., Jones, N.D.: A positive supercompiler. In:
   Journal of Functional Programming. vol.~6, pp. 811--838. Cambridge University
   Press (1996)
+
+\bibitem{sozeau-etal-2023-metacoq-jar}
+Sozeau, M., Forster, Y., Meunier, S., Tabareau, N., Winterhalter, T.: The
+  {MetaCoq} {Project}. Journal of Automated Reasoning  \textbf{67},  1--30
+  (2023)
 
 \bibitem{sprenger-dam-2003-circular-tree}
 Sprenger, C., Dam, M.: On the structure of inductive reasoning: Circular and

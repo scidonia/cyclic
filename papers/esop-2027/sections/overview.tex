@@ -19,6 +19,19 @@ Generalisation & Cut introduction (lemma) & Sync (choice) \\
 
 The separation of invertible (async) from non-invertible (sync) rules follows the discipline of Andreoli's \emph{focusing}~\cite{andreoli-1992-logic-programming}: invertible rules are applied eagerly (driving), and non-invertible rules are explored at choice points (splitting, folding). We do not define explicit polarity judgments or phase transitions; we use ``focused'' in the operational sense, where the eager strategy is justified by the invertibility of the driving rules---applying them never loses provability.
 
+\paragraph{Controlling unfolding.}
+Two mechanisms ensure that the supercompiler does not drive indefinitely.
+First, a \textbf{whistle} based on the homeomorphic embedding relation
+triggers when the current configuration syntactically embeds into a
+previous one~\cite{leuschel-2002-homeomorphic,sorensen-gluck-jones-1996-positive}.
+When the whistle fires, the supercompiler stops driving and either
+generalises (if the embedded config is not an exact match) or folds (if
+it is a memo-table hit).  Second, a \textbf{fuel} parameter bounds the
+total recursion depth, guaranteeing termination even for programs that
+would otherwise diverge under evaluation.  The whistle ensures that
+folding \emph{will} eventually happen for any program with finitely many
+states; fuel ensures the process stops if it does not.
+
 Cyclic proofs require a \textbf{global trace condition} for soundness: every cycle must contain a \emph{progress event}---a case-split on a neutral scrutinee. This matches the termination discipline used in supercompilation: a recursive call must descend on a structurally smaller component. The budget trace construction (Claim~2) enforces this by assigning a decreasing rank to each progress edge.
 
 A particularly striking consequence is that \textbf{induction principles are discovered post-hoc}. In traditional proofs, you must choose an induction scheme at the start. In cyclic proofs, the backlink itself \emph{is} the induction hypothesis, formed when search recognises that the current goal is an instance of a previous one. The cycle structure \emph{is} the induction principle, read off from the completed proof graph. This matches how supercompilation works: the residual program's recursive structure is discovered by the driving process, not prescribed in advance.

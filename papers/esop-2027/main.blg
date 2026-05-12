@@ -5,45 +5,45 @@ The style file: splncs04.bst
 Database file #1: ../cyclic-cic/refs.bib
 Warning--can't use both volume and number fields in pierce-turner-2000-local-type-inference
 Warning--can't use both volume and number fields in sorensen-gluck-jones-1996-positive
-You've used 19 entries,
+You've used 21 entries,
             2850 wiz_defined-function locations,
-            709 strings with 7771 characters,
-and the built_in function-call counts, 9643 in all, are:
-= -- 828
-> -- 193
-< -- 16
-+ -- 88
-- -- 62
-* -- 537
-:= -- 1213
-add.period$ -- 34
-call.type$ -- 19
-change.case$ -- 112
+            721 strings with 8103 characters,
+and the built_in function-call counts, 10665 in all, are:
+= -- 907
+> -- 227
+< -- 18
++ -- 103
+- -- 74
+* -- 600
+:= -- 1348
+add.period$ -- 36
+call.type$ -- 21
+change.case$ -- 126
 chr.to.int$ -- 0
-cite$ -- 21
-duplicate$ -- 911
-empty$ -- 974
-format.name$ -- 72
-if$ -- 2167
+cite$ -- 23
+duplicate$ -- 1006
+empty$ -- 1069
+format.name$ -- 85
+if$ -- 2386
 int.to.chr$ -- 0
-int.to.str$ -- 19
-missing$ -- 172
-newline$ -- 63
-num.names$ -- 38
-pop$ -- 348
+int.to.str$ -- 21
+missing$ -- 192
+newline$ -- 69
+num.names$ -- 42
+pop$ -- 387
 preamble$ -- 1
-purify$ -- 69
+purify$ -- 79
 quote$ -- 0
-skip$ -- 284
+skip$ -- 309
 stack$ -- 0
-substring$ -- 562
-swap$ -- 439
-text.length$ -- 16
+substring$ -- 608
+swap$ -- 487
+text.length$ -- 18
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 72
+type$ -- 80
 warning$ -- 2
-while$ -- 87
-width$ -- 21
-write$ -- 203
+while$ -- 96
+width$ -- 23
+write$ -- 222
 (There were 2 warnings)
