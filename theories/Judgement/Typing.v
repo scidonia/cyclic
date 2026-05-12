@@ -111,11 +111,12 @@ Module Typing.
       SP.lookup_ind Σenv I = Some ΣI ->
       has_type Σenv Γ (T.tInd I []) (T.tSort (S (SP.ind_level ΣI)))
 
-  | ty_roll Γ I ΣI c ctor args params recs :
+  | ty_roll Γ I ΣI c ctor args params recs (param_tys : list T.tm) :
       SP.lookup_ind Σenv I = Some ΣI ->
       SP.lookup_ctor ΣI c = Some ctor ->
       split_at (SP.ctor_param_arity ctor) args = (params, recs) ->
-      Forall2 (has_type Σenv Γ) params (SP.ctor_param_tys ctor) ->
+      param_tys = SP.ctor_param_tys ctor ->
+      Forall2 (has_type Σenv Γ) params param_tys ->
       Forall (fun r => has_type Σenv Γ r (T.tInd I [])) recs ->
       length recs = SP.ctor_rec_arity ctor ->
       has_type Σenv Γ (T.tRoll I c args) (T.tInd I [])
@@ -642,26 +643,27 @@ Module Typing.
         apply (IHn _ Ht' (A :: Γ) t _ Hty2 (Nat.le_refl _) (upren f) (A.[ren f] :: Γ')).
         apply ctx_lookup_ren_new. exact Hf.
     - apply ty_ind. exact H.
-    - apply ty_roll with (ΣI := ΣI) (ctor := ctor)
-        (params := params..[ren f]) (recs := recs..[ren f]).
-      + exact H. + exact H0.
+    - eapply ty_roll with (param_tys := param_tys).
+      + eassumption.
+      + eassumption.
       + exact (split_at_subst_new _ _ _ _ _ H1).
-      + apply (forall2_subst_closed_in_new H2).
+      + eassumption.
+      + apply (forall2_subst_closed_in_new H3).
         * intros p ty Hp Hpin.
           assert (Hp_in_args : In p args) by
             exact (split_at_in_params_new _ args params recs H1 p Hpin).
           assert (Hp_lt : T.size p < n) by
             exact (Nat.lt_le_trans _ _ _ (size_in_args_new I c args p Hp_in_args) Hsize).
           exact (IHn _ Hp_lt Γ p ty Hp (Nat.le_refl _) f Γ' Hf).
-        * exact (Hclosed I ΣI c ctor (ren f) H H0).
-      + apply (forall_subst_ind_in_new H3).
+        * rewrite H2. exact (Hclosed I ΣI c ctor (ren f) H H0).
+      + apply (forall_subst_ind_in_new H4).
         intros r Hr Hrin.
         assert (Hr_in_args : In r args) by
           exact (split_at_in_recs_new _ args params recs H1 r Hrin).
         assert (Hr_lt : T.size r < n) by
           exact (Nat.lt_le_trans _ _ _ (size_in_args_new I c args r Hr_in_args) Hsize).
         exact (IHn _ Hr_lt Γ r (T.tInd I []) Hr (Nat.le_refl _) f Γ' Hf).
-      + rewrite (mmap_length_new (ren f) recs). exact H4.
+      + rewrite (mmap_length_new (ren f) recs). exact H5.
     - assert (Hscrut : T.size scrut < n) by lia.
       assert (HC : T.size C < n) by lia.
       pose proof (IHn _ Hscrut Γ scrut _ Hty1 (Nat.le_refl _) f Γ' Hf) as IHscrut.
@@ -787,26 +789,27 @@ Module Typing.
         rewrite <- shift_up_eq_new.
         apply (IHn _ Ht_lt3 (A :: Γ) t _ Hty2 (Nat.le_refl _) (A.[σ] :: Δ) (T.up σ) (Hup A)).
     - apply ty_ind. exact H.
-    - apply ty_roll with (ΣI := ΣI) (ctor := ctor)
-        (params := params..[σ]) (recs := recs..[σ]).
-      + exact H. + exact H0.
-      + exact (split_at_subst_new _ _ _ _ _ H1).
-      + apply (forall2_subst_gen_in_new H2).
+     - eapply ty_roll with (param_tys := param_tys).
+       + eassumption.
+       + eassumption.
+       + exact (split_at_subst_new _ _ _ _ _ H1).
+       + eassumption.
+       + apply (forall2_subst_gen_in_new H3).
         * intros p ty Hp Hpin.
           assert (Hp_in_args : In p args) by
             exact (split_at_in_params_new _ args params recs H1 p Hpin).
           assert (Hp_lt : T.size p < n) by
             exact (Nat.lt_le_trans _ _ _ (size_in_args_new I c args p Hp_in_args) Hsize).
           exact (IHn _ Hp_lt Γ p ty Hp (Nat.le_refl _) Δ σ Hσ).
-        * exact (Hclosed I ΣI c ctor σ H H0).
-      + apply (forall_subst_ind_gen_in_new H3).
+        * rewrite H2. exact (Hclosed I ΣI c ctor σ H H0).
+      + apply (forall_subst_ind_gen_in_new H4).
         intros r Hr Hrin.
         assert (Hr_in_args : In r args) by
           exact (split_at_in_recs_new _ args params recs H1 r Hrin).
         assert (Hr_lt : T.size r < n) by
           exact (Nat.lt_le_trans _ _ _ (size_in_args_new I c args r Hr_in_args) Hsize).
         exact (IHn _ Hr_lt Γ r (T.tInd I []) Hr (Nat.le_refl _) Δ σ Hσ).
-      + rewrite (mmap_length_new σ recs). exact H4.
+      + rewrite (mmap_length_new σ recs). exact H5.
     - assert (Hscrut : T.size scrut < n) by lia.
       assert (HC : T.size C < n) by lia.
       pose proof (IHn _ Hscrut Γ scrut _ Hty1 (Nat.le_refl _) Δ σ Hσ) as IHscrut.

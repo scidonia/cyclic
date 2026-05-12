@@ -131,14 +131,14 @@ Module SequentTyping.
       eapply syn_ind_tm; eauto.
     - (* roll *)
       eapply syn_roll; try eassumption.
-      + clear -F H2.
-        induction H2 as [|t A ts As Ht Hts IH]; constructor.
-        * apply chk_of_syn. exact (F _ _ _ Ht).
-        * exact IH.
-      + clear -F H3.
-        induction H3 as [|r rs Hr Hrs IH]; constructor.
-        * apply chk_of_syn. exact (F _ _ _ Hr).
-        * exact IH.
+      + { rewrite <- H2. clear -F H3.
+          induction H3 as [|? ? ? ? Hp _ IH]; simpl.
+          - apply Forall2_nil.
+          - apply Forall2_cons; [apply chk_of_syn; exact (F _ _ _ Hp) | exact IH]. }
+      + { clear -F H4.
+          induction H4 as [|? ? Hr _ IH]; simpl.
+          - apply Forall_nil.
+          - apply Forall_cons; [apply chk_of_syn; exact (F _ _ _ Hr) | exact IH]. }
     - (* case *)
       eapply syn_case; try eassumption.
       + apply chk_of_syn. exact (F _ _ _ Hty1).
