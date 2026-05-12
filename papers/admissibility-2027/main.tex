@@ -355,41 +355,42 @@ Each local rule preserves CIU equivalence.  The asynchronous rules are
 single reduction steps (CIU-preserving by \texttt{step\_ciu}); the split
 rule applies CIU-congruence for neutral scrutinees; the back rule becomes a
 $\mu$ binder whose unfolding reproduces the source derivation.
-
-\begin{theorem}[CIU soundness]
+\begin{theorem}[CIU soundness --- general]
 \label{thm:ciu}
-If $\texttt{supercompile\_jTy\_tc}(\mathit{fuel},\Sigma,\Gamma,t,A) =
-  \mathsf{Some}(v, b)$, then
+Let $b$ be any closed configuration graph satisfying the trace condition
+$(\texttt{builder\_succ\_closed}(b) \wedge \texttt{trace\_condition\_ok}(b))$,
+with $\ell(b,v) = \tconf{\Gamma}{t}{A}$.  Then for any depth $d$ and fix
+environment $\rho$ with $v\notin\mathrm{dom}(\rho)$:
 \[
-  t \ciu \mathcal{R}(b,v,0,\emptyset).
+  t^{\uparrow d} \ciu \mathcal{R}(b,v,d,\rho).
 \]
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-\texttt{supercompile\_jTy\_tc} runs \texttt{supercompile\_jTy} to produce
-a graph $b$ rooted at $v$, then checks \texttt{trace\_condition\_ok}$(b)$.
-The CIU theorem (\texttt{supercompile\_ciu\_soundness\_untyped}) proceeds by
-well-founded induction on the budget trace.  The well-foundedness uses
-\texttt{lex\_lt\_wf}: the per-type lexicographic rank is well-founded and
-every progress edge strictly decreases the budget
-(\texttt{trace\_rank\_strict\_on\_progress}).  Critically, this induction is
-over the \emph{finite} budget trace graph: there is no coinductive step,
-no appeal to K\"{o}nig's lemma, and no reasoning about infinite unrollings.
-The entire argument is \texttt{well\_founded\_induction lt\_wf} applied to
-the budget counter, bounded by $|V|$.
+By well-founded induction on the budget counter (lemma
+\texttt{residualise\_cfg\_ciu}).  At each vertex, each local rule is
+CIU-preserving: asynchronous rules are single reduction steps; the split
+rule uses CIU-congruence for neutral scrutinees; a backlink inserts a $\mu$
+binder whose unfolding reproduces the source derivation.
+Well-foundedness uses \texttt{lex\_lt\_wf}: every progress edge strictly
+decreases the budget (\texttt{trace\_rank\_strict\_on\_progress}), and the
+budget is bounded by $|V|$.  There is no coinductive step, no appeal to
+K\"{o}nig's lemma, and no reasoning about infinite unrollings.
 \end{proof}
+
+\noindent The hypothesis requires only that the graph is \emph{closed} and
+\emph{passes the trace check} --- it does not matter how the graph was
+produced.  Any tool that generates such a finite graph (supercompiler,
+proof-search procedure, hand-written cyclic proof) yields the same
+guarantee.
 
 \section{Admissibility}
 
 \begin{theorem}[Backlink admissibility]
 \label{thm:admissible}
-For any $\Gamma, t, A$ and fuel bounds $\mathit{fuel\_sc},
-\mathit{fuel\_res}$, if
-\[
-  \texttt{supercompile\_jTy\_tc}(\mathit{fuel\_sc},\Sigma,\Gamma,t,A)
-  = \mathsf{Some}(v, b),
-\]
-then there exists a standard CIC term $t_{\mathsf{std}}$ such that
+Let $b$ be any closed configuration graph satisfying the trace condition,
+with root vertex $v$ labelled $\tconf{\Gamma}{t}{A}$.
+Then there exists a standard CIC term $t_{\mathsf{std}}$ such that
 \[
   t \ciu t_{\mathsf{std}}
   \quad\text{and}\quad
@@ -397,24 +398,24 @@ then there exists a standard CIC term $t_{\mathsf{std}}$ such that
 \]
 \end{theorem}
 
-\noindent In words: if the supercompiler produces a finite graph satisfying
-the trace condition, the root term is CIU-equivalent to a standard CIC term
-(using only $\lambda$, application, $\mu$, $[\cdot\mid\vec{b}]^I_C$,
-and $c\,\vec{a}$), with no cyclic backlink constructs.
-
 \begin{proof}
 Take $t_{\mathsf{std}} = \mathcal{R}(b,v,0,\emptyset)$.
-By construction, $t_{\mathsf{std}}$ uses only standard CIC constructors.
-CIU equivalence is Theorem~\ref{thm:ciu}.
+By construction, $t_{\mathsf{std}}$ uses only standard CIC constructors
+($\lambda$, application, $\mu$, $[\cdot\mid\vec{b}]^I_C$, $c\,\vec{a}$).
+CIU equivalence is the $d{=}0$, $\rho{=}\emptyset$ case of
+Theorem~\ref{thm:ciu}.
 \end{proof}
 
-\noindent The mechanised proof (\texttt{BacklinkAdmissible.v},
-theorem \texttt{backlink\_admissible}) is a four-line corollary: it
-existentially introduces $t_{\mathsf{std}}$, splits the conjunction, and
-applies \texttt{supercompile\_ciu\_soundness\_untyped} for CIU and
-definitional unfolding for the equation.  The proof term is purely inductive
-(no \texttt{cofix}, no \texttt{Admitted}).  The sole non-constructive
-ingredient is \emph{functional extensionality}
+\noindent \textbf{Supercompiler corollary.}
+In the specific case where $b$ is produced by
+$\texttt{supercompile\_jTy\_tc}(\mathit{fuel\_sc},\Sigma,\Gamma,t,A)
+= \mathsf{Some}(v,b)$, the well-formedness and trace condition are
+discharged automatically (\texttt{cfg\_builder\_well\_formed},
+\texttt{trace\_condition\_ok}), giving the corollary
+\texttt{backlink\_admissible} in \texttt{BacklinkAdmissible.v}.
+
+The proof term is purely inductive (no \texttt{cofix}, no \texttt{Admitted}).
+The sole non-constructive ingredient is \emph{functional extensionality}
 ($\forall f\,g,\,(\forall x,\,f(x)=g(x))\Rightarrow f=g$), which enters
 via Autosubst's substitution lemmas and our typing substitution proofs.
 This axiom is standard and widely accepted in CIC mechanisations; it does
