@@ -35,7 +35,7 @@ Supercompilation is a powerful program optimisation technique: it can deforest i
 
 We give such a foundation by showing that supercompilation is focused cyclic sequent proof search. Driving corresponds to invertible (asynchronous) rules, case-splitting to synchronous choice rules, and folding to cyclic backlinks. A key consequence is that induction principles are not chosen upfront, but are discovered from the cycle structure of the proof graph.
 
-We formalise this correspondence as a mechanised pipeline establishing correctness and termination, with all results proved in Rocq without axioms. This yields a principled foundation for dependently typed supercompilation, connecting program transformation with proof theory and enabling reasoning about optimisation correctness.
+We formalise this correspondence as a mechanised pipeline establishing correctness and termination, with all results proved in Rocq using only functional extensionality---a standard CIC axiom. This yields a principled foundation for dependently typed supercompilation, connecting program transformation with proof theory and enabling reasoning about optimisation correctness.
 \end{abstract}
 
 \input{sections/thesis}

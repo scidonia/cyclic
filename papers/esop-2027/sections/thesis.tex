@@ -7,7 +7,7 @@ This paper proposes such a foundation: \emph{every successful supercompilation r
 
 The correspondence is directional: every total supercompilation (one that passes the trace check) constructs a ranked cyclic proof; the converse does not hold — not every cyclic proof can be obtained by supercompilation, and potentially non-terminating programs may yield pre-proofs that fail the trace condition.
 
-While prior work includes Herbelin-style focused calculi for CoC, cyclic proof systems for first-order logic, and informal correspondences between SC operations and proof rules, this is the first to combine focusing, cyclic proof structure, and supercompilation in a dependently typed setting. The combination yields a principled correctness proof (CIU equivalence, mechanised with 0 axioms) that no prior SC verification framework achieves — Krustev's mechanised SC correctness handles a first-order language; we extend this to CoC with inductives.
+While prior work includes Herbelin-style focused calculi for CoC, cyclic proof systems for first-order logic, and informal correspondences between SC operations and proof rules, this is the first to combine focusing, cyclic proof structure, and supercompilation in a dependently typed setting. The combination yields a principled correctness proof (CIU equivalence, mechanised using only functional extensionality) that no prior SC verification framework achieves — Krustev's mechanised SC correctness handles a first-order language; we extend this to CoC with inductives.
 
 A central insight is that \emph{induction principles are discovered post-hoc from the cycle structure}: rather than choosing an induction scheme at the outset of a proof, the cycle formed by backlinks \emph{is} the induction principle, read off from the completed proof graph. This is particularly valuable in dependent types, where type indices containing computations (e.g., $\mathsf{Vec}\;A\;(\mathsf{length}\;(\mathsf{map}\;f\;v))$) must be normalised before rewriting, and the induction scheme must simultaneously simplify the index and prove the property.
 
@@ -22,7 +22,7 @@ Beyond providing a correctness proof, this perspective reveals supercompilation 
 \begin{itemize}[leftmargin=*]
 \item A focused cyclic sequent calculus designed to mirror supercompilation operations (Section~\ref{sec:focused}).
 \item A precise correspondence between drive/split/fold/generalise and local sequent inference steps, mechanised in Rocq (Section~\ref{sec:equiv}).
-\item A four-claim pipeline mechanised with zero axioms: pre-proof construction, budget trace cyclic proof, CIU soundness, and example validation (Section~\ref{sec:equiv}).
+\item A four-claim pipeline mechanised using only functional extensionality: pre-proof construction, budget trace cyclic proof, CIU soundness, and example validation (Section~\ref{sec:equiv}).
 \item A proof-theoretic account of post-hoc induction discovery via cyclic proofs, with a dependent-type motivation (Section~\ref{sec:thesis:cyclic}).
 \end{itemize}
 
@@ -59,7 +59,7 @@ The mechanisation is described in the appendix.
 \end{tikzpicture}
 \end{center}
 
-The four claims form a dependency chain: each tier builds on the previous. All are mechanized in Rocq with full proofs (0 axioms, 0 admitted lemmas).
+The four claims form a dependency chain: each tier builds on the previous. All are mechanized in Rocq using only functional extensionality.
 
 \paragraph{Claim 1: Supercompilation yields a pre-proof.}
 When the supercompiler succeeds on a well-typed input, the resulting configuration graph directly forms a \emph{rooted pre-proof}.

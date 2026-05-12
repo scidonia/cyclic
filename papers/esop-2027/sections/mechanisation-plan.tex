@@ -3,7 +3,7 @@
 
 The four-claim pipeline is mechanized in Rocq 9.1.0 using the \texttt{stdpp} library for finite maps and graphs.
 The development totals $\sim$5,000 lines of proof across 14 files.
-All theorems below are proved with no axioms or admitted lemmas.
+All theorems below are proved using only functional extensionality (no other axioms or admitted lemmas).
 
 \subsection{Claim 1: Pre-proof correspondence}
 
@@ -86,7 +86,7 @@ The typing proof uses $\texttt{has\_type\_subst}$ (renaming preserves typing, al
 
 \subsection{Claim 4: Example validation}
 
-The example suite in \texttt{Supercompile\-Checklist\-Index\-Pipeline.v} covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) with no axioms.
+The example suite in \texttt{Supercompile\-Checklist\-Index\-Pipeline.v} covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) which does not require additional axioms.
 
 \subsection{Summary of Rocq artefacts}
 
@@ -117,4 +117,4 @@ Claim 4 & \texttt{CIUChecklistLengthMap}, \texttt{SupercompileChecklist} & Equiv
 \end{tabular}
 \end{center}
 
-All proofs are closed (\texttt{Qed}); the development contains zero axioms or admitted lemmas.
+The development relies only on functional extensionality, a standard CIC axiom.

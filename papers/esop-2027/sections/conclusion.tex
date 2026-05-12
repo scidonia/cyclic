@@ -1,2 +1,33 @@
-\paragraph{Open problem: backlink admissibility.}
-Proving that the \textsc{back} rule is admissible---i.e., that every cyclic proof in our calculus corresponds to a standard inductive proof in CIC---remains an open problem. The difficulty lies in the interaction between cyclic backlinks and dependent elimination motives: each recursive call in the cyclic proof must correspond to a use of the CIC recursor whose motive varies with the type indices. Brotherston and Simpson established this correspondence for first-order logic~\cite{brotherston-simpson-2011-sequent}; extending it to CoC with inductives would be a significant new result. Our work sidesteps this via the CIU theorem: the residual is guaranteed observationally equivalent to the source, which suffices for program transformation correctness without requiring admissibility of the backlink rule.
+\section{Conclusion and future work}
+\label{sec:conclusion}
+
+We have shown that supercompilation for the Calculus of Constructions with
+inductives is focused cyclic sequent proof search.  Driving, splitting,
+folding, and generalisation correspond precisely to invertible sequent
+rules, synchronous choice rules, cyclic backlinks, and cut introduction
+respectively.  The operational distinction between invertible and
+non-invertible steps instantiates focusing without requiring explicit
+polarity annotations, and the budget-trace progress condition provides a
+constructive termination guarantee.
+
+The key consequences are threefold.  First, \textbf{induction principles are
+discovered post-hoc}: the cycle structure of the proof graph \emph{is} the
+induction principle, read off from the completed graph rather than
+prescribed in advance.  This is especially valuable in dependent types,
+where index computations must be normalised before rewriting and the
+induction scheme must simultaneously simplify the index and prove the
+property.  Second, \textbf{backlinks are admissible}: every valid cyclic
+proof can be residualised to a standard CIC term using only the native
+fixpoint binder, as shown in a companion paper~\cite{admissibility-2027}.
+Third, the \textbf{correspondence is directional} but sufficient: every
+successful supercompilation run yields a valid cyclic proof, and the
+converse---whether every cyclic proof can be obtained by supercompilation---is
+an open question related to the completeness of the driving/whistle
+strategy.
+
+The mechanised development relies only on functional extensionality, a
+standard axiom of CIC that does not affect computational content.  We
+leave the extension of the substitution lemma to fully parametric
+inductive types (lifting the \texttt{closed\_param\_tys} condition by
+threading parameter instantiation through the $\mathsf{roll}$ rule) as
+future work, following the approach of MetaCoq~\cite{sozeau-etal-2023-metacoq-jar}.
