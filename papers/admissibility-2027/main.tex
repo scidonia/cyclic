@@ -418,12 +418,13 @@ not affect the computational content of the proof term.
 \section{Discussion}
 
 \paragraph{Finite presentation is essential, not incidental.}
-The condition \texttt{supercompile\_jTy\_tc}$(\ldots) = \mathsf{Some}(v,b)$
-encodes three things: (i)~the supercompiler terminates within the given fuel;
-(ii)~it produces a closed finite graph; and (iii)~that graph satisfies the
-trace condition.  All three are needed.  In particular, finiteness bounds
-the budget $B = |V|$, makes the budget trace graph finite, and enables
-well-founded recursion.
+The admissibility result requires three things of a proof graph:
+(i)~it is finite ($|V| < \omega$); (ii)~it is closed (every successor is a
+labelled vertex, i.e.\ \texttt{builder\_succ\_closed}); and
+(iii)~it satisfies the trace condition (every cycle contains a progress
+vertex, i.e.\ \texttt{trace\_condition\_ok}).  All three are needed.
+In particular, finiteness bounds the budget $B = |V|$, makes the budget
+trace graph finite, and enables well-founded recursion.
 
 \paragraph{Relationship to Brotherston--Simpson.}
 Brotherston and Simpson prove admissibility for first-order logic by
