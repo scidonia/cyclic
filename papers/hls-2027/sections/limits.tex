@@ -30,10 +30,17 @@ unconditional proof and requires approximately 100 additional lines.
 
 \subsection{Commutativity}
 
-$\mathsf{plus}\ m\ n = \mathsf{plus}\ n\ m$ remains unproved.  Both sides
-SC to different-shaped residuals.  This requires a lemma environment
-with the inductive equations for $\mathsf{plus}$, which the SC can prove
-individually but cannot chain together without the lemma-driven loop.
+$\mathsf{plusL}\ m\ n = \mathsf{plusL}\ n\ m$ is a well-known hard case for
+supercompilation: standard SC produces different-shaped residuals for the two
+sides, each recursing on a different argument.  The lemma-driven SC
+(Section~\ref{sec:examples}) handles it by outsourcing two unconditional lemmas
+($\mathsf{plusL}\ n\ 0 = n$ and
+$\mathsf{plusL}\ n\ (\mathsf{succ}\ m) = \mathsf{succ}\ (\mathsf{plusL}\ n\ m)$)
+to the sub-prover.  The main proof then uses them as rewrite rules and
+fuses both sides to identical residuals.  This demonstrates that the
+$\omega$-rule pipeline handles commutative operators, but it
+requires the LLM to propose the correct base and step equations --- which
+it does reliably (Section~\ref{sec:eval}).
 
 \subsection{Limitations}
 

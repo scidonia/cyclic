@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  12 MAY 2026 21:39
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  12 MAY 2026 21:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1296,18 +1296,18 @@ Underfull \hbox (badness 10000) in paragraph at lines 20--30
 i-fied
  []
 
-) (./sections/evaluation.tex [10] [11]
+[10]) (./sections/evaluation.tex [11]
 Overfull \hbox (25.34637pt too wide) in paragraph at lines 112--121
  [] 
  []
 
-
+[12]
 Underfull \hbox (badness 5345) in paragraph at lines 132--138
 []\T1/lmr/m/n/10 (+20) The most in-ter-est-ing case is reverse-append: the LLM 
 pro-poses
  []
 
-[12]) (./sections/related.tex
+) (./sections/related.tex
 Underfull \hbox (badness 10000) in paragraph at lines 150--1
 \T1/lmr/m/n/10 (+20) The full ex-per-i-ment script (\T1/lmtt/m/n/10 scramble_te
 st.py\T1/lmr/m/n/10 (+20) ), re-sults
@@ -1325,7 +1325,7 @@ Underfull \hbox (badness 1248) in paragraph at lines 150--1
 sup-ple-men-tary ma-te-rial. All
  []
 
-[13]) (./sections/conclusion.tex) (./main.bbl [14]) [15] (./main.aux)
+[13]) (./sections/conclusion.tex [14]) (./main.bbl) [15] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1334,18 +1334,15 @@ L3 programming layer <2024-01-22>
 
 LaTeX Warning: There were undefined references.
 
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 28095 strings out of 476106
- 519187 string characters out of 5793933
+ 28099 strings out of 476106
+ 519231 string characters out of 5793933
  1987975 words of memory out of 5000000
  49186 multiletter control sequences out of 15000+600000
- 694429 words of font info for 250 fonts, out of 8000000 for 9000
+ 694595 words of font info for 252 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1367,10 +1364,10 @@ pe1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/pu
 blic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on main.pdf (15 pages, 537397 bytes).
+Output written on main.pdf (15 pages, 538153 bytes).
 PDF statistics:
- 410 PDF objects out of 1000 (max. 8388607)
- 312 compressed objects within 4 object streams
+ 412 PDF objects out of 1000 (max. 8388607)
+ 314 compressed objects within 4 object streams
  112 named destinations out of 1000 (max. 500000)
  77845 words of extra memory for PDF output out of 89155 (max. 10000000)
 

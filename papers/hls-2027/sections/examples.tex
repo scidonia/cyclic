@@ -140,8 +140,8 @@ The same pattern yields three additional results:
 
 \subsection{Commutativity of addition}
 
-$\mathsf{plusL}\ m\ n = \mathsf{plusL}\ n\ m$ is the canonical ``SC cannot
-prove'' benchmark.  Standard SC produces different residuals for the two
+$\mathsf{plusL}\ m\ n = \mathsf{plusL}\ n\ m$ is a well-known hard case for
+supercompilers.  Standard SC produces different residuals for the two
 sides, each recursing on a different argument.  The LLM proposes two
 unconditional lemmas (tested with original and scrambled names,
 Section~\ref{sec:eval}):
