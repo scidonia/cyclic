@@ -46,14 +46,14 @@ Both represent a single deterministic computation step. The supercompiler produc
 \begin{array}{ll}
 \text{Supercompiler:} &
 \begin{array}{l}
-\Gamma, l : \mathsf{List} \vdash \mathbf{case}~l~\mathbf{of}~\{ \mathit{nil} \to b_0; \mathit{cons} \to b_1\} : A \\
+\Gamma, l : \mathsf{List} \vdash \langle l \mid \mathit{nil}\to b_0;\; \mathit{cons}\to b_1 \rangle : A \\
 \leadsto \Gamma \vdash b_0 : A \\
 \phantom{\leadsto}\;\; \Gamma, x, xs \vdash b_1[(\mathit{cons}~x~xs)/l] : A
 \end{array} \\[1em]
 \text{Sequent:} &
 \AxiomC{$\Gamma \vdash b_0 : A$}
 \AxiomC{$\Gamma, x, xs \vdash b_1[(\mathit{cons}~x~xs)/l] : A$}
-\BinaryInfC{$\Gamma, l : \mathsf{List} \vdash \mathbf{case}~l~\mathbf{of}~\{\ldots\} : A$}
+\BinaryInfC{$\Gamma, l : \mathsf{List} \vdash \langle l \mid \ldots \rangle : A$}
 \DisplayProof
 \end{array}
 \]

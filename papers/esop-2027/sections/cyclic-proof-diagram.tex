@@ -14,11 +14,11 @@ Figure~1 shows the cyclic proof for the length-map fusion example. The root goal
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{back} \textcolor{red!70}{\textdagger}}
 \UnaryInfC{\textcolor{red!60}{$\Gamma, xs \vdash \mathsf{len}\,(\mathsf{map}\,f\,xs) : \Nat$ \textcolor{red!70}{\textdagger}}}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{cons}}
-\BinaryInfC{$\Gamma, l:\mathsf{List} \vdash \mathsf{case}~l~\mathsf{of}~\{\mathit{nil}\to 0; \mathit{cons}\to\ldots\} : \Nat$}
+\BinaryInfC{$\Gamma, l:\mathsf{List} \vdash \langle l \mid \mathit{nil}\to 0;\; \mathit{cons}\to\ldots \rangle : \Nat$}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textcolor{red!70}{\textsc{split} $\star$}}
-\UnaryInfC{$\Gamma \vdash \mathsf{case}~l~\mathsf{of}~\{\mathit{nil}\to 0; \mathit{cons}\to\ldots\} : \Nat$}
+\UnaryInfC{$\Gamma \vdash \langle l \mid \mathit{nil}\to 0;\; \mathit{cons}\to\ldots \rangle : \Nat$}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{comm}}
-\UnaryInfC{$\Gamma \vdash \mathsf{len}\,(\mathsf{case}~l~\mathsf{of}\ldots) : \Nat$}
+\UnaryInfC{$\Gamma \vdash \mathsf{len}\,(\langle l \mid \ldots \rangle) : \Nat$}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{$\iota$}}
 \UnaryInfC{$\Gamma \vdash \mathsf{len}\,(\mathsf{map}\,f\,l) : \Nat$ \textcolor{red!70}{\textdagger}}
 \RightLabel{\;\fontsize{6}{7}\selectfont\textsc{fix}}

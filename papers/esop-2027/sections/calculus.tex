@@ -3,11 +3,11 @@
 
 Terms are:
 \[
-t,A ::= x \mid \star_i \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t \mid t\,u \mid \mu x{:}A.\,t \mid I\,\vec{a} \mid c\,\vec{a} \mid [t\mid\vec{b}]^I_C
+t,A ::= x \mid \star_i \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t \mid t\,u \mid \mu x{:}A.\,t \mid I\,\vec{a} \mid c\,\vec{a} \mid \langle t \mid \vec{b} \rangle^I_C
 \]
 where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
 fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a constructor,
-and $[t\mid\vec{b}]^I_C$ elimination with motive $C$.
+and $\langle t \mid \vec{b} \rangle^I_C$ elimination with motive $C$.
 Arrow-annotated letters $\vec{a},\vec{b}$ denote vectors of terms.
 $\Sigma$ records inductive signatures.
 
@@ -54,7 +54,7 @@ $\Sigma$ is implicit below, $\uparrow$ denotes shift.
   \dfrac{t:I\,\vec\delta\quad
          x{:}I\,\vec\delta,\Gamma\vdash C:\star_i\quad
          b_c:\Pi\vec\tau_c.\,C[c\,\vec y/x]\;\forall c}%
-        {\Gamma\vdash[t\mid\vec b]^I_C:C[t/x]}\;{\scriptstyle(\textsc{Case})}
+        {\Gamma\vdash\langle t \mid \vec b \rangle^I_C:C[t/x]}\;{\scriptstyle(\textsc{Case})}
 }
 \end{array}
 \]
@@ -62,7 +62,7 @@ $\Sigma$ is implicit below, $\uparrow$ denotes shift.
 \paragraph{Reduction.}
 CBN weak-head: $(\lambda x{:}A.t)\,u\to t[u/x]$,\;
 $\mu x{:}A.t\to t[\mu x{:}A.t/x]$,\;
-$[c\,\vec a\mid\vec b]^I_C\to b_c\,\vec a$,
+$\langle c\,\vec a \mid \vec b \rangle^I_C\to b_c\,\vec a$,
 plus congruence under application and case scrutinee.
 $\to^*$ is $\steps$; $t\Downarrow v$ means $t\steps v$, $v$ a value.
 

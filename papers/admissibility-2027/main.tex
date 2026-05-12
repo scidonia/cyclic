@@ -31,7 +31,7 @@ discovering induction principles post-hoc rather than prescribing them upfront.
 We prove that backlinks are \emph{admissible} in the Calculus of Inductive
 Constructions (CIC): every valid cyclic proof, presented as a finite directed
 graph satisfying a budget-based progress condition, can be residualised to a
-standard CIC term using only the native fixpoint binder ($\Fix{A}{t}$) for
+standard CIC term using only the native fixpoint binder ($\mu x{:}A.\,t$) for
 recursion, and the residual is observationally indistinguishable from the root
 goal.  Crucially, we work throughout with \emph{finitely presented} proof
 structures; this finiteness is what allows the soundness argument to proceed by
@@ -55,7 +55,7 @@ to a standard proof with an explicit induction rule.
 This paper extends their result to the Calculus of Inductive Constructions
 (CIC)~\cite{coquand-huet-1988-coc,paulin-mohring-1993-inductive}, the type
 theory underlying Rocq.  We prove that every rooted, ranked cyclic proof
-can be residualised to a standard CIC term using only $\Fix{A}{t}$ for
+can be residualised to a standard CIC term using only $\mu x{:}A.\,t$ for
 recursion, and that the residual is observationally equivalent to the
 root goal.
 
@@ -107,11 +107,11 @@ of Brotherston--Simpson.  We leave this generalisation as future work.
 \[
 t,A ::= x \mid \star_i \mid \Pi x{:}A.\,B \mid \lambda x{:}A.\,t
         \mid t\,u \mid \mu x{:}A.\,t \mid I\,\vec{a} \mid c\,\vec{a}
-        \mid [t\mid\vec{b}]^I_C
+        \mid \langle t \mid \vec{b} \rangle^I_C
 \]
 where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
 fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a
-constructor, and $[t\mid\vec{b}]^I_C$ elimination with motive $C$.
+constructor, and $\langle t \mid \vec{b} \rangle^I_C$ elimination with motive $C$.
 Arrow-annotated letters $\vec{a},\vec{b}$ denote (possibly empty) vectors of terms.
 
 \paragraph{Inductive signatures.}
@@ -198,7 +198,7 @@ $\Sigma$ is implicit below, $\uparrow$ denotes shift.
   \dfrac{t:I\,\vec\delta\quad
          x{:}I\,\vec\delta,\Gamma\vdash C:\star_i\quad
          b_c:\Pi\vec\tau_c.\,C[c\,\vec y/x]\;\forall c}%
-        {\Gamma\vdash[t\mid\vec b]^I_C:C[t/x]}\;{\scriptstyle(\textsc{Case})}
+        {\Gamma\vdash\langle t \mid \vec b \rangle^I_C:C[t/x]}\;{\scriptstyle(\textsc{Case})}
 }
 \end{array}
 \]
@@ -206,7 +206,7 @@ $\Sigma$ is implicit below, $\uparrow$ denotes shift.
 \paragraph{Reduction.}
 CBN weak-head: $(\lambda x{:}A.t)\,u\step t[u/x]$,\;
 $\mu x{:}A.t\step t[\mu x{:}A.t/x]$,\;
-$[c\,\vec{a}\mid\vec{b}]^I_C\step b_c\,\vec{a}$,
+$\langle c\,\vec{a} \mid \vec{b} \rangle^I_C\step b_c\,\vec{a}$,
 plus congruence under application and case scrutinee.
 $\steps$ is the closure; $t\Downarrow v$ means $t\steps v$ with $v$ a value.
 
@@ -252,7 +252,7 @@ reduces the goal to a single premise.
 \begin{prooftree}
   \AxiomC{$\tconf{\Gamma}{b_c\,\vec{a}}{A}$}
   \RightLabel{\scriptsize ($\iota$)}
-  \UnaryInfC{$\tconf{\Gamma}{[c\,\vec{a}\mid\vec{b}]^I_C}{A}$}
+  \UnaryInfC{$\tconf{\Gamma}{\langle c\,\vec{a} \mid \vec{b} \rangle^I_C}{A}$}
 \end{prooftree}
 \end{minipage}
 
@@ -268,7 +268,7 @@ substituting the constructor pattern into the $c$-th branch:
   \AxiomC{$\cdots$}
   \AxiomC{$\tconf{\Gamma,\vec{y}_n}{b_n[n\,\vec{y}_n/x]}{A}$}
   \RightLabel{\scriptsize (split)}
-  \TrinaryInfC{$\tconf{\Gamma}{[x\mid\vec{b}]^I_C}{A}$}
+  \TrinaryInfC{$\tconf{\Gamma}{\langle x \mid \vec{b} \rangle^I_C}{A}$}
 \end{prooftree}
 \end{minipage}
 \medskip
@@ -339,7 +339,7 @@ $\mathcal{R}$ is defined by well-founded recursion on the budget counter.
   $\mathcal{R}(b,v,d,\rho) = D(\mathcal{R}(b,w,d,\rho))$ where $D$
   re-abstracts the driving step ($\beta$, $\mu$-unfold, $\iota$).
 \item \textbf{Split} (multiple successors): each branch residualised
-  independently, combined into $[\cdot\mid\vec{b}]^I_C$.
+  independently, combined into $\langle \cdot \mid \vec{b} \rangle^I_C$.
 \item \textbf{Backlink} ($v \notin \mathrm{dom}(\rho)$): inserts
   $\mu x{:}A.\,t$ where $t$ residualises the source with $x$ as
   self-reference.
@@ -347,7 +347,7 @@ $\mathcal{R}$ is defined by well-founded recursion on the budget counter.
   corresponding de~Bruijn variable.
 \end{itemize}
 
-The result uses only $\lambda$, application, $\mu$, $[\cdot\mid\vec{b}]^I_C$,
+The result uses only $\lambda$, application, $\mu$, $\langle \cdot \mid \vec{b} \rangle^I_C$,
 and $c\,\vec{a}$ — no backlink constructs remain.
 
 \paragraph{Why finiteness is essential.}
@@ -421,7 +421,7 @@ Then there exists a standard CIC term $t_{\mathsf{std}}$ such that
 \begin{proof}
 Take $t_{\mathsf{std}} = \mathcal{R}(b,v,0,\emptyset)$.
 By construction, $t_{\mathsf{std}}$ uses only standard CIC constructors
-($\lambda$, application, $\mu$, $[\cdot\mid\vec{b}]^I_C$, $c\,\vec{a}$).
+($\lambda$, application, $\mu$, $\langle \cdot \mid \vec{b} \rangle^I_C$, $c\,\vec{a}$).
 CIU equivalence is the $d{=}0$, $\rho{=}\emptyset$ case of
 Theorem~\ref{thm:ciu}.
 \end{proof}
