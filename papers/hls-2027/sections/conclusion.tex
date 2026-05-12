@@ -8,10 +8,10 @@ proof engine as a black-box validator and the LLM as an untrusted oracle
 --- yields a clean architecture for program transformation as theorem
 proving.
 
-The system proves 71 primary theorems (81 including infrastructure) with
-0 Admitted, including commutativity of addition, compiler soundness,
-reverse-append distribution, and dependent-type branch elimination.
-Standard supercompilation cannot prove any of these.
+The system proves 71 primary theorems (81 including infrastructure) by
+computational reflection (\vmcompute), including commutativity of addition,
+compiler soundness, reverse-append distribution, and dependent-type branch
+elimination.  Standard supercompilation cannot prove any of these.
 
 The key design decisions:
 \begin{itemize}[leftmargin=*]
