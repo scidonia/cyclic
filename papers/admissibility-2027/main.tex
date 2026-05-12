@@ -260,9 +260,8 @@ case-split on a neutral scrutinee and is the locus of structural decrease
 that underpins the trace condition.
 
 \paragraph{Cyclic backlink (closure).}
-A vertex with no premises may be closed not by an axiom, but by a
-\emph{back-edge} to a previously-seen configuration under a
-substitution~$\sigma$:
+A vertex may be closed by a \emph{back-edge} to a previously-seen
+configuration under a substitution~$\sigma$:
 
 \medskip
 \noindent
@@ -275,9 +274,12 @@ substitution~$\sigma$:
 \end{minipage}
 \medskip
 
-\noindent where there exists a vertex $v' \in V$ such that
-$\ell(b,v') = \tconf{\Gamma}{t_0}{A}$ and $t = t_0[\sigma]$ is the goal
-under the substitution.
+\noindent where there exists $v' \in V$ with
+$\ell(b,v') = \tconf{\Gamma}{t_0}{A}$ and $t = t_0[\sigma]$.
+The substitution $\sigma$ is \emph{not} the result of further supercompilation:
+it is produced by anti-unifying the current configuration with $v'$'s
+configuration, extracting the instantiation terms that fill the holes of
+the generalised pattern.
 
 \paragraph{Global progress condition.}
 A rooted pre-proof satisfies the progress condition if every directed
