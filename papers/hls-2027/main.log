@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  12 MAY 2026 21:24
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  12 MAY 2026 21:39
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1067,29 +1067,11 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: OT1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-) (./sections/background.tex
-Overfull \hbox (46.04092pt too wide) in paragraph at lines 12--26
- [] 
- []
-
-[2{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}]
-Overfull \hbox (55.29436pt too wide) detected at line 36
-[] [] \OML/lmm/m/it/10 ^^F ^^@ t A \OT1/lmr/m/n/10 = [] (\OML/lmm/m/it/10 v; b\
-OT1/lmr/m/n/10 )  \OMS/lmsy/m/n/10 )  \OML/lmm/m/it/10 t \OMS/lmsy/m/n/10 ^^Y[]
- [] [] \OML/lmm/m/it/10 ^^F b v \OT1/lmr/m/n/10 0 \OMS/lmsy/m/n/10 ;
- []
-
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 5
-0.
-(/usr/share/texmf/tex/latex/lm/t1lmss.fd
-File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+) (./sections/background.tex [2{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}]
+LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 36.
 )
-Package microtype Info: Loading generic protrusion settings for font family
-(microtype)             `lmss' (encoding: T1).
-(microtype)             For optimal results, create family-specific settings.
-(microtype)             See the microtype manual for details.
-)
-(./sections/sequent-guided-design.tex [3]
+(./sections/sequent-guided-design.tex
 Underfull \hbox (badness 10000) in paragraph at lines 26--30
 \T1/lmr/m/n/10 (+20) The or-a-cle is a func-tion $[] \OMS/lmsy/m/n/10 ! [] !
  []
@@ -1099,10 +1081,20 @@ Underfull \hbox (badness 1424) in paragraph at lines 26--30
 []$ \T1/lmr/m/n/10 (+20) im-ple-mented by an LLM. Given the cur-rent stuck
  []
 
-[4]) (./sections/llm-oracle.tex
+[3]) (./sections/llm-oracle.tex [4]
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 8
+.
+ (/usr/share/texmf/tex/latex/lm/t1lmss.fd
+File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `lmss' (encoding: T1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
 LaTeX Font Info:    Trying to load font information for OT1+lmtt on input line 
 16.
- (/usr/share/texmf/tex/latex/lm/ot1lmtt.fd
+
+(/usr/share/texmf/tex/latex/lm/ot1lmtt.fd
 File: ot1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
@@ -1117,13 +1109,12 @@ m/n/10 ]\OML/lmm/m/it/10 ;  []  \OT1/lmr/m/n/10 :  [\OMS/lmsy/m/n/10 h[]i\OML/l
 mm/m/it/10 ; []\OT1/lmr/m/n/10 ] \OMS/lmsy/m/n/10 g
  []
 
-[5{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
-)
+) [5{/usr/share/texmf/fonts/enc/dvips/lm/lm-rmtt.enc}]
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <9> not available
 (Font)              Font shape `T1/lmtt/b/n' tried instead on input line 68.
 
@@ -1138,15 +1129,13 @@ Underfull \hbox (badness 1394) in paragraph at lines 71--77
 con-fig as an S-expression, and
  []
 
-) (./sections/examples.tex [6]
+) (./sections/examples.tex
 Underfull \hbox (badness 10000) in paragraph at lines 10--12
 \T1/lmr/m/n/10 (+20) The List monad has $[] \OML/lmm/m/it/10 x \OT1/lmr/m/n/10 
 (+20) = [\OML/lmm/m/it/10 x\OT1/lmr/m/n/10 (+20) ]$ \T1/lmr/m/n/10 (+20) and $\
 OML/lmm/m/it/10 m [] f \OT1/lmr/m/n/10 (+20) =
  []
 
-LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 13.
 
 Overfull \hbox (30.72855pt too wide) detected at line 20
 \OML/lmm/m/it/10 m [] [] \OT1/lmr/m/n/10 = \OML/lmm/m/it/10 m [] x [] f \OT1/lm
@@ -1162,13 +1151,13 @@ e ad-di-tion-ally prove $[] [] \OML/lmm/m/it/10 l \OT1/lmr/m/n/10 (+20) = \OML/
 lmm/m/it/10 l$\T1/lmr/m/n/10 (+20) ,
  []
 
-[7]
+[6]
 Underfull \hbox (badness 2469) in paragraph at lines 82--87
 \T1/lmr/m/n/10 (+20) as an ex-act equal-ity of in-dex terms af-ter su-per-com-p
 i-la-tion (the-o-rem
  []
 
-
+[7]
 Underfull \hbox (badness 10000) in paragraph at lines 118--120
 []\T1/lmr/m/n/10 (+20) The sub-SC val-i-dates this lemma by in-duc-tion on $[]$
 
@@ -1181,11 +1170,7 @@ m/n/10 (+20) ([] \OML/lmm/m/it/10 e\OT1/lmr/m/n/10 (+20) ) [] = [[] \OML/lmm/m/
 it/10 e\OT1/lmr/m/n/10 (+20) ]$ \T1/lmr/m/n/10 (+20) with lemma
  []
 
-[8]
-Underfull \vbox (badness 2762) has occurred while \output is active []
-
- [9])
-(./sections/proof-graph.tex
+[8]) (./sections/proof-graph.tex
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/7'.
 (microtype)             Ignoring protrusion settings for this character.
@@ -1283,8 +1268,8 @@ Overfull \hbox (87.12682pt too wide) in paragraph at lines 62--63
  []
 
 
-LaTeX Warning: Reference `fig:reverse-append-proof' on page 10 undefined on inp
-ut line 67.
+LaTeX Warning: Reference `fig:reverse-append-proof' on page 9 undefined on inpu
+t line 67.
 
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/9'.
@@ -1299,10 +1284,7 @@ Underfull \hbox (badness 1205) in paragraph at lines 77--81
 r/m/n/10 (+20) ) []$ \T1/lmr/m/n/10 (+20) to
  []
 
-) (./sections/limits.tex
-Underfull \vbox (badness 2486) has occurred while \output is active []
-
- [10]
+) (./sections/limits.tex [9]
 Underfull \hbox (badness 1028) in paragraph at lines 13--19
 \T1/lmr/m/n/10 (+20) Some aux-il-iary lem-mas re-quire a hy-poth-e-sis. The can
 on-i-cal ex-am-ple is
@@ -1314,7 +1296,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 20--30
 i-fied
  []
 
-) (./sections/evaluation.tex [11] [12]
+) (./sections/evaluation.tex [10] [11]
 Overfull \hbox (25.34637pt too wide) in paragraph at lines 112--121
  [] 
  []
@@ -1325,7 +1307,7 @@ Underfull \hbox (badness 5345) in paragraph at lines 132--138
 pro-poses
  []
 
-[13]) (./sections/related.tex
+[12]) (./sections/related.tex
 Underfull \hbox (badness 10000) in paragraph at lines 150--1
 \T1/lmr/m/n/10 (+20) The full ex-per-i-ment script (\T1/lmtt/m/n/10 scramble_te
 st.py\T1/lmr/m/n/10 (+20) ), re-sults
@@ -1343,7 +1325,7 @@ Underfull \hbox (badness 1248) in paragraph at lines 150--1
 sup-ple-men-tary ma-te-rial. All
  []
 
-[14]) (./sections/conclusion.tex) (./main.bbl [15]) [16] (./main.aux)
+[13]) (./sections/conclusion.tex) (./main.bbl [14]) [15] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1352,15 +1334,18 @@ L3 programming layer <2024-01-22>
 
 LaTeX Warning: There were undefined references.
 
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 796FA61EB415F64EE56D89BE804AD07C;440.
  ) 
 Here is how much of TeX's memory you used:
- 28093 strings out of 476106
- 519168 string characters out of 5793933
- 1985975 words of memory out of 5000000
- 49185 multiletter control sequences out of 15000+600000
- 694346 words of font info for 249 fonts, out of 8000000 for 9000
+ 28095 strings out of 476106
+ 519187 string characters out of 5793933
+ 1987975 words of memory out of 5000000
+ 49186 multiletter control sequences out of 15000+600000
+ 694429 words of font info for 250 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,11n,107p,1001b,1291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1372,20 +1357,20 @@ m/lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmib10.pfb></usr/share/tex
 mf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr6
 .pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/t
 ype1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></us
-r/share/texmf/fonts/type1/public/lm/lmri9.pfb></usr/share/texmf/fonts/type1/pub
-lic/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss8.pfb></usr/share
-/texmf/fonts/type1/public/lm/lmss9.pfb></usr/share/texmf/fonts/type1/public/lm/
-lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy5.pfb></usr/share/texmf/
-fonts/type1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.p
-fb></usr/share/texmf/fonts/type1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/ty
-pe1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></u
-sr/share/texmf/fonts/type1/public/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/pu
-blic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
-symbols/msam10.pfb>
-Output written on main.pdf (16 pages, 526363 bytes).
+r/share/texmf/fonts/type1/public/lm/lmri7.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmri9.pfb></usr/share/texmf/fonts/type1/public/lm/lmss10.pfb></usr/share
+/texmf/fonts/type1/public/lm/lmss8.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmss9.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/
+fonts/type1/public/lm/lmsy5.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy6.p
+fb></usr/share/texmf/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf/fonts/ty
+pe1/public/lm/lmsy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></us
+r/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/pu
+blic/lm/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
+Output written on main.pdf (15 pages, 537397 bytes).
 PDF statistics:
- 409 PDF objects out of 1000 (max. 8388607)
+ 410 PDF objects out of 1000 (max. 8388607)
  312 compressed objects within 4 object streams
- 113 named destinations out of 1000 (max. 500000)
+ 112 named destinations out of 1000 (max. 500000)
  77845 words of extra memory for PDF output out of 89155 (max. 10000000)
 

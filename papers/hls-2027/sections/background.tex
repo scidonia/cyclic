@@ -5,6 +5,12 @@ The correspondence between supercompilation and cyclic proof search is the
 foundation on which this paper builds.  We state it here directly; a
 companion mechanisation formalises it in Rocq using only functional extensionality.
 
+\emph{Notation.}  $\mathcal{S}(f,\Sigma,\Gamma,t,A)$ denotes the supercompiler
+with fuel~$f$; $\mathcal{S}_{\!\mathit{tc}}$ adds the trace-condition check;
+$\mathcal{R}(f,b,v)$ denotes residualisation from vertex~$v$ of the
+configuration graph~$b$ with fuel~$f$; and $t\approx u$ abbreviates CIU
+equivalence.\smallskip
+
 \subsection{The operational dictionary}
 
 \begin{center}
@@ -20,31 +26,27 @@ Generalisation & Cut introduction & Instance check \\
 Homeomorphic embedding & Well-quasi-order & Whistle heuristic \\
 Trace condition & Global progress & SCC cycle check \\
 Residual term & Proof term / normal form & Readback \\
-CIU equivalence & Sequent soundness & \texttt{supercompile\_ciu\_soundness\_untyped} \\
+CIU equivalence & Sequent soundness & Thm.\ \texttt{ciu\_soundness} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \subsection{The CIU guarantee}
 
-The central theorem (\texttt{supercompile\_ciu\_soundness\_untyped}) states:
-
+\begin{theorem}[CIU soundness, \texttt{supercompile\_ciu\_soundness\_untyped}]
+\label{thm:ciu}
+If the supercompiler with trace check succeeds on a well-typed goal,
+$\mathcal{S}_{\!\mathit{tc}}(f,\Sigma,\Gamma,t,A) = \mathsf{Some}(v,b)$,
+then the residual term read back from $b$ is observationally indistinguishable
+from the source:
 \[
-  \texttt{supercompile\_jTy\_tc}\ \mathit{fuel}\ \Sigma\ \Gamma\ t\ A = \mathsf{Some}\ (v, b)
-  \;\Rightarrow\;
-  t \ciu \texttt{residualise\_cfg}\ \mathit{fuel'}\ \Sigma\ b\ v\ 0\ \emptyset
+  t \approx \mathcal{R}(f_r,\Sigma,b,v)
 \]
+where $t \approx u$ means $t$ and $u$ are CIU-equivalent
+($\forall\sigma,w.\; t[\sigma]\Downarrow w \iff u[\sigma]\Downarrow w$).
+\end{theorem}
 
-where $t \ciu u$ means $t$ and $u$ are indistinguishable under all closing
-substitutions and evaluation contexts.  The hypothesis mentions only
-\texttt{trace\_condition\_ok} --- not how generalisation was performed.
-This is the key property exploited by the oracle architecture.
-
-\subsection{What this means for the oracle}
-
-The CIU theorem is parametric in the generalisation strategy.  \emph{Any}
-function from configs to generalised configs is admissible, provided the
-resulting proof graph passes the trace check.  The LLM is just one such
-function.  If it proposes a valid generalisation, the kernel accepts it;
-if it proposes nonsense, the graph fails the trace check and the SC
-returns \textsf{None}.  The LLM cannot make the system unsound.
+The hypothesis mentions only the trace-check flag --- not how generalisation
+was performed.  This is the key property exploited by the oracle architecture:
+\emph{any} generalisation strategy is admissible, provided the resulting graph
+passes \texttt{trace\_condition\_ok}.  The LLM is just one such strategy.
