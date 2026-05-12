@@ -448,6 +448,28 @@ soundness argument entirely on the inductive side.  The finite graph,
 together with its progress condition, induces a well-founded measure, which
 induces a terminating recursion, which induces a normalising proof term.
 
+\paragraph{Parametric inductives and substitution.}
+The typing rule for constructors ($\mathsf{roll}$) uses
+\texttt{ctor\_param\_tys} directly from the global signature, as fixed
+closed terms.  For non-parametric inductives (Nat, Bool, etc.) this is
+correct: constructor parameter types are ground terms.  For parametric
+inductives (Vec, List), the constructor types reference the inductive
+parameters via de~Bruijn indices, making them not invariant under
+substitution.  The mechanisation captures this as the
+\texttt{closed\_param\_tys} side condition on the substitution lemma.
+This condition is standard: Paulin-Mohring's original formulation of
+inductive types~\cite{paulin-mohring-1993-inductive}
+defines constructor types as a telescope over the inductive parameters,
+and substitution-invariance corresponds to the uncurried (closed) form
+stored by Coq's kernel~\cite{barras-2010-coq-sets}.  The MetaCoq
+formalization~\cite{sozeau-etal-2020-metacoq,sozeau-etal-2023-metacoq-jar}
+similarly carries a global-well-formedness predicate
+(\texttt {All\_local\_env\_over\_typing}) that ensures constructor types are
+closed under the parameter telescope before substitution is applied.
+Lifting this condition by threading the inductive parameter
+instantiation through \texttt{ty\_roll} is a planned refinement,
+following the approach of MetaCoq's \texttt{PCUICClosedTyp}.
+
 \paragraph{Acknowledgements.}
 Thanks to James Brotherston for the question that motivated this paper.
 
