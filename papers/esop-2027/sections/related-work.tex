@@ -29,7 +29,9 @@ Krustev~\cite{krustev-2014-simple-sc-coq,krustev-2018-sc-flia} gives the first m
 
 \paragraph{Prior work on dependent types.}
 To our knowledge, this is the first formulation of supercompilation for a dependently typed core language.
-Existing work on supercompilation focuses on first-order functional languages (Refal, Scheme, Haskell subsets) or simple typed settings \cite{sorensen-gluck-1995-supercompilation,jonesbook-1996-partial-evaluation}.
+The practice of supercompilation spans first-order and higher-order languages,
+but its formal verification and proof-theoretic analysis have been limited
+to first-order functional settings~\cite{sorensen-gluck-1995-supercompilation,jonesbook-1996-partial-evaluation}.
 The dependent type context introduces new challenges:
 \begin{itemize}
 \item Types depend on terms, so driving must respect typing constraints
