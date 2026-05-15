@@ -413,6 +413,88 @@ Module ListNat.
 
   Definition sorted : tm := tFix sorted_ty sorted_body.
 
+  (** merge : List -> List -> List  (merge two sorted lists) *)
+  Definition merge_ty : tm := tPi list_ty (tPi list_ty list_ty).
+
+  Definition merge_body : tm :=
+    (* tVar 0 = self *)
+    tLam list_ty ( (* tVar 0 = xs, tVar 1 = self *)
+      tLam list_ty ( (* tVar 0 = ys, tVar 1 = xs, tVar 2 = self *)
+        tCase 1 (tVar 1) list_ty
+          [ tVar 0 ;  (* xs = nil → return ys *)
+            (* cons branch: tVar 0 = xs', tVar 1 = x, tVar 2 = ys, tVar 3 = xs, tVar 4 = self *)
+            tLam Examples.nat_ty (
+              tLam list_ty (
+                tCase 1 (tVar 2) list_ty
+                  [ cons (tVar 1) (tVar 0) ;  (* ys = nil → cons x xs' *)
+                    (* cons branch: tVar 0 = ys', tVar 1 = y, tVar 2 = xs', tVar 3 = x, ... *)
+                    tLam Examples.nat_ty (
+                      tLam list_ty (
+                        tCase 0 (tApp (tApp leb (tVar 3)) (tVar 1)) list_ty
+                          [ (* leb x y = true: cons x (merge xs' (cons y ys')) *)
+                            cons (tVar 3) (tApp (tApp (tVar 6) (tVar 2)) (cons (tVar 1) (tVar 0))) ;
+                            (* leb x y = false: cons y (merge (cons x xs') ys') *)
+                            tLam Examples.nat_ty (
+                              cons (tVar 5) (tApp (tApp (tVar 7) (cons (tVar 4) (tVar 3))) (tVar 1))
+                            )
+                          ]
+                      ))
+                  ]
+              ))
+          ]
+      )).
+
+  Definition merge : tm := tFix merge_ty merge_body.
+
+  (** half : Nat -> Nat  (half of a natural, floor division by 2) *)
+  Definition half_ty : tm := tPi Examples.nat_ty Examples.nat_ty.
+  Definition half_body : tm :=
+    (* tVar 0 = self *)
+    tLam Examples.nat_ty (
+      tCase 0 (tVar 0) Examples.nat_ty
+        [ Examples.zero ;
+          tLam Examples.nat_ty (
+            tCase 0 (tVar 0) Examples.nat_ty
+              [ Examples.zero ;
+                tLam Examples.nat_ty (
+                  Examples.succ (tApp (tVar 3) (tVar 0))
+                )
+              ]
+          )
+        ]).
+  Definition half : tm := tFix half_ty half_body.
+
+  (** merge_sort : List -> List *)
+  Definition mergesort_ty : tm := tPi list_ty list_ty.
+  Definition mergesort_body : tm :=
+    (* tVar 0 = self *)
+    tLam list_ty ( (* tVar 0 = l, tVar 1 = self *)
+      tCase 1 (tVar 0) list_ty
+        [ nil ;  (* nil → nil *)
+          tLam Examples.nat_ty ( (* cons *)
+            tLam list_ty ( (* tVar 0 = xs, tVar 1 = x, tVar 2 = l, tVar 3 = self *)
+              tCase 1 (tVar 0) list_ty
+                [ cons (tVar 1) nil ;  (* [x] → [x] *)
+                  (* cons (cons x (cons y xs)): length ≥ 2 *)
+                  tLam Examples.nat_ty (
+                    tLam list_ty (
+                      (* compute len = length l, then h = half len,
+                         then split: left = take h l, right = drop h l *)
+                      let len := tApp length (tVar 4) in
+                      let h := tApp half len in
+                      let left := tApp (tApp take h) (tVar 4) in
+                      let right := tApp (tApp drop h) (tVar 4) in
+                      tApp (tApp merge
+                        (tApp (tVar 6) left))
+                        (tApp (tVar 6) right)
+                    )
+                  )
+                ]
+            )
+          )
+        ]).
+  Definition merge_sort : tm := tFix mergesort_ty mergesort_body.
+
   (** ------------------------------------------------------------------ *)
   (** Predicates on Nat: oddp, evenp, filter, any, all                   *)
 
