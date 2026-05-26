@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  12 MAY 2026 21:06
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.1.31)  26 MAY 2026 12:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1059,9 +1059,9 @@ n-ti-ties pass the pipeline ($[]$
 
 ) (./sections/conclusion.tex [18]) (./main.bbl [19]) (./sections/mechanisation-
 plan.tex
-Overfull \hbox (95.37433pt too wide) in paragraph at lines 17--18
-\T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
-v:1659\T1/lmr/m/n/10 (-20) ). 
+Overfull \hbox (99.86617pt too wide) in paragraph at lines 17--18
+\T1/lmr/m/n/10 (-20) Rocq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence
+.v:1659\T1/lmr/m/n/10 (-20) ). 
  []
 
 
@@ -1071,9 +1071,9 @@ Overfull \hbox (21.37157pt too wide) in paragraph at lines 37--42
  []
 
 
-Overfull \hbox (58.62444pt too wide) in paragraph at lines 44--45
-\T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
-v\T1/lmr/m/n/10 (-20) ). 
+Overfull \hbox (63.11627pt too wide) in paragraph at lines 44--45
+\T1/lmr/m/n/10 (-20) Rocq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence
+.v\T1/lmr/m/n/10 (-20) ). 
  []
 
 [20]
@@ -1083,9 +1083,9 @@ m/n/10 (-20) , with progress pred-i-cate $[]$.
  []
 
 
-Overfull \hbox (32.37451pt too wide) in paragraph at lines 65--66
-\T1/lmr/m/n/10 (-20) Coq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence.
-v\T1/lmr/m/n/10 (-20) ). 
+Overfull \hbox (36.86635pt too wide) in paragraph at lines 65--66
+\T1/lmr/m/n/10 (-20) Rocq: $[]$ (\T1/lmtt/m/n/10 SupercompilationCorrespondence
+.v\T1/lmr/m/n/10 (-20) ). 
  []
 
 
@@ -1133,11 +1133,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7F41135060B33E745EA329DEFFABAB6C;427.
  ) 
 Here is how much of TeX's memory you used:
- 27327 strings out of 476106
- 502222 string characters out of 5793933
+ 27329 strings out of 476106
+ 502246 string characters out of 5793933
  1938975 words of memory out of 5000000
  48256 multiletter control sequences out of 15000+600000
- 726117 words of font info for 323 fonts, out of 8000000 for 9000
+ 726247 words of font info for 324 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  102i,14n,107p,1342b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1162,10 +1162,10 @@ e/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fonts/t
 ype1/public/amsfonts/symbols/msbm10.pfb></usr/share/texlive/texmf-dist/fonts/ty
 pe1/public/amsfonts/symbols/msbm7.pfb>
-Output written on main.pdf (22 pages, 617681 bytes).
+Output written on main.pdf (22 pages, 618126 bytes).
 PDF statistics:
- 559 PDF objects out of 1000 (max. 8388607)
- 424 compressed objects within 5 object streams
+ 563 PDF objects out of 1000 (max. 8388607)
+ 426 compressed objects within 5 object streams
  150 named destinations out of 1000 (max. 500000)
  96277 words of extra memory for PDF output out of 106986 (max. 10000000)
 

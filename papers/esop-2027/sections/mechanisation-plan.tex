@@ -1,7 +1,7 @@
 \section{Mechanization}
 \label{sec:mech}
 
-The four-claim pipeline is mechanized in Rocq 9.1.0 using the \texttt{stdpp} library for finite maps and graphs.
+The four-claim pipeline is mechanized in Rocq using the \texttt{stdpp} library for finite maps and graphs.
 The development totals $\sim$5,000 lines of proof across 14 files.
 All theorems below are proved using only functional extensionality (no other axioms or admitted lemmas).
 
@@ -14,7 +14,7 @@ $\mathtt{supercompile\_jTy}\;f\;\env\;\ctx\;t\;A = \mathsf{Some}\,(v,\mathit{scb
 then $\mathit{scb}$ directly forms a $\mathsf{rooted\_preproof}$ with root $v$.
 \end{theorem}
 
-\noindent Coq: $\texttt{all\_supercompiled\_programs\_yield\_preproof}$ (\texttt{SupercompilationCorrespondence.v:1659}).
+\noindent Rocq: $\texttt{all\_supercompiled\_programs\_yield\_preproof}$ (\texttt{SupercompilationCorrespondence.v:1659}).
 
 \begin{theorem}[Step correspondence]
 \label{thm:mech-step}
@@ -29,7 +29,7 @@ Each supercompilation edge corresponds to a sequent rule.
 \begin{proposition}[Vertex rule classification]
 \label{thm:mech-vertex}
 Every cfg\_builder vertex satisfies a specific drive rule determined by its successor structure: 0 successors~$\Rightarrow$ leaf; 1 successor with driving~$\Rightarrow$ async; 1 successor without change~$\Rightarrow$ fold; $n>1$ successors~$\Rightarrow$ split.
-\newline Coq: $\texttt{cfg\_vertex\_drive\_rule}$ (\texttt{SupercompilationCorrespondence.v}).
+\newline Rocq: $\texttt{cfg\_vertex\_drive\_rule}$ (\texttt{SupercompilationCorrespondence.v}).
 \end{proposition}
 
 \subsection{Claim 2: Cyclic proof via budget trace}
@@ -41,7 +41,7 @@ $\mathtt{supercompile\_jTy\_tc}\;f\;\env\;\ctx\;t\;A = \mathsf{Some}\,(v,\mathit
 then there exists a $\mathsf{Ranked.rooted\_cyclic\_proof}$ on a budget-instrumented trace graph with budget $B = |\mathsf{dom}(\mathit{scb}.\mathsf{cb\_label})|$ and rank $\lambda(v,k).\,k$ ordered by $<_\mathbb{N}$.
 \end{theorem}
 
-\noindent Coq: $\texttt{supercompile\_yields\_rooted\_cyclic\_proof}$ (\texttt{SupercompilationCorrespondence.v}).
+\noindent Rocq: $\texttt{supercompile\_yields\_rooted\_cyclic\_proof}$ (\texttt{SupercompilationCorrespondence.v}).
 
 The construction ($\sim$140 lines) instantiates the general budget-trace theorem from \texttt{CyclicTraceConditionBudget.v}:
 \begin{enumerate}[leftmargin=*,nosep]
@@ -62,7 +62,7 @@ If $\mathtt{supercompile\_jTy\_tc}$ succeeds on $t$, the residualised term is CI
 \]
 \end{theorem}
 
-\noindent Coq: $\texttt{supercompile\_ciu\_soundness\_untyped}$ (\texttt{SupercompilationCorrespondence.v}).
+\noindent Rocq: $\texttt{supercompile\_ciu\_soundness\_untyped}$ (\texttt{SupercompilationCorrespondence.v}).
 
 The proof is by induction on the fuel parameter of the residualiser, using the following component lemmas (all proved):
 \begin{itemize}[leftmargin=*,nosep]
@@ -79,7 +79,7 @@ The typed variant $\texttt{supercompile\_ciu\_soundness\_typed}$ follows in 8 li
 \begin{theorem}[Typing preservation for leaf vertices]
 \label{thm:mech-typing}
 For a leaf vertex (no successors) labelled $\hastype{\Sigma}{\Gamma}{t}{A}$ and adequate fuel, the residual has type $A$ in context $\Gamma$.
-\newline Coq: $\texttt{residualise\_cfg\_root\_typing}$ (\texttt{SupercompilationCorrespondence.v}).
+\newline Rocq: $\texttt{residualise\_cfg\_root\_typing}$ (\texttt{SupercompilationCorrespondence.v}).
 \end{theorem}
 
 The typing proof uses $\texttt{has\_type\_subst}$ (renaming preserves typing, all 9 rules), $\texttt{has\_type\_weaken\_head}$ (weakening by one binder), and $\texttt{has\_type\_shift}$ (uniform shift preserves typing) --- all proved in \texttt{Judgement/Typing.v}.

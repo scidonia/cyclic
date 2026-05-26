@@ -4,7 +4,7 @@
 We organise the central results as a four-claim pipeline. All results are fully mechanised in Rocq using only functional extensionality.
 
 \paragraph{Notation.}
-We define the following abbreviations for the key functions, with their Coq counterparts:
+We define the following abbreviations for the key functions, with their Rocq counterparts:
 
 \[
 \begin{array}{lll}
@@ -64,7 +64,7 @@ Our construction instantiates this schema for the supercompiler's configuration 
 \item \textbf{Cycle detection.} We prove \texttt{trace\_condition\_ok\_cycle\_progress}: if $\mathsf{trace\_condition\_ok}$ holds, every directed cycle contains at least one progress edge. The proof uses a combinatorial pigeonhole argument: any walk of length $>|V|$ through $|V|$ vertices repeats, yielding a shorter cycle.
 \item \textbf{Budget instrumentation.} We lift the base graph to pairs $(v,k)$ where $k \in [0,|V|]$. Progress edges consume budget ($k \mapsto k-1$); non-progress edges preserve it ($k \mapsto k$). Since every original cycle contains a progress edge, the lifted graph is acyclic; its topological ordering yields a ranking $\lambda(v,k).\;k$, satisfying the well-foundedness condition.
 \end{enumerate}
-The result is a constructive proof of global progress: the budget-instrumented ranking is a proof-theoretic witness that every backlink is justified by structural descent. This is a \emph{soundness} result for our construction; it does not establish the converse admissibility (that every cyclic proof corresponds to a standard inductive proof) --- that correspondence, proved by Brotherston and Simpson for first-order logic, is not yet extended to CoC with inductives.
+The result is a constructive proof of global progress: the budget-instrumented ranking is a proof-theoretic witness that every backlink is justified by structural descent. The converse admissibility (that every cyclic proof corresponds to a standard inductive proof) --- that correspondence, proved by Brotherston and Simpson for first-order logic --- is established for CoC with inductives in a companion paper~\cite{admissibility-2027}.
 $\sim$700 lines total (FiniteDigraph, SCC, bounded-return lemma, budget instrumentation).
 \end{proof}
 
