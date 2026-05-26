@@ -82,11 +82,11 @@ For a leaf vertex (no successors) labelled $\hastype{\Sigma}{\Gamma}{t}{A}$ and 
 \newline Rocq: $\texttt{residualise\_cfg\_root\_typing}$ (\texttt{SupercompilationCorrespondence.v}).
 \end{theorem}
 
-The typing proof uses $\texttt{has\_type\_subst}$ (renaming preserves typing, all 9 rules), $\texttt{has\_type\_weaken\_head}$ (weakening by one binder), and $\texttt{has\_type\_shift}$ (uniform shift preserves typing) --- all proved in \texttt{Judgement/Typing.v}.
+ The typing proof uses $\texttt{has\_type\_subst}$ (renaming preserves typing, all 9 rules), $\texttt{has\_type\_weaken\_head}$ (weakening by one binder), and $\texttt{has\_type\_shift}$ (uniform shift preserves typing).
 
 \subsection{Claim 4: Example validation}
 
-The example suite in \texttt{Supercompile\-Checklist\-Index\-Pipeline.v} covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) which does not require additional axioms.
+The mechanised example suite covers length-map fusion, append-length normalisation, append associativity (2-pass), take-drop fusion, map-map composition, and vector-index normalisation. All equalities are verified by computational reflection ($\texttt{vm\_compute}$) which does not require additional axioms.
 
 \subsection{Summary of Rocq artefacts}
 
@@ -105,7 +105,7 @@ Trace check & \texttt{trace\_condition\_ok\_cycle\_progress} & Transform \\
 Budget trace & \texttt{budget\_trace\_ranking\_condition} & Transform \\
 \bottomrule
 \multicolumn{3}{c}{} \\
-\multicolumn{3}{c}{\textbf{Pipeline theorems:} \texttt{SupercompilationCorrespondence.v}} \\
+\multicolumn{3}{c}{\textbf{Pipeline theorems:}} \\
 \midrule
 Claim 1 & \texttt{all\_supercompiled\_programs\_yield\_preproof}, & \\
  & \texttt{drive/split/fold\_corr\_to\_edge}, \texttt{cfg\_vertex\_drive\_rule} & \\
