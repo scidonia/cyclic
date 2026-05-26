@@ -9,7 +9,9 @@ where $x$ is a de~Bruijn index, $\star_i$ a universe, $\mu x{:}A.\,t$ a
 fixpoint ($x$ the recursive call), $I$ an inductive type, $c$ a constructor,
 and $\langle t \mid \vec{b} \rangle^I_C$ elimination with motive $C$.
 Arrow-annotated letters $\vec{a},\vec{b}$ denote vectors of terms.
-$\Sigma$ records inductive signatures.
+$\Sigma$ records inductive signatures (strictly-positive definitions:
+each constructor specifies which argument positions are recursive at which
+indices, ensuring logical consistency).
 
 \paragraph{Contexts and substitutions.}
 A context $\Gamma$ is a \emph{dependent telescope}

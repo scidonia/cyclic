@@ -124,7 +124,9 @@ $\textit{ctor}$ carries:
 \item $\overline{\tau}_{\!\textit{par}}$ — the types of the
   \emph{constructor parameters} (non-recursive arguments);
 \item $\overline{\rho}$ — which argument positions are recursive and
-  at what indices (a list of lists of naturals);
+  at what indices (a list of lists of naturals); recurrence
+  is only allowed at these guarded positions, enforcing
+  \emph{strict positivity};
 \item $\overline{\textit{idx}}$ — the result indices.
 \end{itemize}
 The constructor parameter types $\overline{\tau}_{\!\textit{par}}$
