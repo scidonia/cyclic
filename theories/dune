@@ -3,11 +3,11 @@
  (theories stdpp Stdlib Autosubst)
   (flags (:standard -w -notation-overridden))
    (modules
-    Syntax.StrictPos
-    Syntax.Term
-    Syntax.Examples
-    Syntax.ListNat
-    Judgement.Typing
+     Syntax.StrictPos
+     Syntax.Term
+     Syntax.Examples
+     Syntax.ListNat
+     Judgement.Typing
     Judgement.SequentTyping
     Semantics.Cbn
  
@@ -82,6 +82,7 @@ Transform.ConditionalLemmas
     Equiv.CIUNatObs
     Equiv.CIUChecklistLengthMap
     Equiv.SupercompileChecklistIndexPipeline
+    Equiv.LogicalRelation
      Equiv.SplitNonInvertible))
 
 

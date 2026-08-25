@@ -301,7 +301,7 @@ Section Packaging.
             unfold RO.put_fix_ty; simpl.
             apply elem_of_dom.
             destruct (decide (v_fix = v)) as [->|Hneq].
-            - rewrite lookup_insert_eq. eexists; reflexivity.
+            - rewrite lookup_insert. eexists; reflexivity.
             - apply elem_of_dom in Hv1 as [vA' HvA'].
               rewrite lookup_insert_ne; [eexists; exact HvA' | exact Hneq]. }
           pose proof (IH (Some v_fix :: ρ) body_fix b1' v Hv1') as Hv2.
@@ -879,7 +879,7 @@ Section Packaging.
       injection Hcomp as <- <-.
       unfold verts_of, RO.put. simpl.
       apply elem_of_union_l.
-      apply elem_of_dom. rewrite lookup_insert_eq. eexists; reflexivity.
+      apply elem_of_dom. rewrite lookup_insert. eexists; reflexivity.
       - simpl in Hcomp.
         destruct t; try solve [
           simpl in Hcomp;
@@ -894,7 +894,7 @@ Section Packaging.
           end;
           unfold verts_of, RO.put; simpl;
           apply elem_of_union_l;
-          apply elem_of_dom; rewrite lookup_insert_eq; eexists; reflexivity].
+          apply elem_of_dom; rewrite lookup_insert; eexists; reflexivity].
 
       (* tFix case: root in b_fix_ty *)
       + repeat match goal with
@@ -909,7 +909,7 @@ Section Packaging.
                 (RO.put_fix_ty (RO.b_next b) n b0) n0 b1 (RO.b_next b) Heqp0).
         apply elem_of_dom.
         unfold RO.put_fix_ty; simpl.
-        rewrite lookup_insert_eq. eexists; reflexivity.
+        rewrite lookup_insert. eexists; reflexivity.
   Qed.
 
 

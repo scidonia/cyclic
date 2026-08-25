@@ -46,7 +46,7 @@ Section Packaging.
       injection Hcomp as <- <-.
       unfold verts_of, RO.put. simpl.
       apply elem_of_union_l.
-      apply elem_of_dom. rewrite lookup_insert_eq. eexists; reflexivity.
+      apply elem_of_dom. rewrite lookup_insert. eexists; reflexivity.
     - simpl in Hcomp.
       destruct t; try (
         simpl in Hcomp;
@@ -61,7 +61,7 @@ Section Packaging.
         end;
         unfold verts_of, RO.put; simpl;
         apply elem_of_union_l;
-        apply elem_of_dom; rewrite lookup_insert_eq;
+        apply elem_of_dom; rewrite lookup_insert;
         eexists; reflexivity).
       (* tFix case: root in b_fix_ty *)
       + repeat match goal with
@@ -76,7 +76,7 @@ Section Packaging.
                 (RO.put_fix_ty (RO.b_next b) n b0) n0 b1 (RO.b_next b) Heqp0).
         apply elem_of_dom.
         unfold RO.put_fix_ty; simpl.
-        rewrite lookup_insert_eq. eexists; reflexivity.
+        rewrite lookup_insert. eexists; reflexivity.
   Qed.
 
   Lemma read_off_root_in (t : tm) :

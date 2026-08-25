@@ -53,11 +53,35 @@ Qed.
 
 Lemma sub_eqb_eq : forall s1 s2,
   sub_eqb s1 s2 = true -> s1 = s2.
-Proof. Admitted.
+Proof.
+  intros [k1 l1] [k2 l2] H.
+  unfold sub_eqb in H. cbn in H.
+  apply andb_true_iff in H as [Hk Hl].
+  apply Nat.eqb_eq in Hk.
+  apply (PU.list_eqb_eq tm_eqb PU.tm_eqb_eq) in Hl.
+  subst. reflexivity.
+Qed.
 
 Lemma judgement_eqb_eq : forall j1 j2,
   judgement_eqb j1 j2 = true -> j1 = j2.
-Proof. Admitted.
+Proof.
+  intros [Γ t A|Γ t u A|Δ s Γ] [Γ' t' A'|Γ' t' u' A'|Δ' s' Γ'];
+    cbn; try discriminate; intro H.
+  - apply andb_true_iff in H as [Hrest HA].
+    apply andb_true_iff in Hrest as [HΓ Ht].
+    apply ctx_eqb_eq in HΓ. apply PU.tm_eqb_eq in Ht. apply PU.tm_eqb_eq in HA.
+    subst. reflexivity.
+  - apply andb_true_iff in H as [Hrest HA].
+    apply andb_true_iff in Hrest as [Hrest2 Hu].
+    apply andb_true_iff in Hrest2 as [HΓ Ht].
+    apply ctx_eqb_eq in HΓ. apply PU.tm_eqb_eq in Ht.
+    apply PU.tm_eqb_eq in Hu. apply PU.tm_eqb_eq in HA.
+    subst. reflexivity.
+  - apply andb_true_iff in H as [Hrest HΓ].
+    apply andb_true_iff in Hrest as [HΔ Hs].
+    apply ctx_eqb_eq in HΔ. apply sub_eqb_eq in Hs. apply ctx_eqb_eq in HΓ.
+    subst. reflexivity.
+Qed.
 
 Fixpoint memo_lookup (j : config) (memo : list (config * nat)) : option nat :=
   match memo with

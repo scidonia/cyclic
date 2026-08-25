@@ -89,16 +89,87 @@ Section TermEquality.
   Qed.
 
   Lemma tm_eqb_eq : forall t u, tm_eqb t u = true -> t = u.
-  Proof. Admitted.
+  Proof.
+    fix IH 1.
+    intros [x|i|A B|A t|t1 t2|A t|I args|I c args|I s C brs]
+           [y|j|A' B'|A' u|u1 u2|A' u|I' args'|I' c' args'|I' s' C' brs'];
+      cbn; try discriminate; intro Heq.
+    - apply Nat.eqb_eq in Heq. f_equal. exact Heq.
+    - apply Nat.eqb_eq in Heq. f_equal. exact Heq.
+    - apply andb_true_iff in Heq as [HA HB]. f_equal; [exact (IH A A' HA)|exact (IH B B' HB)].
+    - apply andb_true_iff in Heq as [HA Ht]. f_equal; [exact (IH A A' HA)|exact (IH t u Ht)].
+    - apply andb_true_iff in Heq as [H1 H2]. f_equal; [exact (IH t1 u1 H1)|exact (IH t2 u2 H2)].
+    - apply andb_true_iff in Heq as [HA Ht]. f_equal; [exact (IH A A' HA)|exact (IH t u Ht)].
+    - apply andb_true_iff in Heq as [HI Hargs].
+      apply Nat.eqb_eq in HI; subst I'. f_equal.
+      revert args' Hargs.
+      induction args as [|a as' IHas]; intros [|a' as''] Hargs; cbn in Hargs; try discriminate.
+      + reflexivity.
+      + apply andb_true_iff in Hargs as [Haa' Has'].
+        f_equal. exact (IH a a' Haa'). apply IHas. exact Has'.
+    - apply andb_true_iff in Heq as [HIc Hargs].
+      apply andb_true_iff in HIc as [HI Hc].
+      apply Nat.eqb_eq in HI; apply Nat.eqb_eq in Hc; subst I' c'. f_equal.
+      revert args' Hargs.
+      induction args as [|a as' IHas]; intros [|a' as''] Hargs; cbn in Hargs; try discriminate.
+      + reflexivity.
+      + apply andb_true_iff in Hargs as [Haa' Has'].
+        f_equal. exact (IH a a' Haa'). apply IHas. exact Has'.
+    - apply andb_true_iff in Heq as [Hrest Hbrs].
+      apply andb_true_iff in Hrest as [Hrest2 HC].
+      apply andb_true_iff in Hrest2 as [HI Hs].
+      apply Nat.eqb_eq in HI; subst I'. f_equal.
+      * exact (IH s s' Hs).
+      * exact (IH C C' HC).
+      * revert brs' Hbrs.
+        induction brs as [|b bs' IHbs]; intros [|b' bs''] Hbrs; cbn in Hbrs; try discriminate.
+        -- reflexivity.
+        -- apply andb_true_iff in Hbrs as [Hbb' Hbs'].
+           f_equal. exact (IH b b' Hbb'). apply IHbs. exact Hbs'.
+  Qed.
 
   (** Completeness: if eqb returns false, terms differ *)
   Lemma list_eqb_neq : forall {A : Type} (eqbA : A -> A -> bool),
     (forall x y, eqbA x y = false -> x <> y) ->
     forall xs ys, list_eqb eqbA xs ys = false -> xs <> ys.
-  Proof. Admitted.
+  Proof.
+    intros A eqbA HeqbA.
+    induction xs as [|x xs IH]; intros [|y ys] Heq; cbn in Heq; try discriminate.
+    apply andb_false_iff in Heq as [Hxy|Hxsys].
+    - intro H. injection H as Hx _. apply (HeqbA x y Hxy). exact Hx.
+    - intro H. injection H as _ Hys. apply (IH ys Hxsys). exact Hys.
+  Qed.
+
+  Lemma tm_eqb_refl : forall t, tm_eqb t t = true.
+  Proof.
+    fix IH 1.
+    intro t. destruct t; cbn.
+    - apply Nat.eqb_refl.
+    - apply Nat.eqb_refl.
+    - apply andb_true_iff. split; apply IH.
+    - apply andb_true_iff. split; apply IH.
+    - apply andb_true_iff. split; apply IH.
+    - apply andb_true_iff. split; apply IH.
+    - apply andb_true_iff. split; [apply Nat.eqb_refl|].
+      induction args as [|a as' IHl]; cbn; [reflexivity|].
+      apply andb_true_iff. split; [apply IH|exact IHl].
+    - apply andb_true_iff. split.
+      + apply andb_true_iff. split; apply Nat.eqb_refl.
+      + induction args as [|a as' IHl]; cbn; [reflexivity|].
+        apply andb_true_iff. split; [apply IH|exact IHl].
+    - apply andb_true_iff. split.
+      + apply andb_true_iff. split.
+        * apply andb_true_iff. split; [apply Nat.eqb_refl|apply IH].
+        * apply IH.
+      + induction brs as [|b bs' IHl]; cbn; [reflexivity|].
+        apply andb_true_iff. split; [apply IH|exact IHl].
+  Qed.
 
   Lemma tm_eqb_neq : forall t u, tm_eqb t u = false -> t <> u.
-  Proof. Admitted.
+  Proof.
+    intros t u Hneq Heq.
+    subst u. rewrite (tm_eqb_refl t) in Hneq. discriminate.
+  Qed.
 
   (** Reflection: decidable equality via boolean *)
   Lemma tm_eqb_reflect : forall t u, reflect (t = u) (tm_eqb t u).

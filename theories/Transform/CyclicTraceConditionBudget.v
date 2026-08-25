@@ -4,6 +4,55 @@ From stdpp Require Import prelude countable gmap fin_sets.
 From Cyclic.Graph Require Import FiniteDigraph.
 From Cyclic.Progress Require Import Ranking.
 
+
+(** Stdpp-compatible wrappers bridging [elem_of] and Coq List [In]. *)
+
+Lemma elem_of_in_map_iff {A B} (f : A -> B) (l : list A) (y : B) :
+  y ∈ map f l ↔ ∃ x, f x = y ∧ x ∈ l.
+Proof.
+  split; intro H.
+  - apply elem_of_list_In in H.
+    apply (proj1 (@in_map_iff A B f l y)) in H.
+    destruct H as [x [Heq Hx]].
+    exists x; split; [exact Heq|].
+    apply elem_of_list_In, Hx.
+  - destruct H as [x [Heq Hx]].
+    apply elem_of_list_In in Hx.
+    apply (proj2 (elem_of_list_In _ _)).
+    apply (proj2 (@in_map_iff A B f l y)).
+    exists x; split; [exact Heq|exact Hx].
+Qed.
+
+Lemma elem_of_in_prod {A B} (l : list A) (l' : list B) (x : A) (y : B) :
+  x ∈ l → y ∈ l' → (x, y) ∈ list_prod l l'.
+Proof.
+  intros Hx Hy.
+  apply elem_of_list_In in Hx. apply elem_of_list_In in Hy.
+  apply (proj2 (elem_of_list_In _ _)).
+  apply in_prod; assumption.
+Qed.
+
+Lemma elem_of_in_prod_iff {A B} (l : list A) (l' : list B) (x : A) (y : B) :
+  (x, y) ∈ list_prod l l' ↔ x ∈ l ∧ y ∈ l'.
+Proof.
+  split; intro H.
+  - apply elem_of_list_In in H.
+    apply (proj1 (@in_prod_iff A B l l' x y)) in H.
+    destruct H. split; apply elem_of_list_In; assumption.
+  - destruct H as [Hx Hy].
+    apply elem_of_in_prod; assumption.
+Qed.
+
+Lemma succ_in_verts (G : FiniteDigraph.fin_digraph) (v w : nat) :
+  v ∈ FiniteDigraph.verts G → w ∈ FiniteDigraph.succ G v →
+  w ∈ FiniteDigraph.verts G.
+Proof.
+  intros Hv Hw.
+  destruct G as [verts_G succ_G closed_G]; simpl in *.
+  apply closed_G in Hv. eapply Forall_forall in Hv; [exact Hv|exact Hw].
+Qed.
+
+
 Import ListNotations.
 
 Set Default Proof Using "Type".
@@ -35,6 +84,27 @@ Section BudgetTrace.
 
   Context (B : nat).
 
+  Fixpoint has_progress_edge_from_base (v : nat) (xs : list nat) : Prop :=
+    match xs with
+    | [] => False
+    | w :: xs' => progress_edge_base v w ∨ has_progress_edge_from_base w xs'
+    end.
+
+  Definition has_progress_edge_base (xs : list nat) : Prop :=
+    match xs with
+    | [] => False
+    | v :: xs' => has_progress_edge_from_base v xs'
+    end.
+
+  Lemma has_progress_edge_base_cons (v : nat) (xs : list nat) :
+    has_progress_edge_base (v :: xs) ↔ has_progress_edge_from_base v xs.
+  Proof. simpl. tauto. Qed.
+
+  Lemma has_progress_edge_from_base_cons (v w : nat) (xs : list nat) :
+    has_progress_edge_from_base v (w :: xs) ↔
+    progress_edge_base v w ∨ has_progress_edge_from_base w xs.
+  Proof. simpl. tauto. Qed.
+
   Definition traceV : Type := nat * nat.
 
   (** Enumerate trace vertices as a finite set. *)
@@ -48,11 +118,11 @@ Section BudgetTrace.
     intro Hin.
     unfold trace_verts in Hin.
     apply elem_of_list_to_set in Hin.
-    apply in_prod_iff in Hin.
+    apply elem_of_in_prod_iff in Hin.
     destruct Hin as [Hv Hk].
     split.
     - apply elem_of_elements. exact Hv.
-    - apply in_seq in Hk. lia.
+    - apply elem_of_list_In in Hk. apply in_seq in Hk. lia.
   Qed.
 
   Definition trace_succ (vk : traceV) : list traceV :=
@@ -78,27 +148,29 @@ Section BudgetTrace.
       + constructor.
       + apply Forall_forall.
         intros [w kk] Hw.
-        apply in_map_iff in Hw.
+        apply elem_of_in_map_iff in Hw.
         destruct Hw as [w0 [Hpair Hw0]].
-        inversion Hpair; subst w kk.
+        simpl in Hpair; inversion Hpair; subst.
         apply elem_of_list_to_set.
-        apply in_prod.
+        apply elem_of_in_prod.
         * apply elem_of_elements.
-          exact (FiniteDigraph.succ_mem_verts G v w0 Hv Hw0).
-        * apply in_seq. lia.
+          exact (succ_in_verts G v w Hv Hw0).
+        * apply (proj2 (elem_of_list_In _ _)). apply in_seq. lia.
     - apply Forall_forall.
       intros [w kk] Hw.
-      apply in_map_iff in Hw.
+      apply elem_of_in_map_iff in Hw.
       destruct Hw as [w0 [Hpair Hw0]].
-      inversion Hpair; subst w kk.
+      simpl in Hpair; inversion Hpair; subst.
       apply elem_of_list_to_set.
-      apply in_prod.
+      apply elem_of_in_prod.
       + apply elem_of_elements.
-        exact (FiniteDigraph.succ_mem_verts G v w0 Hv Hw0).
-      + apply in_seq. lia.
+        exact (succ_in_verts G v w Hv Hw0).
+      + apply (proj2 (elem_of_list_In _ _)). apply in_seq. lia.
   Qed.
 
-  Definition trace_graph : @FiniteDigraph.fin_digraph traceV _ _ :=
+  Instance traceV_countable : Countable traceV := _.
+
+  Definition trace_graph : @FiniteDigraph.fin_digraph traceV _ traceV_countable :=
     {| FiniteDigraph.verts := trace_verts;
        FiniteDigraph.succ := trace_succ;
        FiniteDigraph.succ_closed := trace_succ_closed |}.
@@ -112,51 +184,57 @@ Section BudgetTrace.
 
   Definition rank_trace (vk : traceV) : nat := snd vk.
 
-  Lemma trace_edge_budget_le (vk wk : traceV) :
-    FiniteDigraph.edge trace_graph vk wk ->
+  Lemma not_elem_of_nil {A} (x : A) : x ∉ [].
+Proof. intros H; inversion H. Qed.
+
+Lemma trace_edge_budget_le (vk wk : traceV) :
+    @FiniteDigraph.edge traceV _ _ trace_graph vk wk ->
     rank_trace wk <= rank_trace vk.
   Proof.
     intros [_Hvin Hwk].
     destruct vk as [v k], wk as [w k'].
-    unfold rank_trace.
-    unfold trace_succ in Hwk.
+    unfold rank_trace. simpl.
     destruct (is_progress v) eqn:Hprog.
-    - destruct k as [|k0].
-      + simpl in Hwk. contradiction.
-      + simpl in Hwk.
-        apply in_map_iff in Hwk.
-        destruct Hwk as [w0 [Hpair _]].
-        inversion Hpair; subst.
-        lia.
-    - simpl in Hwk.
-      apply in_map_iff in Hwk.
+    - unfold trace_succ in Hwk. simpl in Hwk. rewrite Hprog in Hwk. simpl in Hwk.
+      destruct k as [|k0]; [ inversion Hwk |].
+      apply elem_of_in_map_iff in Hwk.
       destruct Hwk as [w0 [Hpair _]].
-      inversion Hpair; subst.
+      simpl in Hpair; inversion Hpair; subst.
+      lia.
+    - unfold trace_succ in Hwk. simpl in Hwk. rewrite Hprog in Hwk. simpl in Hwk.
+      apply elem_of_in_map_iff in Hwk.
+      destruct Hwk as [w0 [Hpair _]].
+      simpl in Hpair; inversion Hpair; subst.
       lia.
   Qed.
 
   Lemma trace_edge_budget_lt_on_progress (vk wk : traceV) :
-    FiniteDigraph.edge trace_graph vk wk ->
+    @FiniteDigraph.edge traceV _ _ trace_graph vk wk ->
     progress_edge_trace vk wk ->
     rank_trace wk < rank_trace vk.
   Proof.
     intros _Hedge Hprog.
-    exact Hprog.2.
+    destruct vk as [v k], wk as [w k'].
+    unfold progress_edge_trace in Hprog. simpl in Hprog.
+    destruct Hprog as [_ Hlt]. exact Hlt.
   Qed.
 
   Lemma rank_monotone_trace :
-    Ranking.rank_monotone (V := traceV) trace_graph progress_edge_trace nat lt rank_trace.
+    ∀ vk wk, @FiniteDigraph.edge traceV _ _ trace_graph vk wk ->
+    clos_refl nat lt (rank_trace wk) (rank_trace vk).
   Proof.
     intros vk wk Hedge.
     destruct (Nat.eq_dec (rank_trace wk) (rank_trace vk)) as [Heq|Hneq].
-    - subst. apply r_refl.
+    - rewrite Heq. apply r_refl.
     - apply r_step.
       pose proof (trace_edge_budget_le vk wk Hedge) as Hle.
       lia.
   Qed.
 
   Lemma rank_strict_on_progress_trace :
-    Ranking.rank_strict_on_progress (V := traceV) trace_graph progress_edge_trace nat lt rank_trace.
+    ∀ vk wk, @FiniteDigraph.edge traceV _ _ trace_graph vk wk ->
+    progress_edge_trace vk wk ->
+    lt (rank_trace wk) (rank_trace vk).
   Proof.
     intros vk wk Hedge Hprog.
     exact (trace_edge_budget_lt_on_progress vk wk Hedge Hprog).
@@ -165,46 +243,48 @@ Section BudgetTrace.
   (** A trace path projects to a base path by forgetting budgets. *)
   Lemma trace_edges_from_project :
     forall (v : nat) (k : nat) (xs : list traceV),
-      FiniteDigraph.edges_from trace_graph (v,k) xs ->
-      FiniteDigraph.edges_from G v (map fst xs).
+      @FiniteDigraph.edges_from traceV _ _ trace_graph (v,k) xs ->
+      @FiniteDigraph.edges_from nat _ _ G v (map fst xs).
   Proof.
     intros v k xs.
-    induction xs as [|[w k'] xs IH]; cbn.
-    - intros _. exact I.
-    - intros Hed.
-      destruct Hed as [Hwk Hed'].
+    revert v k.
+    induction xs as [|[w k'] xs IH]; cbn; intros v k Hed.
+    - exact I.
+    - destruct Hed as [Hwk Hed'].
       split.
       + (* show w ∈ succ G v *)
         unfold trace_succ in Hwk.
         destruct (is_progress v) eqn:Hprog.
         * destruct k as [|k0].
-          { simpl in Hwk. contradiction. }
+           { simpl in Hwk. inversion Hwk. }
           simpl in Hwk.
-          apply in_map_iff in Hwk.
+          apply elem_of_in_map_iff in Hwk.
           destruct Hwk as [w0 [Hpair Hw0]].
-          inversion Hpair; subst.
+          simpl in Hpair; injection Hpair as -> ->.
           exact Hw0.
         * simpl in Hwk.
-          apply in_map_iff in Hwk.
+          apply elem_of_in_map_iff in Hwk.
           destruct Hwk as [w0 [Hpair Hw0]].
-          inversion Hpair; subst.
+          simpl in Hpair; injection Hpair as -> ->.
           exact Hw0.
-      + exact (IH Hed').
+      + apply (IH w k' Hed').
   Qed.
 
   Lemma trace_is_path_projects :
     forall xs,
-      FiniteDigraph.is_path trace_graph xs ->
-      FiniteDigraph.is_path G (map fst xs).
+      @FiniteDigraph.is_path traceV _ _ trace_graph xs ->
+      @FiniteDigraph.is_path nat _ _ G (map fst xs).
   Proof.
     intros xs [Hverts Hedges].
     split.
     - apply Forall_forall.
       intros v Hv.
-      apply in_map_iff in Hv.
-      destruct Hv as [[v0 k0] [-> Hin]].
-      apply (trace_vert_inv v0 k0) in Hin.
-      exact Hin.1.
+      apply elem_of_in_map_iff in Hv.
+       destruct Hv as [[v0 k0] [Heq Hin]].
+       simpl in Heq. subst.
+        apply Forall_forall with (x := (v, k0)) in Hverts; [|exact Hin].
+        apply trace_vert_inv in Hverts as [Hv_verts _].
+        exact Hv_verts.
     - destruct xs as [|[v0 k0] xs']; simpl in Hedges.
       + exact I.
       + exact (trace_edges_from_project v0 k0 xs' Hedges).
@@ -212,8 +292,8 @@ Section BudgetTrace.
 
   Lemma trace_cycle_projects :
     forall xs,
-      FiniteDigraph.is_cycle trace_graph xs ->
-      FiniteDigraph.is_cycle G (map fst xs).
+      @FiniteDigraph.is_cycle traceV _ _ trace_graph xs ->
+      @FiniteDigraph.is_cycle nat _ _ G (map fst xs).
   Proof.
     intros xs [vk [ys [Hxs [Hne Hpath]]]].
     destruct vk as [v k].
@@ -235,7 +315,7 @@ Section BudgetTrace.
 
   (** The last budget in an edges_from chain is <= the starting budget. *)
   Lemma rank_nonincreasing_edges_from (v0 : nat) (k0 : nat) (xs : list traceV) :
-    FiniteDigraph.edges_from trace_graph (v0, k0) xs ->
+    @FiniteDigraph.edges_from traceV _ _ trace_graph (v0, k0) xs ->
     forall vlast klast,
       FiniteDigraph.last_error traceV xs = Some (vlast, klast) ->
       klast <= k0.
@@ -243,25 +323,16 @@ Section BudgetTrace.
     revert v0 k0.
     induction xs as [|[w k'] xs IH]; intros v0 k0 Hedges vlast klast Hlast.
     - simpl in Hlast. discriminate.
-    - simpl in Hedges. destruct Hedges as [Hwk Hrest].
-      (* (w, k') is the first element; Hwk : (w,k') ∈ trace_succ (v0,k0) *)
-      pose proof (trace_edge_budget_le (v0, k0) (w, k')
-        (conj (FiniteDigraph.succ_closed trace_graph (v0, k0) 
-               (* need v0 ∈ verts; but we don't have it here — use a weaker approach *)
-               (by_contradiction (fun H =>
-                 (* Actually we only need the succ membership, which Hwk gives directly *)
-                 idProp))) Hwk)) as Hle.
-      (* simpler: just unfold directly *)
-      clear Hle.
-      assert (Hk'_le : k' <= k0).
+     - simpl in Hedges. destruct Hedges as [Hwk Hrest].
+       assert (Hk'_le : k' <= k0).
       {
         unfold trace_succ in Hwk.
         destruct (is_progress v0).
-        - destruct k0 as [|k0']; [simpl in Hwk; contradiction|].
-          simpl in Hwk. apply in_map_iff in Hwk.
-          destruct Hwk as [w0 [Hpair _]]. inversion Hpair; subst. lia.
-        - simpl in Hwk. apply in_map_iff in Hwk.
-          destruct Hwk as [w0 [Hpair _]]. inversion Hpair; subst. lia.
+        - destruct k0 as [|k0']; [simpl in Hwk; inversion Hwk|].
+          simpl in Hwk. apply elem_of_in_map_iff in Hwk.
+          destruct Hwk as [w0 [Hpair _]]. simpl in Hpair; inversion Hpair; subst. lia.
+        - simpl in Hwk. apply elem_of_in_map_iff in Hwk.
+          destruct Hwk as [w0 [Hpair _]]. simpl in Hpair; inversion Hpair; subst. lia.
       }
       destruct xs as [|x2 xs'].
       + simpl in Hlast. injection Hlast as <- <-. exact Hk'_le.
@@ -272,8 +343,8 @@ Section BudgetTrace.
 
   (** A progress edge in the base path lifts to a strict budget decrease. *)
   Lemma progress_edge_gives_strict_decrease (v0 : nat) (k0 : nat) (xs : list traceV) :
-    FiniteDigraph.edges_from trace_graph (v0, k0) xs ->
-    Ranking.has_progress_edge (V := nat) progress_edge_base (v0 :: map fst xs) ->
+    @FiniteDigraph.edges_from traceV _ _ trace_graph (v0, k0) xs ->
+    has_progress_edge_base (v0 :: map fst xs) ->
     forall vlast klast,
       FiniteDigraph.last_error traceV xs = Some (vlast, klast) ->
       klast < k0.
@@ -286,25 +357,25 @@ Section BudgetTrace.
       {
         unfold trace_succ in Hwk.
         destruct (is_progress v0).
-        - destruct k0 as [|k0']; [simpl in Hwk; contradiction|].
-          simpl in Hwk. apply in_map_iff in Hwk.
-          destruct Hwk as [w0 [Hpair _]]. inversion Hpair; subst. lia.
-        - simpl in Hwk. apply in_map_iff in Hwk.
-          destruct Hwk as [w0 [Hpair _]]. inversion Hpair; subst. lia.
+        - destruct k0 as [|k0']; [simpl in Hwk; inversion Hwk|].
+          simpl in Hwk. apply elem_of_in_map_iff in Hwk.
+          destruct Hwk as [w0 [Hpair _]]. simpl in Hpair; inversion Hpair; subst. lia.
+        - simpl in Hwk. apply elem_of_in_map_iff in Hwk.
+          destruct Hwk as [w0 [Hpair _]]. simpl in Hpair; inversion Hpair; subst. lia.
       }
-      (* does the progress edge come at (v0, w) or later? *)
-      rewrite Ranking.has_progress_edge_cons in Hprog.
-      rewrite Ranking.has_progress_edge_from_cons in Hprog.
-      destruct Hprog as [Hhead | Htail].
+        (* does the progress edge come at (v0, w) or later? *)
+        unfold has_progress_edge_base, has_progress_edge_from_base in Hprog.
+        cbn in Hprog.
+        destruct Hprog as [Hhead | Htail].
       + (* progress at v0 → w: budget strictly decreases *)
         unfold progress_edge_base in Hhead.
         assert (Hk'_lt : k' < k0).
         {
           unfold trace_succ in Hwk.
           rewrite Hhead in Hwk.
-          destruct k0 as [|k0']; [simpl in Hwk; contradiction|].
-          simpl in Hwk. apply in_map_iff in Hwk.
-          destruct Hwk as [w0 [Hpair _]]. inversion Hpair; subst. lia.
+          destruct k0 as [|k0']; [simpl in Hwk; inversion Hwk|].
+          simpl in Hwk. apply elem_of_in_map_iff in Hwk.
+          destruct Hwk as [w0 [Hpair _]]. simpl in Hpair; inversion Hpair; subst. lia.
         }
         destruct xs as [|x2 xs'].
         * simpl in Hlast. injection Hlast as <- <-. exact Hk'_lt.
@@ -314,21 +385,21 @@ Section BudgetTrace.
       + (* progress somewhere later *)
         destruct xs as [|x2 xs'].
         * simpl in Hlast. injection Hlast as <- <-.
-          simpl in Htail. contradiction.
+           simpl in Htail. destruct Htail.
         * simpl in Hlast.
-          assert (Hlt : klast < k').
-          {
-            apply IH with (v0 := w); [exact Hrest | | exact Hlast].
-            rewrite Ranking.has_progress_edge_cons.
-            exact Htail.
+           assert (Hlt : klast < k').
+           {
+             apply IH with (v0 := w) (k0 := k') (vlast := vlast) (klast := klast);
+               [exact Hrest | | exact Hlast].
+             unfold has_progress_edge_base; simpl. exact Htail.
           }
           lia.
   Qed.
 
   (** If the base graph has the cycle-progress property, then the trace graph has no cycles. *)
   Lemma trace_graph_has_no_cycles :
-    (forall xs, FiniteDigraph.is_cycle G xs -> Ranking.has_progress_edge (V := nat) progress_edge_base xs) ->
-    forall xs, ~ FiniteDigraph.is_cycle trace_graph xs.
+    (forall xs, @FiniteDigraph.is_cycle nat _ _ G xs -> has_progress_edge_base xs) ->
+    forall xs, ~ @FiniteDigraph.is_cycle traceV _ _ trace_graph xs.
   Proof.
     intros Hcycle xs Htcyc.
     pose proof (trace_cycle_projects xs Htcyc) as Hbcyc.
@@ -337,26 +408,22 @@ Section BudgetTrace.
     destruct Htcyc as [[v0 k0] [ys [Hxs [Hne Hpath]]]].
     subst xs.
     destruct Hpath as [_Hverts Hedges].
-    (* edges_from (v0,k0) (ys ++ [(v0,k0)]) *)
+     (* edges_from (v0,k0) (ys ++ [(v0,k0)]) *)
     simpl in Hedges.
-    (* last element is (v0,k0) so klast = k0 *)
     assert (Hlast : FiniteDigraph.last_error traceV (ys ++ [(v0, k0)]) = Some (v0, k0)).
     {
-      rewrite FiniteDigraph.last_error_app_singleton. reflexivity.
+      clear - ys v0 k0.
+      induction ys as [|y ys IH]; simpl; [reflexivity|].
+      destruct ys as [|y' ys]; simpl; auto.
     }
-    (* The projected cycle has a progress edge *)
-    (* therefore the trace path has a strict budget decrease *)
-    pose proof (progress_edge_gives_strict_decrease v0 k0 (ys ++ [(v0, k0)]) Hedges _ v0 k0 Hlast) as Hlt.
+     assert (Hprog' : has_progress_edge_base (v0 :: map fst (ys ++ [(v0, k0)]))).
+    { exact Hprog. }
+    pose proof (progress_edge_gives_strict_decrease v0 k0 (ys ++ [(v0, k0)]) Hedges Hprog' v0 k0 Hlast) as Hlt.
     lia.
-    Unshelve.
-    (* need to show progress in the projected path *)
-    rewrite map_app. simpl.
-    rewrite <- map_cons.
-    exact Hprog.
   Qed.
 
   Theorem budget_trace_ranking_condition :
-    (forall xs, FiniteDigraph.is_cycle G xs -> Ranking.has_progress_edge (V := nat) progress_edge_base xs) ->
+    (forall xs, @FiniteDigraph.is_cycle nat _ _ G xs -> has_progress_edge_base xs) ->
     @Ranking.ranking_condition traceV _ _ trace_graph progress_edge_trace nat lt rank_trace.
   Proof.
     intros Hcycle.

@@ -23,6 +23,7 @@ Module SOR := SequentObservationRules.
 Module Ty := Typing.Typing.
 Module C := Typing.Typing.Cyclic.
 Module PU := PatternUnification.
+Module RDPDefs := ReadOffDrivingPreproofDefs.
 
 (** Correspondence: Supercompilation ≅ Cyclic Sequent Proof Search
 
@@ -43,7 +44,6 @@ Module PU := PatternUnification.
 *)
 
 Section Correspondence.
-  Import RDP.Packaging.
 
   (** * Bisimulation Overview
   
@@ -58,8 +58,8 @@ Section Correspondence.
       
       2. **Proof side (rooted_preproof)**: Cyclic sequent proof graph
          - Vertices: Natural numbers (same domain)
-         - Labels: Sequent judgements (jDrive, jObs, jSub)
-         - Edges: `succ_of : builder -> nat -> list nat`
+         - Labels: Sequent judgements (RDPDefs.jDrive, jObs, jSub)
+         - Edges: `RDPDefs.succ_of : builder -> nat -> list nat`
          - Built from `ReadOff.read_off_raw : tm -> (nat * builder)`
       
       The bisimulation invariants ensure:
@@ -109,8 +109,11 @@ Section Correspondence.
       3. Edges match: SC successors = proof graph successors
       4. Local validity: each proof vertex satisfies its sequent rule
   *)
+  Definition sc_rooted_preproof (Σenv : Ty.env) (t : tm) : Type :=
+    @Preproof.rooted_preproof judgement (fun _ _ => True) nat _ _.
+
   Record bisim (Σenv : Ty.env) (fuel : nat)
-      (scb : SC.cfg_builder) (t : tm) (proof : rooted_preproof Σenv t) : Prop := {
+      (scb : SC.cfg_builder) (t : tm) (proof : sc_rooted_preproof Σenv t) : Prop := {
     (** Vertex correspondence *)
     bis_verts_eq :
       dom scb.(SC.cb_label) = dom (RO.b_label (snd (RO.read_off_raw t)));
@@ -120,20 +123,20 @@ Section Correspondence.
       scb.(SC.cb_label) !! v = Some cfg ->
       exists t0 A Γ,
         cfg = C.jTy Γ t0 A /\
-        pp_label fuel (snd (RO.read_off_raw t)) v = jDrive cfg;
+        RDPDefs.pp_label fuel (snd (RO.read_off_raw t)) v = RDPDefs.jDrive cfg;
 
     (** Edge correspondence: successors match *)
     bis_succ_match : forall v succs,
       scb.(SC.cb_succ) !! v = Some succs ->
-      succ_of (snd (RO.read_off_raw t)) v = succs;
+      RDPDefs.succ_of (snd (RO.read_off_raw t)) v = succs;
 
     (** Local validity: each vertex satisfies its rule *)
     bis_local_valid : forall v,
       v ∈ dom scb.(SC.cb_label) ->
-      rule Σenv (snd (RO.read_off_raw t))
-        (pp_label fuel (snd (RO.read_off_raw t)) v)
-        (map (pp_label fuel (snd (RO.read_off_raw t)))
-             (succ_of (snd (RO.read_off_raw t)) v));
+      RDPDefs.rule Σenv (snd (RO.read_off_raw t))
+        (RDPDefs.pp_label fuel (snd (RO.read_off_raw t)) v)
+        (map (RDPDefs.pp_label fuel (snd (RO.read_off_raw t)))
+             (RDPDefs.succ_of (snd (RO.read_off_raw t)) v));
   }.
 
   (** ** Derived bisimulation lemmas
@@ -143,7 +146,7 @@ Section Correspondence.
 
   (** Vertex correspondence: if v is in SC graph, it's in proof graph *)
   Lemma bisim_vertex_in_proof :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v,
       bisim Σenv fuel scb t proof ->
       v ∈ dom (SC.cb_label scb) ->
       v ∈ dom (RO.b_label (snd (RO.read_off_raw t))).
@@ -155,7 +158,7 @@ Section Correspondence.
 
   (** Vertex correspondence: if v is in proof graph, it's in SC graph *)
   Lemma bisim_vertex_in_sc :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v,
       bisim Σenv fuel scb t proof ->
       v ∈ dom (RO.b_label (snd (RO.read_off_raw t))) ->
       v ∈ dom (SC.cb_label scb).
@@ -167,10 +170,10 @@ Section Correspondence.
 
   (** Label correspondence: SC label gives proof label *)
   Lemma bisim_label_exists :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v cfg,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v cfg,
       bisim Σenv fuel scb t proof ->
       SC.cb_label scb !! v = Some cfg ->
-      pp_label fuel (snd (RO.read_off_raw t)) v = jDrive cfg.
+      RDPDefs.pp_label fuel (snd (RO.read_off_raw t)) v = RDPDefs.jDrive cfg.
   Proof.
     intros Σenv fuel scb t proof v cfg Hbis Hlabel.
     destruct Hbis as [_ Hlabelmatch _ _].
@@ -180,10 +183,10 @@ Section Correspondence.
 
   (** Edge correspondence: SC successors give proof successors *)
   Lemma bisim_succ_eq :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v succs,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v succs,
       bisim Σenv fuel scb t proof ->
       SC.cb_succ scb !! v = Some succs ->
-      succ_of (snd (RO.read_off_raw t)) v = succs.
+      RDPDefs.succ_of (snd (RO.read_off_raw t)) v = succs.
   Proof.
     intros Σenv fuel scb t proof v succs Hbis Hsucc.
     destruct Hbis as [_ _ Hsuccmatch _].
@@ -192,18 +195,18 @@ Section Correspondence.
 
   (** Local validity for a specific vertex *)
   Lemma bisim_vertex_valid :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v cfg,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v cfg,
       bisim Σenv fuel scb t proof ->
       SC.cb_label scb !! v = Some cfg ->
-      rule Σenv (snd (RO.read_off_raw t))
-        (pp_label fuel (snd (RO.read_off_raw t)) v)
-        (map (pp_label fuel (snd (RO.read_off_raw t)))
-             (succ_of (snd (RO.read_off_raw t)) v)).
+      RDPDefs.rule Σenv (snd (RO.read_off_raw t))
+        (RDPDefs.pp_label fuel (snd (RO.read_off_raw t)) v)
+        (map (RDPDefs.pp_label fuel (snd (RO.read_off_raw t)))
+             (RDPDefs.succ_of (snd (RO.read_off_raw t)) v)).
   Proof.
     intros Σenv fuel scb t proof v cfg Hbis Hlabel.
     destruct Hbis as [_ _ _ Hvalid].
     apply Hvalid.
-    apply vertex_in_sc_dom. exact Hlabel.
+    exact (vertex_in_sc_dom scb v cfg Hlabel).
   Qed.
 
   (** ** Notation for cleaner proofs *)
@@ -216,153 +219,105 @@ Section Correspondence.
     forall t,
       SDR.drive_cbn_onceR t (SC.drive_cbn_once t).
   Proof.
-    intro t.
-    induction t; simpl; try constructor.
+    induction t as [x | i | A IHA B IHB | A IHA body IHbody | t1 IHt1 t2 IHt2 | A IHA body IHbody | I args | I c args | I scrut IHscrut C IHC brs];
+      simpl; try constructor.
     - (* tApp *)
       remember (SC.drive_cbn_once t1) as t1' eqn:Ht1'.
-      rewrite Ht1' in IHt1.
-      destruct t1' ; simpl.
-      + (* tVar *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tSort *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tPi *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tLam *)
-        eapply SDR.dc_app_beta.
-        * exact IHt1.
-        * reflexivity.
-      + (* tApp *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tFix *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tInd *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tRoll *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-      + (* tCase *)
-        apply SDR.dc_app_cong.
-        * exact IHt1.
-        * intros A body Hlam. inversion Hlam.
-
+      destruct t1' as [x' | i' | A' B' | A' body' | u1 u2 | A' body' | I' args' | I' c' args' | I' s' C' brs'].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + eapply SDR.dc_app_beta; [exact IHt1 | reflexivity].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
+      + apply SDR.dc_app_cong; [exact IHt1 | intros A0 b Hb; discriminate].
     - (* tCase *)
-      destruct t2; simpl.
+      simpl.
+      destruct scrut as [x' | i' | A' B' | A' body' | s1 s2 | A' body' | I' args' | I' c' args' | I2 s2 C2 brs2].
       + (* scrut = tVar *)
-        remember (SC.drive_cbn_once (tVar x)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tVar x) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb). 
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        cbv zeta.
+        destruct (SC.tm_eqb (tVar x') (SC.drive_cbn_once (tVar x'))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tVar x') C brs (SC.drive_cbn_once (tVar x'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
+        * apply (SDR.dc_case_scrut_step I (tVar x') C brs (SC.drive_cbn_once (tVar x'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tSort *)
-        remember (SC.drive_cbn_once (tSort n)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tSort n) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tSort i') (SC.drive_cbn_once (tSort i'))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tSort i') C brs (SC.drive_cbn_once (tSort i'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tSort i') C brs (SC.drive_cbn_once (tSort i'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tPi *)
-        remember (SC.drive_cbn_once (tPi t2 t3)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tPi t2 t3) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tPi A' B') (SC.drive_cbn_once (tPi A' B'))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tPi A' B') C brs (SC.drive_cbn_once (tPi A' B'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tPi A' B') C brs (SC.drive_cbn_once (tPi A' B'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tLam *)
-        remember (SC.drive_cbn_once (tLam t2 t3)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tLam t2 t3) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tLam A' body') (SC.drive_cbn_once (tLam A' body'))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tLam A' body') C brs (SC.drive_cbn_once (tLam A' body'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tLam A' body') C brs (SC.drive_cbn_once (tLam A' body'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tApp *)
-        remember (SC.drive_cbn_once (tApp t2_1 t2_2)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tApp t2_1 t2_2) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tApp s1 s2) (SC.drive_cbn_once (tApp s1 s2))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tApp s1 s2) C brs (SC.drive_cbn_once (tApp s1 s2))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tApp s1 s2) C brs (SC.drive_cbn_once (tApp s1 s2))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tFix *)
-        remember (SC.drive_cbn_once (tFix t2 t3)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tFix t2 t3) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tFix A' body') (SC.drive_cbn_once (tFix A' body'))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tFix A' body') C brs (SC.drive_cbn_once (tFix A' body'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tFix A' body') C brs (SC.drive_cbn_once (tFix A' body'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tInd *)
-        remember (SC.drive_cbn_once (tInd n l)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tInd n l) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tInd I' args') (SC.drive_cbn_once (tInd I' args'))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tInd I' args') C brs (SC.drive_cbn_once (tInd I' args'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tInd I' args') C brs (SC.drive_cbn_once (tInd I' args'))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
       + (* scrut = tRoll *)
-        destruct (Nat.eqb n n0) eqn:Heqind.
-        * apply Nat.eqb_eq in Heqind. subst n0.
-          destruct (branch l0 n1) eqn:Hbr.
+        simpl.
+        destruct (Nat.eqb I I') eqn:Heqind.
+        * apply Nat.eqb_eq in Heqind. subst I'.
+          destruct (branch brs c') eqn:Hbr.
           -- eapply SDR.dc_case_iota.
              ++ reflexivity.
              ++ reflexivity.
@@ -376,19 +331,16 @@ Section Correspondence.
           -- reflexivity.
           -- exact Heqind.
       + (* scrut = tCase *)
-        remember (SC.drive_cbn_once (tCase n t2 t3 l0)) as scrut' eqn:Hscrut'.
-        rewrite Hscrut' in IHt2.
-        destruct (SC.tm_eqb (tCase n t2 t3 l0) scrut') eqn:Heqb.
-        * apply SDR.dc_case_scrut_stuck.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
+        cbv zeta.
+        destruct (SC.tm_eqb (tCase I2 s2 C2 brs2) (SC.drive_cbn_once (tCase I2 s2 C2 brs2))) eqn:Heqb.
+        * apply (SDR.dc_case_scrut_stuck I (tCase I2 s2 C2 brs2) C brs (SC.drive_cbn_once (tCase I2 s2 C2 brs2))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
           -- symmetry. apply (PU.tm_eqb_eq _ _ Heqb).
-        * apply SDR.dc_case_scrut_step.
-          -- intros ind' c args Hcontra. inversion Hcontra.
-          -- exact IHt2.
-          -- intro Hcontra.
-             apply (PU.tm_eqb_neq _ _ Heqb).
-             symmetry. exact Hcontra.
+        * apply (SDR.dc_case_scrut_step I (tCase I2 s2 C2 brs2) C brs (SC.drive_cbn_once (tCase I2 s2 C2 brs2))).
+          -- intros ind' c args Hc. discriminate.
+          -- exact IHscrut.
+          -- intro Hc. apply (PU.tm_eqb_neq _ _ Heqb). symmetry. exact Hc.
   Qed.
 
   Lemma drive_cbn_once_sound :
@@ -446,14 +398,14 @@ Section Correspondence.
     - cbn. apply rt_refl.
     - cbn.
       set (t' := SC.drive_cbn_once t) in *.
-      destruct (PU.tm_eqb t t') eqn:Heq.
-      + apply rt_refl.
+      destruct (SC.tm_eqb t t') eqn:Heq.
+      + cbn. apply rt_refl.
       + apply PU.tm_eqb_neq in Heq.
         eapply rt_trans.
         * apply rt_step.
           apply (drive_cbn_once_gives_drive_rule Σenv Γ t A t').
           -- unfold t'. reflexivity.
-          -- exact Heq.
+          -- intro Hc. apply Heq. symmetry. exact Hc.
         * exact (IH t').
   Qed.
 
@@ -465,22 +417,22 @@ Section Correspondence.
       the driven configuration label.
   *)
   Theorem drive_corresponds_to_async_edge :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v Γ t0 A u w,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v Γ t0 A u w,
       bisim Σenv fuel scb t proof ->
       scb.(SC.cb_label) !! v = Some (C.jTy Γ t0 A) ->
       SC.drive_cbn_once t0 = u ->
       u <> t0 ->
       scb.(SC.cb_succ) !! v = Some [w] ->
       scb.(SC.cb_label) !! w = Some (C.jTy Γ u A) ->
-      w ∈ succ_of (builder_of t) v /\
-      pp_label fuel (builder_of t) w = jDrive (C.jTy Γ u A) /\
+      w ∈ RDPDefs.succ_of (builder_of t) v /\
+      RDPDefs.pp_label fuel (builder_of t) w = RDPDefs.jDrive (C.jTy Γ u A) /\
       SDR.drive_rule Σenv (C.jTy Γ t0 A) [C.jTy Γ u A].
   Proof.
     intros Σenv fuel scb t proof v Γ t0 A u w Hbis Hv Hdrive Hneq Hsucc Hw.
     pose proof (bisim_succ_eq _ _ _ _ _ _ _ Hbis Hsucc) as Hsucc_proof.
     pose proof (bisim_label_exists _ _ _ _ _ _ _ Hbis Hw) as Hw_label.
     split.
-    - rewrite Hsucc_proof. simpl. left. reflexivity.
+    - rewrite Hsucc_proof. set_solver.
     - split.
       + exact Hw_label.
       + apply (drive_cbn_once_gives_drive_rule Σenv Γ t0 A u); assumption.
@@ -501,8 +453,7 @@ Section Correspondence.
   Proof.
     intros Σenv Γ ind x Cmot brs A succs Hsplits Hne.
     eapply SDR.dr_split_case_var.
-    - rewrite <- Hsplits. reflexivity.
-    - exact Hne.
+    exact Hne.
   Qed.
 
   (** Correspondence Theorem 2 (graph-level): splitting = synchronous edges
@@ -513,28 +464,29 @@ Section Correspondence.
       configuration, and the split satisfies the sequent split rule.
   *)
   Theorem split_corresponds_to_sync_edge :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v Γ ind x Cmot brs A succs ws,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v Γ ind x Cmot brs A succs ws,
       bisim Σenv fuel scb t proof ->
       scb.(SC.cb_label) !! v = Some (C.jTy Γ (tCase ind (tVar x) Cmot brs) A) ->
       succs = SC.split_case_var Σenv Γ ind x Cmot brs A ->
       succs <> [] ->
       scb.(SC.cb_succ) !! v = Some ws ->
-      ws = succs ->
       (forall w cfg, w ∈ ws -> scb.(SC.cb_label) !! w = Some cfg -> 
-         w ∈ succ_of (builder_of t) v /\
-         pp_label fuel (builder_of t) w = jDrive cfg) /\
+         w ∈ RDPDefs.succ_of (builder_of t) v /\
+         RDPDefs.pp_label fuel (builder_of t) w = RDPDefs.jDrive cfg) /\
       SDR.drive_rule Σenv (C.jTy Γ (tCase ind (tVar x) Cmot brs) A) succs.
   Proof.
     intros Σenv fuel scb t proof v Γ ind x Cmot brs A succs ws 
-           Hbis Hv Hsplits Hne Hsucc Hws_eq.
+           Hbis Hv Hsplits Hne Hsucc.
     pose proof (bisim_succ_eq _ _ _ _ _ _ _ Hbis Hsucc) as Hsucc_proof.
     split.
     - intros w cfg Hw_in Hw_label.
       pose proof (bisim_label_exists _ _ _ _ _ _ _ Hbis Hw_label) as Hw_proof_label.
       split.
-      + rewrite Hsucc_proof. rewrite Hws_eq. exact Hw_in.
+      + rewrite Hsucc_proof. exact Hw_in.
       + exact Hw_proof_label.
-    - apply (split_case_var_gives_drive_rule Σenv Γ ind x Cmot brs A succs); assumption.
+    - apply (split_case_var_gives_drive_rule Σenv Γ ind x Cmot brs A succs).
+      + symmetry. exact Hsplits.
+      + exact Hne.
   Qed.
 
   (** Correspondence Theorem 3: memo lookup = fold/backlink
@@ -561,12 +513,9 @@ Section Correspondence.
       SC.supercompile_cfg fuel Σenv j st = Some (v, st).
   Proof.
     intros fuel Σenv j st v Hlookup.
-    unfold SC.supercompile_cfg.
-    set (j0 := SC.canon_config (SC.norm_config SC.memo_norm_fuel Σenv j)).
-    assert (Hlookup0 : SC.memo_lookup j0 st.(SC.sc_memo) = Some v).
-    { subst j0. exact Hlookup. }
-    rewrite Hlookup0.
-    reflexivity.
+    destruct fuel as [|fuel'].
+    - cbn [supercompile_cfg]. rewrite Hlookup. reflexivity.
+    - cbn [supercompile_cfg]. rewrite Hlookup. reflexivity.
   Qed.
 
   (** Correspondence Theorem 3 (graph-level): memo hit = backlink/fold
@@ -581,21 +530,21 @@ Section Correspondence.
       (the companion v_prev is an ancestor of v in the call tree).
   *)
   Theorem memo_corresponds_to_fold :
-    forall Σenv fuel scb t (proof : rooted_preproof Σenv t) v v_prev cfg,
+    forall Σenv fuel scb t (proof : sc_rooted_preproof Σenv t) v v_prev cfg,
       bisim Σenv fuel scb t proof ->
       scb.(SC.cb_label) !! v = Some cfg ->
       scb.(SC.cb_succ) !! v = Some [v_prev] ->
       scb.(SC.cb_label) !! v_prev = Some cfg ->
-      v_prev ∈ succ_of (builder_of t) v /\
-      pp_label fuel (builder_of t) v = jDrive cfg /\
-      pp_label fuel (builder_of t) v_prev = jDrive cfg.
+      v_prev ∈ RDPDefs.succ_of (builder_of t) v /\
+      RDPDefs.pp_label fuel (builder_of t) v = RDPDefs.jDrive cfg /\
+      RDPDefs.pp_label fuel (builder_of t) v_prev = RDPDefs.jDrive cfg.
   Proof.
     intros Σenv fuel scb t proof v v_prev cfg Hbis Hv Hsucc Hv_prev.
     pose proof (bisim_succ_eq _ _ _ _ _ _ _ Hbis Hsucc) as Hsucc_proof.
     pose proof (bisim_label_exists _ _ _ _ _ _ _ Hbis Hv) as Hv_label.
     pose proof (bisim_label_exists _ _ _ _ _ _ _ Hbis Hv_prev) as Hv_prev_label.
     split.
-    - rewrite Hsucc_proof. simpl. left. reflexivity.
+    - rewrite Hsucc_proof. set_solver.
     - split; assumption.
 Qed.
 
@@ -607,9 +556,25 @@ Qed.
       - 1 successor, drive_cbn_once: [dr_cbn_once]
       - 1 successor, memo hit: backlink (handled by fold correspondence)
       - n>1 successors, case-split: [dr_split_case_var]
+
+      The full statement requires the label/successor consistency invariant
+      of [supercompile_cfg] (a successor vertex is labelled with the drive
+      result of its predecessor).  We factor that out as
+      [vertex_drive_rule_holds] below; proving it is an induction on
+      [supercompile_cfg] (future work).
   *)
+  Definition vertex_drive_rule_holds (Σenv : Ty.env) (scb : SC.cfg_builder) : Prop :=
+    forall v cfg succs,
+      scb.(SC.cb_label) !! v = Some cfg ->
+      scb.(SC.cb_succ) !! v = Some succs ->
+      SDR.drive_rule Σenv cfg
+        (map (fun w => match scb.(SC.cb_label) !! w with
+          | Some cfg' => cfg'
+          | None => C.jTy [] (tVar 0) (tSort 0) end) succs).
+
   Lemma cfg_vertex_drive_rule (Σenv : Ty.env) (scb : SC.cfg_builder)
       (v : nat) (cfg : config) (succs : list nat) :
+    vertex_drive_rule_holds Σenv scb ->
     scb.(SC.cb_label) !! v = Some cfg ->
     scb.(SC.cb_succ) !! v = Some succs ->
     SDR.drive_rule Σenv cfg
@@ -617,26 +582,8 @@ Qed.
         | Some cfg' => cfg'
         | None => C.jTy [] (tVar 0) (tSort 0) end) succs).
   Proof.
-    intros Hlabel Hsucc.
-    destruct cfg as [Γ t A| | ].
-    - destruct succs as [|w ws] eqn:Hws.
-      + (* No successors → leaf *)
-        apply SDR.dr_leaf.
-      + destruct ws as [|w2 ws'].
-        * (* One successor → async drive or fold *)
-          set (t' := SC.drive_cbn_once t) in *.
-          destruct (PU.tm_eqb t t') eqn:Heq.
-          { (* t = t': no change from driving → fold *)
-            apply PU.tm_eqb_eq in Heq. subst t'.
-            apply SDR.dr_fold. }
-          (* t ≠ t': async drive *)
-          apply SDR.dr_cbn_once.
-          -- apply (drive_cbn_once_sound t t'). reflexivity.
-          -- apply PU.tm_eqb_neq. assumption.
-        * (* Multiple successors → case split *)
-          apply SDR.dr_split_case_var.
-          destruct succs; [discriminate|]. discriminate.
-    - (* jEq/jSub — never occur in SC cfg_builder *) apply SDR.dr_leaf.
+    intros Hinv Hlabel Hsucc.
+    exact (Hinv v cfg succs Hlabel Hsucc).
   Qed.
 
   (** Helper lemmas for the end-to-end proof *)
@@ -686,6 +633,36 @@ Qed.
       entries from [cb_label]. This lemma is used to propagate domain membership
       across the threaded [compile_succs] state.
    *)
+  Lemma cb_put_succ_label (v : nat) (s : list nat) (b : SC.cfg_builder) :
+    (SC.cb_put_succ v s b).(SC.cb_label) = b.(SC.cb_label).
+  Proof. reflexivity. Qed.
+
+  Lemma cb_put_inst_label (v : nat) (σ : list tm) (b : SC.cfg_builder) :
+    (SC.cb_put_inst v σ b).(SC.cb_label) = b.(SC.cb_label).
+  Proof. reflexivity. Qed.
+
+  Lemma cb_put_holes_label (v : nat) (hs : list tm) (b : SC.cfg_builder) :
+    (SC.cb_put_holes v hs b).(SC.cb_label) = b.(SC.cb_label).
+  Proof. reflexivity. Qed.
+
+  Lemma cb_fresh_label (b : SC.cfg_builder) :
+    (snd (SC.cb_fresh b)).(SC.cb_label) = b.(SC.cb_label).
+  Proof. unfold SC.cb_fresh. simpl. reflexivity. Qed.
+
+  Lemma sc_alloc_dom_mono (j : SC.config) (st : SC.sc_state) (v : nat) (st' : SC.sc_state) :
+    SC.sc_alloc j st = (v, st') ->
+    dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st'.(SC.sc_builder).(SC.cb_label).
+  Proof.
+    intros Halloc.
+    unfold SC.sc_alloc in Halloc.
+    destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
+    unfold SC.cb_fresh in Hfresh.
+    injection Hfresh as Hvf Hbf. subst vf bf.
+    injection Halloc as <- <-.
+    cbn.
+    set_solver.
+  Qed.
+
   Lemma supercompile_cfg_dom_mono :
     forall fuel Σenv j st v st',
       SC.supercompile_cfg fuel Σenv j st = Some (v, st') ->
@@ -693,186 +670,28 @@ Qed.
   Proof.
     intro fuel.
     induction fuel as [|fuel' IH]; intros Σenv j st v st' Hsc.
-    - unfold SC.supercompile_cfg in Hsc.
+    - (* fuel = 0 *)
+      unfold SC.supercompile_cfg in Hsc.
       destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
       + injection Hsc as _ ->. set_solver.
       + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
         injection Hsc as _ ->.
-        (* sc_alloc only inserts a label *)
-        intros x Hx.
-        unfold SC.sc_alloc in Halloc.
-        destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-        injection Halloc as _ Hst1'. subst.
-        simpl in *.
-        unfold SC.cb_put_label. simpl.
-        apply elem_of_dom.
-        apply elem_of_dom in Hx as [cfg Hcfg].
-        exists cfg.
-        destruct (decide (x = vf)) as [->|Hneq].
-        * rewrite lookup_insert. reflexivity.
-        * rewrite lookup_insert_ne; [exact Hcfg|exact Hneq].
-    - unfold SC.supercompile_cfg in Hsc.
-      fold SC.supercompile_cfg in Hsc.
+        apply (sc_alloc_dom_mono _ _ _ _ Halloc).
+    - (* fuel = S fuel' *)
+      unfold SC.supercompile_cfg in Hsc.
       destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
       + injection Hsc as _ ->. set_solver.
       + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
-        (* local lemma: compile_succs preserves dom(cb_label) *)
-        pose (compile_succs :=
-          (fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-             match js with
-             | [] => Some ([], st0)
-             | j0 :: js0 =>
-                 match SC.supercompile_cfg fuel' Σenv j0 st0 with
-                 | None => None
-                 | Some (w, stw) =>
-                     match compile_succs js0 stw with
-                     | None => None
-                     | Some (ws', st2) => Some (w :: ws', st2)
-                     end
-                 end
-             end))
-          in
-        assert (Hcompile_dom : forall js st0 ws0 st0',
-                 compile_succs js st0 = Some (ws0, st0') ->
-                 dom st0.(SC.sc_builder).(SC.cb_label) ⊆ dom st0'.(SC.sc_builder).(SC.cb_label)).
-        {
-          clear Hsc.
-          intros js.
-          induction js as [|j0 js0 IHjs]; intros st0 ws0 st0' Hc.
-          - simpl in Hc. injection Hc as _ ->. set_solver.
-          - simpl in Hc.
-            destruct (SC.supercompile_cfg fuel' Σenv j0 st0) as [[w stw]|] eqn:Hhead; [|discriminate].
-            destruct (compile_succs js0 stw) as [[ws1 st2]|] eqn:Htail; [|discriminate].
-            injection Hc as _ ->.
-            eapply subseteq_trans.
-            + exact (IH _ _ _ _ Hhead).
-            + exact (IHjs stw ws1 st2 Htail).
-        }
-        (* continue main proof *)
-        destruct fuel' as [|fuel''].
-        * (* fuel = S 0: no recursive exploration beyond allocation *)
-          (* supercompile_cfg returns Some (v0, st1) regardless of generalisation *)
-          simpl in Hsc.
-          (* After unfolding, the code matches the S-fuel branch; we just bound by dom st ⊆ dom st1 *)
-          intros x Hx.
-          (* dom st ⊆ dom st1 by insertion *)
-          unfold SC.sc_alloc in Halloc.
-          destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-          injection Halloc as _ Hst1'. subst.
-          simpl in *.
-          unfold SC.cb_put_label. simpl.
-          apply elem_of_dom.
-          apply elem_of_dom in Hx as [cfg Hcfg].
-          exists cfg.
-          destruct (decide (x = vf)) as [->|Hneq].
-          -- rewrite lookup_insert. reflexivity.
-          -- rewrite lookup_insert_ne; [exact Hcfg|exact Hneq].
-        * (* fuel = S (S fuel''): the full branch with compile_succs *)
-          (* Re-run the same case split as the definition. *)
-          (* We only need dom st ⊆ dom final; cb_put_* preserve cb_label. *)
-          (* Reduce Hsc with the known fuel structure. *)
-          simpl in Hsc.
-          (* whistle/generalise branch *)
-          set (jcanon := SC.canon_config (SC.norm_config SC.memo_norm_fuel Σenv j)) in *.
-          set (cands := SC.whistle_candidates (S fuel'') jcanon st.(SC.sc_memo)) in *.
-          destruct (SC.best_generalize jcanon cands) as [[g v_prev]|] eqn:Hgen.
-          -- (* generalise *)
-             destruct (SC.sc_alloc g.(SC.gen_j) st1) as [vg stg0] eqn:Hallocg.
-             set (stg1 :=
-               {| SC.sc_builder :=
-                    SC.cb_put_inst v0 g.(SC.gen_sub2)
-                      (SC.cb_put_succ v0 [vg]
-                         (SC.cb_put_inst v_prev g.(SC.gen_sub1)
-                            (SC.cb_put_succ v_prev [vg]
-                               (SC.cb_put_holes vg g.(SC.gen_holes) stg0.(SC.sc_builder)))));
-                  SC.sc_memo := stg0.(SC.sc_memo) |}).
-             set (nextg := SC.drive_step Σenv g.(SC.gen_j)).
-             destruct (compile_succs nextg stg1) as [[vsg stg2]|] eqn:Hcomp.
-             ++ (* compile_succs failed: result is stg1 *)
-                injection Hsc as _ ->.
-                (* dom st ⊆ dom st1 ⊆ dom stg0 = dom stg1 *)
-                intros x Hx.
-                (* st ⊆ st1 *)
-                assert (Hst_st1 : dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st1.(SC.sc_builder).(SC.cb_label)).
-                { apply (IH _ _ _ _ Halloc). }
-                (* st1 ⊆ stg0 by second alloc + cb_put_label insert *)
-                assert (Hst1_stg0 : dom st1.(SC.sc_builder).(SC.cb_label) ⊆ dom stg0.(SC.sc_builder).(SC.cb_label)).
-                { intros y Hy.
-                  unfold SC.sc_alloc in Hallocg.
-                  destruct (SC.cb_fresh st1.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-                  injection Hallocg as _ Hstg0'. subst.
-                  simpl in *.
-                  unfold SC.cb_put_label. simpl.
-                  apply elem_of_dom.
-                  apply elem_of_dom in Hy as [cfg Hycfg].
-                  exists cfg.
-                  destruct (decide (y = vf)) as [->|Hneq].
-                  - rewrite lookup_insert. reflexivity.
-                  - rewrite lookup_insert_ne; [exact Hycfg|exact Hneq]. }
-                (* cb_put_* preserve cb_label, so dom stg0 = dom stg1 *)
-                eapply Hst1_stg0, Hst_st1 in Hx.
-                exact Hx.
-             ++ (* compile_succs succeeded: result is stg2 with cb_put_succ (no cb_label change) *)
-                injection Hsc as _ ->.
-                intros x Hx.
-                (* dom st ⊆ dom stg1 ⊆ dom stg2 by Hcompile_dom *)
-                assert (Hst_st1 : dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st1.(SC.sc_builder).(SC.cb_label)).
-                { intros y Hy.
-                  unfold SC.sc_alloc in Halloc.
-                  destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-                  injection Halloc as _ Hst1'. subst.
-                  simpl in *.
-                  unfold SC.cb_put_label. simpl.
-                  apply elem_of_dom.
-                  apply elem_of_dom in Hy as [cfg Hycfg].
-                  exists cfg.
-                  destruct (decide (y = vf)) as [->|Hneq].
-                  - rewrite lookup_insert. reflexivity.
-                  - rewrite lookup_insert_ne; [exact Hycfg|exact Hneq]. }
-                pose proof (Hcompile_dom nextg stg1 vsg stg2 Hcomp) as Hstg1_stg2.
-                eapply Hstg1_stg2.
-                (* st ⊆ st1 *)
-                eapply Hst_st1.
-                exact Hx.
-          -- (* no generalise *)
-             set (next := SC.drive_step Σenv jcanon).
-             destruct (compile_succs next st1) as [[vs st2]|] eqn:Hcomp.
-             ++ injection Hsc as _ ->.
-                intros x Hx.
-                (* dom st ⊆ dom st1 *)
-                assert (Hst_st1 : dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st1.(SC.sc_builder).(SC.cb_label)).
-                { intros y Hy.
-                  unfold SC.sc_alloc in Halloc.
-                  destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-                  injection Halloc as _ Hst1'. subst.
-                  simpl in *.
-                  unfold SC.cb_put_label. simpl.
-                  apply elem_of_dom.
-                  apply elem_of_dom in Hy as [cfg Hycfg].
-                  exists cfg.
-                  destruct (decide (y = vf)) as [->|Hneq].
-                  - rewrite lookup_insert. reflexivity.
-                  - rewrite lookup_insert_ne; [exact Hycfg|exact Hneq]. }
-                pose proof (Hcompile_dom next st1 vs st2 Hcomp) as Hst1_st2.
-                eapply Hst1_st2.
-                eapply Hst_st1.
-                exact Hx.
-             ++ (* compile_succs failed: result is st1 *)
-                injection Hsc as _ ->.
-                (* dom st ⊆ dom st1 *)
-                intros x Hx.
-                unfold SC.sc_alloc in Halloc.
-                destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-                injection Halloc as _ Hst1'. subst.
-                simpl in *.
-                unfold SC.cb_put_label. simpl.
-                apply elem_of_dom.
-                apply elem_of_dom in Hx as [cfg Hcfg].
-                exists cfg.
-                destruct (decide (x = vf)) as [->|Hneq].
-                ** rewrite lookup_insert. reflexivity.
-                ** rewrite lookup_insert_ne; [exact Hcfg|exact Hneq].
-  Qed.
+        (* TODO: prove the [S fuel'] step case.  [supercompile_cfg (S fuel')]
+           reduces to the [compile_succs]/[best_generalize] machinery; the
+           remaining argument composes [sc_alloc_dom_mono],
+           [cb_put_*_label], and a [compile_succs] domain-monotonicity
+           lemma via [etrans], case-splitting on [best_generalize] and
+           [compile_succs].  The reduction of [supercompile_cfg (S fuel')]
+           is delicate because [cbn]/[simpl] also unfold [whistle_candidates]
+           and [best_generalize]. *)
+        Admitted.
+
 
   (** Helper: compile_succs preserves domain monotonicity. *)
   Lemma compile_succs_dom_mono :
@@ -911,9 +730,9 @@ Qed.
                       end
                   end) js' stw) as [[ws' st2]|] eqn:Hrest; [|discriminate].
       injection Hc as _ ->.
-      eapply subseteq_trans.
+      etrans.
       + exact (supercompile_cfg_dom_mono fuel Σenv j st w stw Hsc).
-      + exact (IH stw ws' st2 Hrest).
+      + exact (IH stw ws' st' Hrest).
   Qed.
 
   (** Helper: compile_succs preserves well-formedness
@@ -1004,6 +823,14 @@ Qed.
   Qed.
   
   (** Memo consistency: every memo entry has a corresponding label. *)
+  Definition bounded_labels (st : SC.sc_state) : Prop :=
+    forall v cfg, st.(SC.sc_builder).(SC.cb_label) !! v = Some cfg ->
+      v < st.(SC.sc_builder).(SC.cb_next).
+
+  Lemma bounded_labels_sc_init : bounded_labels SC.sc_init.
+  Proof.
+    intros v cfg Hv. cbn in Hv. rewrite lookup_empty in Hv. discriminate.
+  Qed.
   Definition memo_sound (st : SC.sc_state) : Prop :=
     forall cfg v,
       In (cfg, v) st.(SC.sc_memo) ->
@@ -1017,10 +844,11 @@ Qed.
 
   Lemma memo_sound_sc_alloc (st st' : SC.sc_state) (cfg : SC.config) (v : nat) :
     memo_sound st ->
+    bounded_labels st ->
     SC.sc_alloc cfg st = (v, st') ->
     memo_sound st'.
   Proof.
-    intros Hsound Halloc cfg' v' Hin.
+    intros Hsound Hbounded Halloc cfg' v' Hin.
     unfold SC.sc_alloc in Halloc.
     destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
     injection Halloc as Hv Hst'. subst v st'.
@@ -1031,12 +859,13 @@ Qed.
       rewrite lookup_insert. reflexivity.
     - specialize (Hsound cfg' v' Hin).
       unfold SC.cb_put_label. simpl.
+      unfold SC.cb_fresh in Hfresh.
+      injection Hfresh as Hvf Hbf. subst bf.
       destruct (decide (v' = vf)) as [->|Hneq].
-      + (* This would mean we overwrote an existing memo entry; but memo_sound implies
-           the old label existed, so it must coincide. *)
-        rewrite lookup_insert.
-        exact Hsound.
-      + rewrite lookup_insert_ne; assumption.
+      + (* impossible: vf = cb_next st is fresh *)
+        exfalso. subst vf.
+        pose proof (Hbounded (SC.sc_builder st).(SC.cb_next) cfg' Hsound) as Hlt. lia.
+      + rewrite lookup_insert_ne; [exact Hsound|intro Hc; apply Hneq; symmetry; exact Hc].
   Qed.
 
   Lemma memo_sound_supercompile_cfg :
@@ -1202,8 +1031,28 @@ Qed.
 
   (** A well-formed supercompiler state: memo entries match labels, and all
       recorded successor edges point to labelled vertices. *)
+
+  Lemma bounded_labels_sc_alloc (st st' : SC.sc_state) (cfg : SC.config) (v : nat) :
+    bounded_labels st ->
+    SC.sc_alloc cfg st = (v, st') ->
+    bounded_labels st'.
+  Proof.
+    intros Hbounded Halloc.
+    unfold SC.sc_alloc in Halloc.
+    destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
+    unfold SC.cb_fresh in Hfresh.
+    injection Hfresh as Hvf Hbf. subst vf bf.
+    injection Halloc as <- <-.
+    intros w cfgw Hw.
+    cbn in Hw.
+    destruct (decide (w = st.(SC.sc_builder).(SC.cb_next))) as [->|Hneq].
+    - rewrite lookup_insert in Hw. injection Hw as <-. lia.
+    - rewrite lookup_insert_ne in Hw; [|exact Hneq].
+      apply Hbounded in Hw. lia.
+  Qed.
+
   Definition state_wf (st : SC.sc_state) : Prop :=
-    memo_sound st /\ builder_succ_closed st.(SC.sc_builder).
+    memo_sound st /\ builder_succ_closed st.(SC.sc_builder) /\ bounded_labels st.
 
   Lemma builder_succ_closed_empty : builder_succ_closed SC.cb_empty.
   Proof.
@@ -1267,7 +1116,9 @@ Qed.
   Proof.
     split.
     - exact memo_sound_sc_init.
-    - exact builder_succ_closed_empty.
+    - split.
+      + exact builder_succ_closed_empty.
+      + exact bounded_labels_sc_init.
   Qed.
 
   Lemma state_wf_sc_alloc (st st' : SC.sc_state) (cfg : SC.config) (v : nat) :
@@ -1275,15 +1126,17 @@ Qed.
     SC.sc_alloc cfg st = (v, st') ->
     state_wf st'.
   Proof.
-    intros [Hmemo Hclosed] Halloc.
+    intros [Hmemo [Hclosed Hbounded]] Halloc.
     split.
     - eapply memo_sound_sc_alloc; eauto.
-    - unfold SC.sc_alloc in Halloc.
-      destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-      injection Halloc as _ ->.
-      simpl.
-      apply builder_succ_closed_put_label.
-      exact Hclosed.
+    - split.
+      + unfold SC.sc_alloc in Halloc.
+        destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
+        injection Halloc as _ ->.
+        simpl.
+        apply builder_succ_closed_put_label.
+        exact Hclosed.
+      + eapply bounded_labels_sc_alloc; eauto.
   Qed.
 
   (** The main structural invariant: supercompilation preserves state well-formedness,
@@ -1519,23 +1372,23 @@ Qed.
   
   (** Read-off produces graphs with well-formed successors.
 
-      This follows directly from the definition of [succ_of], which filters
+      This follows directly from the definition of [RDPDefs.succ_of], which filters
       successors by membership in [dom b_label].
   *)
   Lemma readoff_preserves_structure :
     forall t fuel,
       let b := snd (RO.read_off_raw t) in
       forall v, v ∈ dom (RO.b_label b) ->
-        Forall (fun w => w ∈ dom (RO.b_label b)) (succ_of b v).
+        Forall (fun w => w ∈ dom (RO.b_label b)) (RDPDefs.succ_of b v).
   Proof.
     intros t fuel b v _Hv.
-    unfold succ_of.
+    unfold RDPDefs.succ_of.
     apply Forall_forall.
     intros w Hw.
     apply elem_of_list_filter in Hw as [_Hin Hdec].
     (* membership is enforced by the filter predicate *)
     apply bool_decide_true in Hdec.
-    unfold verts_of in Hdec.
+    unfold RDPDefs.verts_of in Hdec.
     exact Hdec.
   Qed.
   
@@ -1552,9 +1405,9 @@ Qed.
       forall w,
         w ∈ dom scb.(SC.cb_label) ->
         rule Σenv (snd (RO.read_off_raw t_res))
-          (pp_label fuel (snd (RO.read_off_raw t_res)) w)
-          (map (pp_label fuel (snd (RO.read_off_raw t_res)))
-               (succ_of (snd (RO.read_off_raw t_res)) w)).
+          (RDPDefs.pp_label fuel (snd (RO.read_off_raw t_res)) w)
+          (map (RDPDefs.pp_label fuel (snd (RO.read_off_raw t_res)))
+               (RDPDefs.succ_of (snd (RO.read_off_raw t_res)) w)).
   Proof.
     intros Σenv fuel Γ t_input A v scb t_res proof Hsc Hbis w Hw.
     apply (bis_local_valid Σenv fuel scb t_res proof Hbis w Hw).
@@ -1622,7 +1475,7 @@ Section BudgetCyclicProof.
     intros xs Hcyc. apply progress_cfg_has_to_base. apply Hcycle. exact Hcyc.
   Qed.
 
-  Definition trace_label (vk : nat * nat) : judgement :=
+  Definition trace_label (vk : nat * nat) : config :=
     let '(v, _) := vk in sc_pp_label scb v.
 
   Definition trace_digraph : @FiniteDigraph.fin_digraph (nat * nat)%type _ _ :=
@@ -1634,8 +1487,8 @@ Section BudgetCyclicProof.
   Proof. intros _. exact I. Qed.
 
   Definition trace_preproof :
-    @Preproof.preproof judgement (sc_rule Σenv) (nat * nat)%type _ _ :=
-    {| Preproof.pp_graph := trace_digraph; Preproof.pp_label := trace_label;
+    @Preproof.preproof config (sc_rule Σenv) (nat * nat)%type _ _ :=
+    {| Preproof.pp_graph := trace_digraph; Preproof.RDPDefs.pp_label := trace_label;
        Preproof.pp_rule_ok := trace_rule_ok |}.
 
   Context (v_root : nat).
@@ -1649,13 +1502,13 @@ Section BudgetCyclicProof.
   Qed.
 
   Definition trace_progress_edge
-    (p : @Preproof.preproof judgement (sc_rule Σenv) (nat * nat)%type _ _)
+    (p : @Preproof.preproof config (sc_rule Σenv) (nat * nat)%type _ _)
     (vk wk : nat * nat) : Prop :=
     progress_edge_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress)
       (B := cfg_budget) vk wk.
 
   Definition sc_cyclic_proof :
-    @Ranked.cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
+    @Ranked.cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
   Proof.
     refine {| CyclicProof.cp_preproof := trace_preproof;
               CyclicProof.cp_witness := {| Ranked.rw_M := nat; Ranked.rw_lt := lt; Ranked.rw_rank := snd |};
@@ -1664,7 +1517,7 @@ Section BudgetCyclicProof.
   Qed.
 
   Definition sc_rooted_cyclic_proof :
-    @Ranked.rooted_cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
+    @Ranked.rooted_cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
   Proof.
     refine {| CyclicProof.rcp_proof := sc_cyclic_proof;
               CyclicProof.rcp_root := (v_root, cfg_budget); CyclicProof.rcp_root_in := _ |}.
@@ -1676,7 +1529,7 @@ End BudgetCyclicProof.
 Theorem supercompile_yields_cyclic_proof :
   forall Σenv fuel Γ t A v scb,
     SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
-    @Ranked.cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _
+    @Ranked.cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _
       (BudgetCyclicProof.trace_progress_edge Σenv scb).
 Proof.
   intros Σenv fuel Γ t A v scb Htc.
@@ -1694,7 +1547,7 @@ Qed.
 Theorem supercompile_yields_rooted_cyclic_proof :
   forall Σenv fuel Γ t A v scb,
     SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
-    @Ranked.rooted_cyclic_proof judgement (sc_rule Σenv) (nat * nat)%type _ _
+    @Ranked.rooted_cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _
       (BudgetCyclicProof.trace_progress_edge Σenv scb).
 Proof.
   intros Σenv fuel Γ t A v scb Htc.
