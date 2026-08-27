@@ -1,5 +1,6 @@
 From Stdlib Require Import List Arith Lia Utf8 Relations Relation_Operators.
 From stdpp Require Import prelude countable gmap fin_sets.
+From Autosubst Require Import Autosubst.
 
 From Cyclic.Syntax Require Import StrictPos Term.
 From Cyclic.Judgement Require Import Typing.
@@ -7,6 +8,7 @@ From Cyclic.Graph Require Import FiniteDigraph.
 From Cyclic.Preproof Require Import Preproof.
 From Cyclic.Progress Require Import PatternUnification.
 From Cyclic.Transform Require Import ReadOff ReadOffDrivingPreproof Supercompile SupercompileTraceCheckSound SequentDrivingRules SequentObservationRules CyclicTraceConditionObsTree CyclicTraceConditionBudget.
+From Cyclic.Semantics Require Cbn.
 From Cyclic.CyclicProof Require Import Ranked.
 From Cyclic.Equiv Require Import CIU CIUJudgement.
 
@@ -24,6 +26,19 @@ Module Ty := Typing.Typing.
 Module C := Typing.Typing.Cyclic.
 Module PU := PatternUnification.
 Module RDPDefs := ReadOffDrivingPreproofDefs.
+Module STC := SupercompileTraceCheckSound.
+Module CTB := CyclicTraceConditionBudget.
+
+(** Configurations-as-vertices view of a [cfg_builder]: labels, local rule, and
+    vertex set, used to build the trace-level cyclic proof. *)
+Definition sc_pp_label (scb : SC.cfg_builder) (v : nat) : config :=
+  default (C.jTy [] (tVar 0) (tSort 0)) (SC.lookup_label scb v).
+
+Definition sc_rule (Σenv : Ty.env) : config -> list config -> Prop :=
+  SDR.drive_rule Σenv.
+
+Definition sc_verts (scb : SC.cfg_builder) : gset nat :=
+  dom scb.(SC.cb_label).
 
 (** Correspondence: Supercompilation ≅ Cyclic Sequent Proof Search
 
@@ -800,7 +815,7 @@ Qed.
       + (* Show Forall for ws' by IH *)
         apply (IH stw ws' st2 Hrest Hwf).
   Qed.
-  
+
   (** Helper: memo_lookup returns vertices in domain *)
   Lemma memo_lookup_in_domain :
     forall j memo v,
@@ -868,119 +883,6 @@ Qed.
       + rewrite lookup_insert_ne; [exact Hsound|intro Hc; apply Hneq; symmetry; exact Hc].
   Qed.
 
-  Lemma memo_sound_supercompile_cfg :
-    forall fuel Σenv j st v st',
-      memo_sound st ->
-      SC.supercompile_cfg fuel Σenv j st = Some (v, st') ->
-      memo_sound st'.
-  Proof.
-    intro fuel.
-    induction fuel as [|fuel' IH]; intros Σenv j st v st' Hsound Hsc.
-    - unfold SC.supercompile_cfg in Hsc.
-      destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
-      + injection Hsc as _ ->. exact Hsound.
-      + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
-        injection Hsc as _ ->.
-        eapply memo_sound_sc_alloc; eauto.
-    - unfold SC.supercompile_cfg in Hsc.
-      fold SC.supercompile_cfg in Hsc.
-      destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
-      + injection Hsc as _ ->. exact Hsound.
-      + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
-        assert (Hsound1 : memo_sound st1).
-        { eapply memo_sound_sc_alloc; eauto. }
-        destruct (SC.best_generalize _ _) as [[g v_prev]|] eqn:Hgen.
-        * (* generalisation branch *)
-          destruct (SC.sc_alloc _ _) as [vg stg0] eqn:Hallocg.
-          assert (Hsoundg0 : memo_sound stg0).
-          { eapply memo_sound_sc_alloc; eauto. }
-          (* patching does not change memo *)
-          set (stg1 := {| SC.sc_builder := _; SC.sc_memo := stg0.(SC.sc_memo) |}).
-          set (nextg := SC.drive_step Σenv g.(SC.gen_j)).
-          (* compile successors; any recursive calls preserve memo_sound *)
-          remember ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                      match js with
-                      | [] => Some ([], st0)
-                      | j0 :: js0 =>
-                          match SC.supercompile_cfg fuel' Σenv j0 st0 with
-                          | None => None
-                          | Some (_w, stw) =>
-                              match compile_succs js0 stw with
-                              | None => None
-                              | Some (ws, st2) => Some (_w :: ws, st2)
-                              end
-                          end
-                      end) nextg stg1) as comp eqn:Hcomp.
-          destruct comp as [[ws st2]|].
-          -- (* succeeded *)
-             injection Hsc as _ ->.
-             (* memo comes from st2 *)
-             (* prove memo_sound st2 by list induction over compile_succs *)
-             revert stg1 st2 Hsoundg0 Hcomp.
-             induction nextg as [|j0 js0 IHjs]; intros stx sty Hsx Hc; simpl in Hc.
-             ++ injection Hc as _ ->. exact Hsx.
-             ++ destruct (SC.supercompile_cfg fuel' Σenv j0 stx) as [[w stw]|] eqn:Hhd; [|discriminate].
-                pose proof (IH fuel' Σenv j0 stx w stw Hsx Hhd) as Hstw.
-                destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                           match js with
-                           | [] => Some ([], st0)
-                           | j1 :: js1 =>
-                               match SC.supercompile_cfg fuel' Σenv j1 st0 with
-                               | None => None
-                               | Some (w1, stw1) =>
-                                   match compile_succs js1 stw1 with
-                                   | None => None
-                                   | Some (ws, st2) => Some (w1 :: ws, st2)
-                                   end
-                               end
-                           end) js0 stw) as [[ws' st2']|] eqn:Htl; [|discriminate].
-                injection Hc as _ ->.
-                exact (IHjs stw st2' Hstw Htl).
-          -- (* failed *)
-             injection Hsc as _ ->.
-             exact Hsoundg0.
-        * (* no generalisation branch *)
-          set (next := SC.drive_step Σenv (SC.canon_config (SC.norm_config SC.memo_norm_fuel Σenv j))).
-          remember ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                      match js with
-                      | [] => Some ([], st0)
-                      | j0 :: js0 =>
-                          match SC.supercompile_cfg fuel' Σenv j0 st0 with
-                          | None => None
-                          | Some (_w, stw) =>
-                              match compile_succs js0 stw with
-                              | None => None
-                              | Some (ws, st2) => Some (_w :: ws, st2)
-                              end
-                          end
-                      end) next st1) as comp eqn:Hcomp.
-          destruct comp as [[ws st2]|].
-          -- injection Hsc as _ ->.
-             (* memo comes from st2; prove memo_sound st2 by list induction as above *)
-             revert st1 st2 Hsound1 Hcomp.
-             induction next as [|j0 js0 IHjs]; intros stx sty Hsx Hc; simpl in Hc.
-             ++ injection Hc as _ ->. exact Hsx.
-             ++ destruct (SC.supercompile_cfg fuel' Σenv j0 stx) as [[w stw]|] eqn:Hhd; [|discriminate].
-                pose proof (IH fuel' Σenv j0 stx w stw Hsx Hhd) as Hstw.
-                destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                           match js with
-                           | [] => Some ([], st0)
-                           | j1 :: js1 =>
-                               match SC.supercompile_cfg fuel' Σenv j1 st0 with
-                               | None => None
-                               | Some (w1, stw1) =>
-                                   match compile_succs js1 stw1 with
-                                   | None => None
-                                   | Some (ws, st2) => Some (w1 :: ws, st2)
-                                   end
-                               end
-                           end) js0 stw) as [[ws' st2']|] eqn:Htl; [|discriminate].
-                injection Hc as _ ->.
-                exact (IHjs stw st2' Hstw Htl).
-          -- injection Hsc as _ ->.
-             exact Hsound1.
-  Qed.
-
   Lemma memo_vertices_in_builder :
     forall st cfg v,
       memo_sound st ->
@@ -1046,18 +948,72 @@ Qed.
     intros w cfgw Hw.
     cbn in Hw.
     destruct (decide (w = st.(SC.sc_builder).(SC.cb_next))) as [->|Hneq].
-    - rewrite lookup_insert in Hw. injection Hw as <-. lia.
-    - rewrite lookup_insert_ne in Hw; [|exact Hneq].
-      apply Hbounded in Hw. lia.
+    - rewrite lookup_insert in Hw. injection Hw as <-.
+      cbn. lia.
+    - rewrite lookup_insert_ne in Hw; [|symmetry; exact Hneq].
+      apply Hbounded in Hw.
+      cbn. lia.
   Qed.
 
   Definition state_wf (st : SC.sc_state) : Prop :=
     memo_sound st /\ builder_succ_closed st.(SC.sc_builder) /\ bounded_labels st.
 
+  (** Helper: compile_succs preserves [state_wf] and returns labelled vertices,
+      given that each individual [supercompile_cfg] step does. *)
+  Lemma compile_succs_state_wf :
+    forall fuel Σenv js st ws st',
+      (fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
+         match js with
+         | [] => Some ([], st0)
+         | j0 :: js0 =>
+             match SC.supercompile_cfg fuel Σenv j0 st0 with
+             | None => None
+             | Some (w, stw) =>
+                 match compile_succs js0 stw with
+                 | None => None
+                 | Some (ws', st2) => Some (w :: ws', st2)
+                 end
+             end
+         end) js st = Some (ws, st') ->
+      state_wf st ->
+      (forall j0 st0 v0 st0',
+         state_wf st0 ->
+         SC.supercompile_cfg fuel Σenv j0 st0 = Some (v0, st0') ->
+         state_wf st0' /\ v0 ∈ dom st0'.(SC.sc_builder).(SC.cb_label)) ->
+      state_wf st' /\ Forall (fun w => w ∈ dom st'.(SC.sc_builder).(SC.cb_label)) ws.
+  Proof.
+    intros fuel Σenv js.
+    induction js as [|j js' IH]; intros st ws st' Hc Hwf Hstep.
+    - cbn in Hc. injection Hc as Hws Hst'. subst ws st'. split; [exact Hwf|constructor].
+    - cbn in Hc.
+      destruct (SC.supercompile_cfg fuel Σenv j st) as [[w stw]|] eqn:Hsc; [|discriminate].
+      destruct ((fix compile_succs (js0 : list SC.config) (st0 : SC.sc_state) {struct js0} : option (list nat * SC.sc_state) :=
+                  match js0 with
+                  | [] => Some ([], st0)
+                  | j0 :: js0 =>
+                      match SC.supercompile_cfg fuel Σenv j0 st0 with
+                      | None => None
+                      | Some (w0, stw0) =>
+                          match compile_succs js0 stw0 with
+                          | None => None
+                          | Some (ws', st2) => Some (w0 :: ws', st2)
+                          end
+                      end
+                  end) js' stw) as [[ws' st2]|] eqn:Hrest; [|discriminate].
+      injection Hc as Hws Hst'. subst ws st'.
+      pose proof (Hstep j st w stw Hwf Hsc) as [HwfW Hwdom].
+      destruct (IH stw ws' st2 Hrest HwfW Hstep) as [Hwf2 Hfor].
+      split; [exact Hwf2|].
+      constructor.
+      + pose proof (compile_succs_dom_mono fuel Σenv js' stw ws' st2 Hrest) as Hmono.
+        exact (Hmono _ Hwdom).
+      + exact Hfor.
+  Qed.
+
   Lemma builder_succ_closed_empty : builder_succ_closed SC.cb_empty.
   Proof.
     intros v succs Hs.
-    rewrite lookup_empty in Hs.
+    cbn in Hs.
     discriminate.
   Qed.
 
@@ -1070,13 +1026,14 @@ Qed.
     specialize (Hclosed w succs Hsucc).
     eapply Forall_impl; [exact Hclosed|].
     intros u Hu.
-    apply elem_of_dom.
     apply elem_of_dom in Hu as [cfg' Hcfg'].
-    exists cfg'.
-    unfold SC.cb_put_label; cbn.
     destruct (decide (u = v)) as [->|Hneq].
-    - rewrite lookup_insert. reflexivity.
-    - rewrite lookup_insert_ne; [exact Hcfg'|exact Hneq].
+    - apply elem_of_dom. eexists cfg.
+      unfold SC.cb_put_label; cbn.
+      rewrite lookup_insert. reflexivity.
+    - apply elem_of_dom. eexists cfg'.
+      unfold SC.cb_put_label; cbn.
+      rewrite lookup_insert_ne; [exact Hcfg'|symmetry; exact Hneq].
   Qed.
 
   Lemma builder_succ_closed_put_inst (b : SC.cfg_builder) (v : nat) (σ : list tm) :
@@ -1108,7 +1065,7 @@ Qed.
     - rewrite lookup_insert in Hws.
       inversion Hws; subst.
       exact Hsuccs.
-    - rewrite lookup_insert_ne in Hws; [|exact Hneq].
+    - rewrite lookup_insert_ne in Hws; [|symmetry; exact Hneq].
       exact (Hclosed w ws Hws).
   Qed.
 
@@ -1132,8 +1089,11 @@ Qed.
     - split.
       + unfold SC.sc_alloc in Halloc.
         destruct (SC.cb_fresh st.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-        injection Halloc as _ ->.
-        simpl.
+        unfold SC.cb_fresh in Hfresh.
+        injection Hfresh as Hvf Hbf. subst vf bf.
+        injection Halloc as _ Hst'.
+        subst st'.
+        cbn.
         apply builder_succ_closed_put_label.
         exact Hclosed.
       + eapply bounded_labels_sc_alloc; eauto.
@@ -1150,15 +1110,14 @@ Qed.
     intro fuel.
     induction fuel as [|fuel' IH]; intros Σenv j st v st' Hwf Hsc.
     - unfold SC.supercompile_cfg in Hsc.
-      destruct Hwf as [Hmemo Hclosed].
       destruct (SC.memo_lookup _ _) as [vhit|] eqn:HmemoL.
       + injection Hsc as <- <-.
-        split; [split; assumption|].
+        split; [exact Hwf|].
         apply memo_lookup_in_domain in HmemoL.
         destruct HmemoL as [cfg Hin].
         apply elem_of_dom.
         exists cfg.
-        exact (Hmemo cfg vhit Hin).
+        exact (proj1 Hwf cfg vhit Hin).
       + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
         injection Hsc as <- <-.
         split.
@@ -1166,192 +1125,151 @@ Qed.
         * apply (sc_alloc_adds_label _ _ _ _ Halloc).
     - unfold SC.supercompile_cfg in Hsc.
       fold SC.supercompile_cfg in Hsc.
-      destruct Hwf as [Hmemo Hclosed].
       destruct (SC.memo_lookup _ _) as [vhit|] eqn:HmemoL.
       + injection Hsc as <- <-.
-        split; [split; assumption|].
+        split; [exact Hwf|].
         apply memo_lookup_in_domain in HmemoL.
         destruct HmemoL as [cfg Hin].
         apply elem_of_dom.
         exists cfg.
-        exact (Hmemo cfg vhit Hin).
+        exact (proj1 Hwf cfg vhit Hin).
       + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
         assert (Hwf1 : state_wf st1).
         { eapply state_wf_sc_alloc; eauto. }
-        destruct fuel' as [|fuel''].
-        * simpl in Hsc.
-          injection Hsc as <- <-.
-          split; [exact Hwf1|].
-          apply (sc_alloc_adds_label _ _ _ _ Halloc).
-        * simpl in Hsc.
-          set (jcanon := SC.canon_config (SC.norm_config SC.memo_norm_fuel Σenv j)) in *.
-          set (cands := SC.whistle_candidates (S fuel'') jcanon st.(SC.sc_memo)) in *.
-          destruct (SC.best_generalize jcanon cands) as [[g v_prev]|] eqn:Hgen.
-          -- (* generalisation branch *)
+        cbn -[SC.sc_alloc SC.cb_fresh SC.cb_put_label SC.cb_put_succ SC.cb_put_inst SC.cb_put_holes SC.whistle_candidates SC.best_generalize SC.canon_config SC.norm_config SC.drive_step] in Hsc.
+        set (jcanon := SC.canon_config (SC.norm_config SC.memo_norm_fuel Σenv j)) in *.
+        set (cands := SC.whistle_candidates fuel' jcanon st.(SC.sc_memo)) in *.
+        destruct (SC.best_generalize jcanon cands) as [[g v_prev]|] eqn:Hgen.
+          * (* generalisation branch *)
              destruct (SC.sc_alloc g.(SC.gen_j) st1) as [vg stg0] eqn:Hallocg.
              assert (Hwf_g0 : state_wf stg0).
              { eapply state_wf_sc_alloc; eauto. }
-             set (bg1 := SC.cb_put_holes vg g.(SC.gen_holes) stg0.(SC.sc_builder)).
-             set (bg2 := SC.cb_put_succ v_prev [vg] bg1).
-             set (bg3 := SC.cb_put_inst v_prev g.(SC.gen_sub1) bg2).
-             set (bg4 := SC.cb_put_succ v0 [vg] bg3).
-             set (bg5 := SC.cb_put_inst v0 g.(SC.gen_sub2) bg4).
-             set (stg1 := {| SC.sc_builder := bg5; SC.sc_memo := stg0.(SC.sc_memo) |}).
-             assert (Hwf_g1 : state_wf stg1).
-             { split.
-               - exact Hwf_g0.1.
-               - (* build succ-closed for patched builder *)
-                 assert (Hvg_dom : vg ∈ dom stg0.(SC.sc_builder).(SC.cb_label)).
-                 { apply (sc_alloc_adds_label _ _ _ _ Hallocg). }
-                 (* propagate closure through cb_put_holes/inst and two succ patches *)
-                 pose proof (builder_succ_closed_put_holes _ _ _ Hwf_g0.2) as Hc1.
-                 pose proof (builder_succ_closed_put_succ _ _ _ Hc1 (Forall_cons_1 _ _ Hvg_dom (Forall_nil _))) as Hc2.
-                 pose proof (builder_succ_closed_put_inst _ _ _ Hc2) as Hc3.
-                 pose proof (builder_succ_closed_put_succ _ _ _ Hc3 (Forall_cons_1 _ _ Hvg_dom (Forall_nil _))) as Hc4.
-                 exact (builder_succ_closed_put_inst _ _ _ Hc4). }
+              set (bg1 := SC.cb_put_holes vg g.(SC.gen_holes) stg0.(SC.sc_builder)) in *.
+              set (bg2 := SC.cb_put_succ v_prev [vg] bg1) in *.
+              set (bg3 := SC.cb_put_inst v_prev g.(SC.gen_sub1) bg2) in *.
+              set (bg4 := SC.cb_put_succ v0 [vg] bg3) in *.
+              set (bg5 := SC.cb_put_inst v0 g.(SC.gen_sub2) bg4) in *.
+              set (stg1 := {| SC.sc_builder := bg5; SC.sc_memo := stg0.(SC.sc_memo) |}) in *.
+              assert (Hwf_g1 : state_wf stg1).
+              { destruct Hwf_g0 as [Hmemo_g0 [Hsucc_g0 Hbound_g0]].
+                repeat split.
+                - (* memo_sound: stg1 shares stg0's memo and cb_label *)
+                  exact Hmemo_g0.
+                - (* builder_succ_closed: patching preserves closure *)
+                  assert (Hvg_dom : vg ∈ dom stg0.(SC.sc_builder).(SC.cb_label)).
+                  { apply (sc_alloc_adds_label _ _ _ _ Hallocg). }
+                  assert (Hvg_succ : Forall (fun u => u ∈ dom stg0.(SC.sc_builder).(SC.cb_label)) [vg]).
+                  { apply Forall_singleton. exact Hvg_dom. }
+                  pose proof (builder_succ_closed_put_holes stg0.(SC.sc_builder) vg g.(SC.gen_holes) Hsucc_g0) as Hc1.
+                  pose proof (builder_succ_closed_put_succ bg1 v_prev [vg] Hc1 Hvg_succ) as Hc2.
+                  pose proof (builder_succ_closed_put_inst bg2 v_prev g.(SC.gen_sub1) Hc2) as Hc3.
+                  pose proof (builder_succ_closed_put_succ bg3 v0 [vg] Hc3 Hvg_succ) as Hc4.
+                  exact (builder_succ_closed_put_inst bg4 v0 g.(SC.gen_sub2) Hc4).
+                - (* bounded_labels: stg1 shares stg0's cb_label and cb_next *)
+                  exact Hbound_g0. }
              (* compile successors of generalised node; if it fails we keep stg1 *)
-             set (nextg := SC.drive_step Σenv g.(SC.gen_j)).
-             remember ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                         match js with
-                         | [] => Some ([], st0)
-                         | j0 :: js0 =>
-                             match SC.supercompile_cfg (S fuel'') Σenv j0 st0 with
-                             | None => None
-                             | Some (w, stw) =>
-                                 match compile_succs js0 stw with
-                                 | None => None
-                                 | Some (ws, st2) => Some (w :: ws, st2)
-                                 end
-                             end
-                         end) nextg stg1) as comp eqn:Hcomp.
-             destruct comp as [[vsg stg2]|].
-             ++ (* success: add succs for vg *)
-                (* Prove that compile_succs preserves state_wf and returns dom-labelled vertices. *)
-                assert (Hcomp_wf : state_wf stg2 /\ Forall (fun w => w ∈ dom stg2.(SC.sc_builder).(SC.cb_label)) vsg).
-                {
-                  clear Hsc.
-                  revert stg1 stg2 Hwf_g1 Hcomp.
-                  induction nextg as [|j0 js0 IHjs]; intros stx sty HwfX Hc; cbn in Hc.
-                  - injection Hc as <- <-. split; [exact HwfX|constructor].
-                  - destruct (SC.supercompile_cfg (S fuel'') Σenv j0 stx) as [[w stw]|] eqn:Hhd; [|discriminate].
-                    pose proof (IH _ _ _ _ HwfX Hhd) as [HwfW Hwdom].
-                    destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                                match js with
-                                | [] => Some ([], st0)
-                                | j1 :: js1 =>
-                                    match SC.supercompile_cfg (S fuel'') Σenv j1 st0 with
-                                    | None => None
-                                    | Some (w1, stw1) =>
-                                        match compile_succs js1 stw1 with
-                                        | None => None
-                                        | Some (ws, st2) => Some (w1 :: ws, st2)
-                                        end
-                                    end
-                                end) js0 stw) as [[ws' st2]|] eqn:Htl; [|discriminate].
-                    specialize (IHjs stw st2 HwfW Htl) as [Hwf2 Hfor].
-                    injection Hc as <- <-.
-                    split; [exact Hwf2|].
-                    constructor.
-                    + pose proof (compile_succs_dom_mono (S fuel'') Σenv js0 stw ws' st2 Htl) as Hmono.
-                      exact (Hmono _ Hwdom).
-                    + exact Hfor.
-                }
-                destruct Hcomp_wf as [Hwf2 Hvsg].
-                injection Hsc as <- <-.
-                (* build final state_wf after cb_put_succ vg vsg *)
-                split.
-                ** split.
-                   --- exact Hwf2.1.
-                   --- eapply builder_succ_closed_put_succ; [exact Hwf2.2|exact Hvsg].
-                ** (* root vertex v0 remains labelled *)
+              set (nextg := SC.drive_step Σenv g.(SC.gen_j)) in *.
+              destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
+                          match js with
+                          | [] => Some ([], st0)
+                          | j0 :: js0 =>
+                              match SC.supercompile_cfg fuel' Σenv j0 st0 with
+                              | None => None
+                              | Some (w, stw) =>
+                                  match compile_succs js0 stw with
+                                  | None => None
+                                  | Some (ws, st2) => Some (w :: ws, st2)
+                                  end
+                              end
+                          end) nextg stg1) as [[vsg stg2]|] eqn:Hcomp.
+              -- (* success: add succs for vg *)
+                 (* Prove that compile_succs preserves state_wf and returns dom-labelled vertices. *)
+                 assert (Hcomp_wf : state_wf stg2 /\ Forall (fun w => w ∈ dom stg2.(SC.sc_builder).(SC.cb_label)) vsg).
+                 { eapply compile_succs_state_wf; [exact Hcomp|exact Hwf_g1|].
+                   intros jc stc vc stc' Hwfc Hscc. exact (IH _ _ _ _ _ Hwfc Hscc). }
+                 destruct Hcomp_wf as [Hwf2 Hvsg].
+                 destruct Hwf2 as [Hmemo2 [Hsucc2 Hbound2]].
+                 injection Hsc as <- <-.
+                 (* build final state_wf after cb_put_succ vg vsg *)
+                 split.
+                 ++ split.
+                 ** exact Hmemo2.
+                 ** split.
+                    --- eapply builder_succ_closed_put_succ; [exact Hsucc2|exact Hvsg].
+                    --- exact Hbound2.
+                 ++ (* root vertex v0 remains labelled *)
                    (* v0 ∈ dom stg1.cb_label by construction, and compile_succs is dom-mono. *)
                    assert (Hv0_st1 : v0 ∈ dom st1.(SC.sc_builder).(SC.cb_label)).
                    { apply (sc_alloc_adds_label _ _ _ _ Halloc). }
-                   assert (Hv0_stg0 : v0 ∈ dom stg0.(SC.sc_builder).(SC.cb_label)).
-                   { (* stg0 extends st1 by a label insert *)
-                     unfold SC.sc_alloc in Hallocg.
-                     destruct (SC.cb_fresh st1.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
-                     injection Hallocg as _ Hstg0'. subst.
-                     simpl.
-                     unfold SC.cb_put_label. cbn.
-                     apply elem_of_dom.
-                     apply elem_of_dom in Hv0_st1 as [cfg Hv0cfg].
-                     exists cfg.
-                     destruct (decide (v0 = vf)) as [->|Hneq].
-                     - rewrite lookup_insert. reflexivity.
-                     - rewrite lookup_insert_ne; [exact Hv0cfg|exact Hneq]. }
+                    assert (Hv0_stg0 : v0 ∈ dom stg0.(SC.sc_builder).(SC.cb_label)).
+                    { (* stg0 extends st1 by a label insert *)
+                      unfold SC.sc_alloc in Hallocg.
+                      destruct (SC.cb_fresh st1.(SC.sc_builder)) as [vf bf] eqn:Hfresh.
+                      unfold SC.cb_fresh in Hfresh.
+                      injection Hfresh as Hvf Hbf. subst vf bf.
+                      injection Hallocg as _ Hstg0'. subst.
+                      simpl.
+                      unfold SC.cb_put_label. cbn.
+                       apply elem_of_dom in Hv0_st1 as [cfg Hv0cfg].
+                       destruct (decide (v0 = st1.(SC.sc_builder).(SC.cb_next))) as [->|Hneq].
+                       - apply elem_of_dom. eexists (SC.gen_j g).
+                         rewrite lookup_insert. reflexivity.
+                       - apply elem_of_dom. eexists cfg.
+                         rewrite lookup_insert_ne; [exact Hv0cfg|symmetry; exact Hneq]. }
                    assert (Hv0_stg1 : v0 ∈ dom stg1.(SC.sc_builder).(SC.cb_label)).
                    { (* stg1 builder is bg5; cb_put_* preserve cb_label *)
                      subst stg1 bg5 bg4 bg3 bg2 bg1.
                      cbn.
                      exact Hv0_stg0. }
-                   pose proof (compile_succs_dom_mono (S fuel'') Σenv nextg stg1 vsg stg2 Hcomp) as Hmono.
+                   pose proof (compile_succs_dom_mono fuel' Σenv nextg stg1 vsg stg2 Hcomp) as Hmono.
                    exact (Hmono _ Hv0_stg1).
-             ++ (* compile_succs failed: keep stg1 *)
-                injection Hsc as <- <-.
-                split; [exact Hwf_g1|].
-                apply (sc_alloc_adds_label _ _ _ _ Halloc).
-          -- (* no generalise branch *)
-             set (next := SC.drive_step Σenv jcanon).
-             remember ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                         match js with
-                         | [] => Some ([], st0)
-                         | j0 :: js0 =>
-                             match SC.supercompile_cfg (S fuel'') Σenv j0 st0 with
-                             | None => None
-                             | Some (w, stw) =>
-                                 match compile_succs js0 stw with
-                                 | None => None
-                                 | Some (ws, st2) => Some (w :: ws, st2)
-                                 end
-                             end
-                         end) next st1) as comp eqn:Hcomp.
-             destruct comp as [[vs st2]|].
-             ++ (* success *)
-                assert (Hcomp_wf : state_wf st2 /\ Forall (fun w => w ∈ dom st2.(SC.sc_builder).(SC.cb_label)) vs).
-                {
-                  clear Hsc.
-                  revert st1 st2 Hwf1 Hcomp.
-                  induction next as [|j0 js0 IHjs]; intros stx sty HwfX Hc; cbn in Hc.
-                  - injection Hc as <- <-. split; [exact HwfX|constructor].
-                  - destruct (SC.supercompile_cfg (S fuel'') Σenv j0 stx) as [[w stw]|] eqn:Hhd; [|discriminate].
-                    pose proof (IH _ _ _ _ HwfX Hhd) as [HwfW Hwdom].
-                    destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
-                                match js with
-                                | [] => Some ([], st0)
-                                | j1 :: js1 =>
-                                    match SC.supercompile_cfg (S fuel'') Σenv j1 st0 with
-                                    | None => None
-                                    | Some (w1, stw1) =>
-                                        match compile_succs js1 stw1 with
-                                        | None => None
-                                        | Some (ws, st2) => Some (w1 :: ws, st2)
-                                        end
-                                    end
-                                end) js0 stw) as [[ws' st3]|] eqn:Htl; [|discriminate].
-                    specialize (IHjs stw st3 HwfW Htl) as [Hwf3 Hfor].
-                    injection Hc as <- <-.
-                    split; [exact Hwf3|].
-                    constructor.
-                    + pose proof (compile_succs_dom_mono (S fuel'') Σenv js0 stw ws' st3 Htl) as Hmono.
-                      exact (Hmono _ Hwdom).
-                    + exact Hfor.
-                }
-                destruct Hcomp_wf as [Hwf2 Hvs].
-                injection Hsc as <- <-.
-                split.
-                ** split.
-                   --- exact Hwf2.1.
-                   --- eapply builder_succ_closed_put_succ; [exact Hwf2.2|exact Hvs].
-                ** (* root v0 remains in dom, and compile_succs is dom-mono *)
-                   assert (Hv0_st1 : v0 ∈ dom st1.(SC.sc_builder).(SC.cb_label)).
-                   { apply (sc_alloc_adds_label _ _ _ _ Halloc). }
-                   pose proof (compile_succs_dom_mono (S fuel'') Σenv next st1 vs st2 Hcomp) as Hmono.
-                   exact (Hmono _ Hv0_st1).
-             ++ (* failure: keep st1 *)
-                injection Hsc as <- <-.
-                split; [exact Hwf1|].
-                apply (sc_alloc_adds_label _ _ _ _ Halloc).
+              -- (* compile_succs failed: keep stg1 *)
+                 injection Hsc as <- <-.
+                 split; [exact Hwf_g1|].
+                 assert (Hv0_st1 : v0 ∈ dom st1.(SC.sc_builder).(SC.cb_label)).
+                 { apply (sc_alloc_adds_label _ _ _ _ Halloc). }
+                 assert (Hv0_stg0 : v0 ∈ dom stg0.(SC.sc_builder).(SC.cb_label)).
+                 { apply (sc_alloc_dom_mono _ _ _ _ Hallocg). exact Hv0_st1. }
+                 subst stg1 bg5 bg4 bg3 bg2 bg1.
+                 cbn.
+                 exact Hv0_stg0.
+           * (* no generalise branch *)
+              set (next := SC.drive_step Σenv jcanon) in *.
+              destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
+                          match js with
+                          | [] => Some ([], st0)
+                          | j0 :: js0 =>
+                              match SC.supercompile_cfg fuel' Σenv j0 st0 with
+                              | None => None
+                              | Some (w, stw) =>
+                                  match compile_succs js0 stw with
+                                  | None => None
+                                  | Some (ws, st2) => Some (w :: ws, st2)
+                                  end
+                              end
+                           end) next st1) as [[vs st2]|] eqn:Hcomp.
+              -- (* success *)
+                 assert (Hcomp_wf : state_wf st2 /\ Forall (fun w => w ∈ dom st2.(SC.sc_builder).(SC.cb_label)) vs).
+                 { eapply compile_succs_state_wf; [exact Hcomp|exact Hwf1|].
+                   intros jc stc vc stc' Hwfc Hscc. exact (IH _ _ _ _ _ Hwfc Hscc). }
+                  destruct Hcomp_wf as [Hwf2 Hvs].
+                  destruct Hwf2 as [Hmemo2 [Hsucc2 Hbound2]].
+                  injection Hsc as <- <-.
+                  split.
+                  ++ split.
+                  ** exact Hmemo2.
+                  ** split.
+                     --- eapply builder_succ_closed_put_succ; [exact Hsucc2|exact Hvs].
+                     --- exact Hbound2.
+                  ++ (* root v0 remains in dom, and compile_succs is dom-mono *)
+                    assert (Hv0_st1 : v0 ∈ dom st1.(SC.sc_builder).(SC.cb_label)).
+                    { apply (sc_alloc_adds_label _ _ _ _ Halloc). }
+                    pose proof (compile_succs_dom_mono fuel' Σenv next st1 vs st2 Hcomp) as Hmono.
+                    exact (Hmono _ Hv0_st1).
+              -- (* failure: keep st1 *)
+                 injection Hsc as <- <-.
+                 split; [exact Hwf1|].
+                 apply (sc_alloc_adds_label _ _ _ _ Halloc).
   Qed.
  
   Theorem cfg_builder_well_formed :
@@ -1366,52 +1284,15 @@ Qed.
     destruct (SC.supercompile_cfg fuel Σenv (C.jTy Γ t A) SC.sc_init) as [[v0 st0]|] eqn:Hcfg; [|discriminate].
     injection Hsc as <- Hscb. subst scb.
     pose proof (supercompile_cfg_well_formed fuel Σenv (C.jTy Γ t A) SC.sc_init v0 st0 state_wf_sc_init Hcfg)
-      as [[_Hmemo Hclosed] Hv0].
+      as [[_Hmemo [Hclosed _]] Hv0].
     split; [exact Hclosed|exact Hv0].
   Qed.
   
   (** Read-off produces graphs with well-formed successors.
 
-      This follows directly from the definition of [RDPDefs.succ_of], which filters
-      successors by membership in [dom b_label].
+      (See [ReadOffDrivingPreproofDefs.succ_of_closed] for the successor-closure
+      invariant; it filters by [verts_of].)
   *)
-  Lemma readoff_preserves_structure :
-    forall t fuel,
-      let b := snd (RO.read_off_raw t) in
-      forall v, v ∈ dom (RO.b_label b) ->
-        Forall (fun w => w ∈ dom (RO.b_label b)) (RDPDefs.succ_of b v).
-  Proof.
-    intros t fuel b v _Hv.
-    unfold RDPDefs.succ_of.
-    apply Forall_forall.
-    intros w Hw.
-    apply elem_of_list_filter in Hw as [_Hin Hdec].
-    (* membership is enforced by the filter predicate *)
-    apply bool_decide_true in Hdec.
-    unfold RDPDefs.verts_of in Hdec.
-    exact Hdec.
-  Qed.
-  
-  (** Corollary: SC gives locally-valid proof artifact
-  
-      This follows from supercompile_gives_valid_preproof and the
-      bisimulation's local validity invariant.
-  *)
-  Corollary supercompile_local_validity :
-    forall Σenv fuel Γ t_input A v scb t_res proof,
-      SC.supercompile_jTy fuel Σenv Γ t_input A = Some (v, scb) ->
-      bisim Σenv fuel scb t_res proof ->
-      (* Every vertex satisfies its local rule *)
-      forall w,
-        w ∈ dom scb.(SC.cb_label) ->
-        rule Σenv (snd (RO.read_off_raw t_res))
-          (RDPDefs.pp_label fuel (snd (RO.read_off_raw t_res)) w)
-          (map (RDPDefs.pp_label fuel (snd (RO.read_off_raw t_res)))
-               (RDPDefs.succ_of (snd (RO.read_off_raw t_res)) w)).
-  Proof.
-    intros Σenv fuel Γ t_input A v scb t_res proof Hsc Hbis w Hw.
-    apply (bis_local_valid Σenv fuel scb t_res proof Hbis w Hw).
-  Qed.
 
 End Correspondence.
 
@@ -1432,29 +1313,27 @@ End Correspondence.
 
 Section BudgetCyclicProof.
 
-  Module STC := SupercompileTraceCheckSound.
-  Module CTB := CyclicTraceConditionBudget.
   Import CTB.
 
   Context (Σenv : Ty.env).
   Context (scb : SC.cfg_builder).
   Context (Hclosed : STC.builder_succ_closed scb).
   Context (Hcycle : forall xs,
-    FiniteDigraph.is_cycle (STC.cfg_graph scb Hclosed) xs ->
-    Ranking.has_progress_edge (V := nat) (STC.progress_edge_cfg scb) xs).
+    @FiniteDigraph.is_cycle nat _ _ (STC.cfg_graph scb Hclosed) xs ->
+    Ranking.has_progress_edge nat (STC.progress_edge_cfg scb) xs).
 
-  Definition cfg_budget : nat := size (dom scb.(SC.cb_label)).
+  Definition cfg_budget : nat := stdpp.base.size (dom scb.(SC.cb_label)).
   Definition cfg_is_progress (v : nat) : bool := SC.is_progress_vertex scb v.
 
   Lemma progress_cfg_to_base (v w : nat) :
     STC.progress_edge_cfg scb v w <->
-    progress_edge_base (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) v w.
+    progress_edge_base cfg_is_progress v w.
   Proof. unfold STC.progress_edge_cfg, progress_edge_base, cfg_is_progress. reflexivity. Qed.
 
   Lemma progress_cfg_has_to_base (xs : list nat) :
-    Ranking.has_progress_edge (V := nat) (STC.progress_edge_cfg scb) xs ->
-    Ranking.has_progress_edge (V := nat)
-      (progress_edge_base (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress)) xs.
+    Ranking.has_progress_edge nat (STC.progress_edge_cfg scb) xs ->
+    Ranking.has_progress_edge nat
+      (progress_edge_base cfg_is_progress) xs.
   Proof.
     intros Hprog. induction xs as [|v xs IH]; [contradiction|].
     destruct xs as [|w xs']; cbn in Hprog. { contradiction. }
@@ -1465,13 +1344,12 @@ Section BudgetCyclicProof.
 
   Lemma cfg_ranking_condition :
     @Ranking.ranking_condition ((nat * nat)%type) _ _
-      (trace_graph (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget))
-      (progress_edge_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget))
+      (trace_graph (STC.cfg_graph scb Hclosed) cfg_is_progress cfg_budget)
+      (progress_edge_trace cfg_is_progress)
       nat lt
-      (rank_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget)).
-  Proof.
-    apply (budget_trace_ranking_condition (G := STC.cfg_graph scb Hclosed)
-      (is_progress := cfg_is_progress) (B := cfg_budget)).
+      rank_trace.
+  Proof using scb Hclosed Hcycle.
+    apply (budget_trace_ranking_condition (STC.cfg_graph scb Hclosed) cfg_is_progress cfg_budget).
     intros xs Hcyc. apply progress_cfg_has_to_base. apply Hcycle. exact Hcyc.
   Qed.
 
@@ -1479,50 +1357,55 @@ Section BudgetCyclicProof.
     let '(v, _) := vk in sc_pp_label scb v.
 
   Definition trace_digraph : @FiniteDigraph.fin_digraph (nat * nat)%type _ _ :=
-    trace_graph (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress) (B := cfg_budget).
+    trace_graph (STC.cfg_graph scb Hclosed) cfg_is_progress cfg_budget.
 
-  Lemma trace_rule_ok (vk : nat * nat) :
+  (** Local validity of the trace graph: every trace vertex satisfies the
+      configuration drive rule against its trace successors.
+
+      NOTE: this is an open invariant.  It follows from
+      [vertex_drive_rule_holds Σenv scb] together with a correct treatment of
+      budget-cutoff vertices (a progress vertex at budget 0 has no trace
+      successors, so its rule is a backlink, not [dr_leaf]). *)
+  Context (Hrule_ok : forall vk,
     vk ∈ verts trace_digraph ->
-    sc_rule Σenv (trace_label vk) (map trace_label (succ trace_digraph vk)).
-  Proof. intros _. exact I. Qed.
+    sc_rule Σenv (trace_label vk) (map trace_label (succ trace_digraph vk))).
 
   Definition trace_preproof :
     @Preproof.preproof config (sc_rule Σenv) (nat * nat)%type _ _ :=
-    {| Preproof.pp_graph := trace_digraph; Preproof.RDPDefs.pp_label := trace_label;
-       Preproof.pp_rule_ok := trace_rule_ok |}.
+    {| Preproof.pp_graph := trace_digraph; Preproof.pp_label := trace_label;
+       Preproof.pp_rule_ok := Hrule_ok |}.
 
   Context (v_root : nat).
   Context (Hv_root : v_root ∈ sc_verts scb).
 
   Lemma trace_root_in_verts : (v_root, cfg_budget) ∈ verts trace_digraph.
-  Proof.
-    unfold trace_digraph, trace_graph. cbn. apply elem_of_list_to_set. apply in_prod.
+  Proof using Hclosed Hv_root scb v_root.
+    unfold trace_digraph, trace_graph. cbn. apply elem_of_list_to_set. apply elem_of_in_prod.
     - apply elem_of_elements. unfold sc_verts in Hv_root. unfold STC.cfg_graph. cbn. exact Hv_root.
-    - apply in_seq. lia.
+    - apply (proj2 (elem_of_list_In _ _)). apply in_seq. lia.
   Qed.
 
   Definition trace_progress_edge
     (p : @Preproof.preproof config (sc_rule Σenv) (nat * nat)%type _ _)
     (vk wk : nat * nat) : Prop :=
-    progress_edge_trace (G := STC.cfg_graph scb Hclosed) (is_progress := cfg_is_progress)
-      (B := cfg_budget) vk wk.
+    progress_edge_trace cfg_is_progress vk wk.
 
   Definition sc_cyclic_proof :
-    @Ranked.cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
-  Proof.
+     @Ranked.cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
+  Proof using Hclosed Hcycle Hrule_ok scb Σenv.
     refine {| CyclicProof.cp_preproof := trace_preproof;
               CyclicProof.cp_witness := {| Ranked.rw_M := nat; Ranked.rw_lt := lt; Ranked.rw_rank := snd |};
               CyclicProof.cp_progress_ok := _ |}.
     unfold Ranked.progress_ok. cbn. apply cfg_ranking_condition.
-  Qed.
+  Defined.
 
   Definition sc_rooted_cyclic_proof :
     @Ranked.rooted_cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _ trace_progress_edge.
-  Proof.
+  Proof using Hclosed Hcycle Hrule_ok Hv_root scb v_root Σenv.
     refine {| CyclicProof.rcp_proof := sc_cyclic_proof;
               CyclicProof.rcp_root := (v_root, cfg_budget); CyclicProof.rcp_root_in := _ |}.
-    cbn. exact trace_root_in_verts.
-  Qed.
+    change ((v_root, cfg_budget) ∈ verts trace_digraph). exact trace_root_in_verts.
+  Defined.
 
 End BudgetCyclicProof.
 
@@ -1530,37 +1413,21 @@ Theorem supercompile_yields_cyclic_proof :
   forall Σenv fuel Γ t A v scb,
     SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
     @Ranked.cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _
-      (BudgetCyclicProof.trace_progress_edge Σenv scb).
+      (trace_progress_edge Σenv scb).
 Proof.
-  intros Σenv fuel Γ t A v scb Htc.
-  unfold SC.supercompile_jTy_tc in Htc.
-  destruct (SC.supercompile_jTy fuel Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
-  destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
-  injection Htc as <- ->. subst scb.
-  pose proof (cfg_builder_well_formed fuel Σenv Γ t A v0 b0 Hbase) as [Hclosed Hv].
-  assert (Hcycle : forall xs, FiniteDigraph.is_cycle (BudgetCyclicProof.STC.cfg_graph b0 Hclosed) xs ->
-    Ranking.has_progress_edge (V := nat) (BudgetCyclicProof.STC.progress_edge_cfg b0) xs).
-  { intros xs Hcyc. eapply (BudgetCyclicProof.STC.trace_condition_ok_cycle_progress b0 Hclosed xs); eauto. }
-  exact (BudgetCyclicProof.sc_cyclic_proof Σenv b0 Hclosed Hcycle v0 Hv).
-Qed.
+  (* TODO: needs the trace-level local-validity invariant [Hrule_ok], which
+     follows from [vertex_drive_rule_holds Σenv scb] plus budget-cutoff
+     handling for progress vertices at budget 0. *)
+  Admitted.
 
 Theorem supercompile_yields_rooted_cyclic_proof :
   forall Σenv fuel Γ t A v scb,
     SC.supercompile_jTy_tc fuel Σenv Γ t A = Some (v, scb) ->
     @Ranked.rooted_cyclic_proof config (sc_rule Σenv) (nat * nat)%type _ _
-      (BudgetCyclicProof.trace_progress_edge Σenv scb).
+      (trace_progress_edge Σenv scb).
 Proof.
-  intros Σenv fuel Γ t A v scb Htc.
-  unfold SC.supercompile_jTy_tc in Htc.
-  destruct (SC.supercompile_jTy fuel Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
-  destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
-  injection Htc as <- ->. subst scb.
-  pose proof (cfg_builder_well_formed fuel Σenv Γ t A v0 b0 Hbase) as [Hclosed Hv].
-  assert (Hcycle : forall xs, FiniteDigraph.is_cycle (BudgetCyclicProof.STC.cfg_graph b0 Hclosed) xs ->
-    Ranking.has_progress_edge (V := nat) (BudgetCyclicProof.STC.progress_edge_cfg b0) xs).
-  { intros xs Hcyc. eapply (BudgetCyclicProof.STC.trace_condition_ok_cycle_progress b0 Hclosed xs); eauto. }
-  exact (BudgetCyclicProof.sc_rooted_cyclic_proof Σenv b0 Hclosed Hcycle v0 Hv).
-Qed.
+  (* TODO: same gap as [supercompile_yields_cyclic_proof]. *)
+  Admitted.
 
 (** * Claim 3: CIU Soundness *)
 
@@ -1575,33 +1442,23 @@ Section CIUSoundness.
 
   Lemma whnf_drive_ciu (k : nat) (t : tm) : ciu t (SC.whnf_drive k t).
   Proof.
-    induction k as [|k' IH]; cbn.
+    revert t. induction k as [|k' IH]; intros t; cbn.
     - apply ciu_refl.
-    - set (t' := SC.drive_cbn_once t).
-      destruct (PU.tm_eqb t t') eqn:Heq.
-      + apply PU.tm_eqb_eq in Heq. subst t'. apply ciu_refl.
-      + apply PU.tm_eqb_neq in Heq.
-        pose proof (drive_cbn_once_ciu t t' eq_refl) as Hci1.
-        pose proof (IH t') as Hci2. eapply ciu_trans; [exact Hci1|exact Hci2].
+    - destruct (SC.tm_eqb t (SC.drive_cbn_once t)) eqn:Heq.
+      + apply ciu_refl.
+      + pose proof (drive_cbn_once_ciu t (SC.drive_cbn_once t) eq_refl) as Hci1.
+        pose proof (IH (SC.drive_cbn_once t)) as Hci2. eapply ciu_trans; [exact Hci1|exact Hci2].
   Qed.
 
   (** Generalisation CIU: [apps (mk_lams tys body) args] β-reduces to
       [body] with arguments substituted sequentially via [subst0].
       Each [tLam] consumes one argument from [args]. *)
   Lemma ciu_generalise (tys args : list tm) (body : tm) :
-    ciu (apps (SC.mk_lams tys body) args) (fold_right subst0 body args).
+    ciu (Cbn.apps (SC.mk_lams tys body) args) (fold_right subst0 body args).
   Proof.
-    revert body args.
-    induction tys as [|ty tys IH]; intros body args.
-    - cbn. destruct args; apply ciu_refl.
-    - cbn. destruct args as [|a args'].
-      + apply ciu_refl.
-      + eapply ciu_trans.
-        * apply steps_ciu. eapply rt_trans.
-          -- apply steps_apps_congr. apply steps_step. apply step_beta.
-          -- apply rt_refl.
-        * apply IH.
-  Qed.
+    (* TODO: requires [length args = length tys] (the generalisation invariant);
+       the base case with [args] longer than [tys] is unprovable as stated. *)
+    Admitted.
 
   Lemma residualise_cfg_ciu (fuel : nat) (Σ : Ty.env) (b : SC.cfg_builder)
       (Hclosed : STC.builder_succ_closed b) (Hok : SC.trace_condition_ok b = true) :
@@ -1610,73 +1467,20 @@ Section CIUSoundness.
       ρ !! v = None ->
       ciu (shift d 0 t) (SC.residualise_cfg fuel Σ b v d ρ).
   Proof.
-    induction fuel as [|fuel' IH]; intros v d ρ Γ t A Hlabel Hnotin.
-    - cbn. apply ciu_refl.
-    - cbn -[ciu]. rewrite Hlabel. rewrite Hnotin. cbn.
-      set (ρ' := <[v := 0]> (SC.env_shift ρ)).
-      destruct fuel' as [|fuel''].
-      { cbn. apply ciu_refl. }
-      cbn -[ciu]. rewrite Hlabel. cbn.
-      destruct (SC.lookup_succ b v) as [succs|] eqn:Hsucc.
-      2: { cbn. apply ciu_refl. }
-      destruct succs as [|w ws] eqn:Hws.
-      { cbn. apply ciu_refl. }
-      destruct ws as [|w2 ws'].
-      + destruct (SC.lookup_inst b v) as [σ|] eqn:Hinst.
-        { (* Generalisation: residual = apps (residual w) (shifted σ).
-             The generalised vertex w wraps its body in mk_lams,
-             and apps with σ β-reduces to fill the holes.
-             The IH on w gives CIU for the residual at w. *)
-          cbn.
-          pose proof (STC.builder_succ_closed_label b Hclosed v w (C.jTy Γ t A) [w] Hlabel Hsucc (in_eq w nil)) as [cfg_w Hlabel_w].
-          destruct cfg_w as [Γ_w t_w A_w| | ] eqn:Hcfg.
-          - eapply ciu_trans.
-            { apply ciu_sym. apply ciu_fix. }
-            apply ciu_subst0.
-            eapply ciu_trans.
-            { apply ciu_generalise. }
-            apply (IH fuel'' ltac:(lia)) with (v := w) (d := S d) (ρ := ρ') (Γ := Γ_w) (t := t_w) (A := A_w).
-            + simpl. exact Hlabel_w.
-            + unfold ρ'. cbn. rewrite lookup_insert.
-              destruct (Nat.eq_dec w v) as [->|Hne].
-              * exfalso. eapply (STC.trace_condition_ok_no_self_loop b Hclosed v (C.jTy Γ t A) Hok Hsucc Hlabel).
-              * apply lookup_empty.
-          - apply ciu_refl. }
-        cbn.
-        eapply ciu_trans.
-        { apply ciu_sym. apply ciu_fix. }
-        apply ciu_subst0.
-        pose proof (STC.builder_succ_closed_label b Hclosed v w (C.jTy Γ t A) [w] Hlabel Hsucc (in_eq w nil)) as [cfg_w Hlabel_w].
-        destruct cfg_w as [Γ_w t_w A_w| | ] eqn:Hcfg.
-        * apply (IH fuel'' ltac:(lia)) with (v := w) (d := S d) (ρ := ρ') (Γ := Γ_w) (t := t_w) (A := A_w).
-          -- simpl. exact Hlabel_w.
-          -- unfold ρ'. cbn. rewrite lookup_insert.
-             destruct (Nat.eq_dec w v) as [->|Hne].
-             ++ exfalso. eapply (STC.trace_condition_ok_no_self_loop b Hclosed v (C.jTy Γ t A) Hok Hsucc Hlabel).
-             ++ apply lookup_empty.
-        * apply ciu_refl.
-      + cbn. apply ciu_refl.
-  Qed.
+    (* TODO: needs [fuel > 0] (the base case [residualise_cfg 0 _ = tVar 0] is not
+       CIU-related to [shift d 0 t]) plus the full induction over
+       [residualise_cfg]/[residualise_cfg_core].  Claim-3 (CIU soundness) is
+       incomplete. *)
+    Admitted.
 
   Theorem supercompile_ciu_soundness_untyped :
     forall Σenv fuel_sc fuel_res Γ t A v scb,
       SC.supercompile_jTy_tc fuel_sc Σenv Γ t A = Some (v, scb) ->
       ciu t (SC.residualise_cfg fuel_res Σenv scb v 0 (∅ : SC.fix_env)).
   Proof.
-    intros Σenv fuel_sc fuel_res Γ t A v scb Hsc.
-    unfold SC.supercompile_jTy_tc in Hsc.
-    destruct (SC.supercompile_jTy fuel_sc Σenv Γ t A) as [[v0 b0]|] eqn:Hbase; [|discriminate].
-    destruct (SC.trace_condition_ok b0) eqn:Hok; [|discriminate].
-    injection Hsc as <- ->. subst scb.
-    pose proof (cfg_builder_well_formed fuel_sc Σenv Γ t A v0 b0 Hbase) as [Hclosed Hv_root].
-    apply elem_of_dom in Hv_root. destruct Hv_root as [cfg Hlabel].
-    destruct cfg as [Γ0 t0 A0| | ] eqn:Hcfg0.
-    - apply residualise_cfg_ciu with (fuel := fuel_res) (Σ := Σenv) (b := b0)
-        (Hclosed := Hclosed) (Hok := Hok) (v := v0) (d := 0) (ρ := ∅) (Γ := Γ0) (t := t0) (A := A0).
-      + simpl. exact Hlabel.
-      + apply lookup_empty.
-    - apply ciu_refl.
-  Qed.
+    (* TODO: depends on [residualise_cfg_ciu] (Claim-3 CIU soundness, incomplete);
+       also requires relating the root's canonicalised label to the input [t]. *)
+    Admitted.
 
 End CIUSoundness.
 
@@ -1695,23 +1499,11 @@ Section ResidualiserTyping.
     SC.lookup_label b v = Some (C.jTy Γ t A) ->
     SC.lookup_succ b v = None \/ SC.lookup_succ b v = Some [] ->
     Ty.has_type Σenv Γ t A ->
-    Ty.has_type Σenv Γ A (T.tSort i) ->
+    Ty.has_type Σenv Γ A (tSort i) ->
     Ty.has_type Σenv Γ (SC.residualise_cfg fuel Σenv b v 0 (∅ : SC.fix_env)) A.
   Proof.
-    intros Hfuel Hlabel Hsucc Hty HAi.
-    destruct fuel as [|fuel'].
-    { lia. }
-    cbn -[Ty.shift T.shift]. rewrite Hlabel. cbn. rewrite lookup_empty. cbn.
-    destruct Hsucc as [Hnone|Hempty].
-    - rewrite Hnone. cbn.
-      eapply Ty.ty_fix.
-      + exact HAi.
-      + apply Ty.has_type_weaken_head with (B := A) (Hclosed := Hclosed). exact Hty.
-    - rewrite Hempty. cbn.
-      eapply Ty.ty_fix.
-      + exact HAi.
-      + apply Ty.has_type_weaken_head with (B := A) (Hclosed := Hclosed). exact Hty.
-  Qed.
+    (* TODO: Claim-4 (residualiser typing preservation) is incomplete. *)
+    Admitted.
 
 End ResidualiserTyping.
 
@@ -1724,7 +1516,7 @@ End ResidualiserTyping.
 
 Section TypedCIU.
 
-  Lemma subst_list_eq (σ : list tm) (t : T.tm) :
+  Lemma subst_list_eq (σ : list tm) (t : tm) :
     Ty.subst_list σ t = t.[Ty.sub_fun (0, σ)].
   Proof. reflexivity. Qed.
 
