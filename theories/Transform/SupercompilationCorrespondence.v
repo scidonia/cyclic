@@ -678,37 +678,8 @@ Qed.
     set_solver.
   Qed.
 
-  Lemma supercompile_cfg_dom_mono :
-    forall fuel Σenv j st v st',
-      SC.supercompile_cfg fuel Σenv j st = Some (v, st') ->
-      dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st'.(SC.sc_builder).(SC.cb_label).
-  Proof.
-    intro fuel.
-    induction fuel as [|fuel' IH]; intros Σenv j st v st' Hsc.
-    - (* fuel = 0 *)
-      unfold SC.supercompile_cfg in Hsc.
-      destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
-      + injection Hsc as _ ->. set_solver.
-      + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
-        injection Hsc as _ ->.
-        apply (sc_alloc_dom_mono _ _ _ _ Halloc).
-    - (* fuel = S fuel' *)
-      unfold SC.supercompile_cfg in Hsc.
-      destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
-      + injection Hsc as _ ->. set_solver.
-      + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
-        (* TODO: prove the [S fuel'] step case.  [supercompile_cfg (S fuel')]
-           reduces to the [compile_succs]/[best_generalize] machinery; the
-           remaining argument composes [sc_alloc_dom_mono],
-           [cb_put_*_label], and a [compile_succs] domain-monotonicity
-           lemma via [etrans], case-splitting on [best_generalize] and
-           [compile_succs].  The reduction of [supercompile_cfg (S fuel')]
-           is delicate because [cbn]/[simpl] also unfold [whistle_candidates]
-           and [best_generalize]. *)
-        Admitted.
-
-
-  (** Helper: compile_succs preserves domain monotonicity. *)
+  (** Helper: compile_succs preserves domain monotonicity, given that each
+      individual [supercompile_cfg] call does. *)
   Lemma compile_succs_dom_mono :
     forall fuel Σenv js st ws st',
       (fix compile_succs (js : list SC.config) (st0 : SC.sc_state) :=
@@ -724,10 +695,12 @@ Qed.
                  end
              end
          end) js st = Some (ws, st') ->
+      (forall j0 st0 v0 st0', SC.supercompile_cfg fuel Σenv j0 st0 = Some (v0, st0') ->
+        dom st0.(SC.sc_builder).(SC.cb_label) ⊆ dom st0'.(SC.sc_builder).(SC.cb_label)) ->
       dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st'.(SC.sc_builder).(SC.cb_label).
   Proof.
     intros fuel Σenv js.
-    induction js as [|j js' IH]; intros st ws st' Hc.
+    induction js as [|j js' IH]; intros st ws st' Hc Hstep.
     - simpl in Hc. injection Hc as _ ->. set_solver.
     - simpl in Hc.
       destruct (SC.supercompile_cfg fuel Σenv j st) as [[w stw]|] eqn:Hsc; [|discriminate].
@@ -746,9 +719,92 @@ Qed.
                   end) js' stw) as [[ws' st2]|] eqn:Hrest; [|discriminate].
       injection Hc as _ ->.
       etrans.
-      + exact (supercompile_cfg_dom_mono fuel Σenv j st w stw Hsc).
-      + exact (IH stw ws' st' Hrest).
+      + exact (Hstep j st w stw Hsc).
+      + exact (IH stw ws' st' Hrest Hstep).
   Qed.
+
+  Lemma supercompile_cfg_dom_mono :
+    forall fuel Σenv j st v st',
+      SC.supercompile_cfg fuel Σenv j st = Some (v, st') ->
+      dom st.(SC.sc_builder).(SC.cb_label) ⊆ dom st'.(SC.sc_builder).(SC.cb_label).
+  Proof.
+    intro fuel.
+    induction fuel as [|fuel' IH]; intros Σenv j st v st' Hsc.
+    - (* fuel = 0 *)
+      unfold SC.supercompile_cfg in Hsc.
+      destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
+      + injection Hsc as _ ->. set_solver.
+      + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
+        injection Hsc as _ ->.
+        apply (sc_alloc_dom_mono _ _ _ _ Halloc).
+    - (* fuel = S fuel' *)
+      unfold SC.supercompile_cfg in Hsc.
+      fold SC.supercompile_cfg in Hsc.
+      destruct (SC.memo_lookup _ _) as [vhit|] eqn:Hmemo.
+      + injection Hsc as _ ->. set_solver.
+      + destruct (SC.sc_alloc _ _) as [v0 st1] eqn:Halloc.
+        cbn -[SC.sc_alloc SC.cb_fresh SC.cb_put_label SC.cb_put_succ SC.cb_put_inst SC.cb_put_holes SC.whistle_candidates SC.best_generalize SC.canon_config SC.norm_config SC.drive_step] in Hsc.
+        set (jcanon := SC.canon_config (SC.norm_config SC.memo_norm_fuel Σenv j)) in *.
+        set (cands := SC.whistle_candidates fuel' jcanon st.(SC.sc_memo)) in *.
+        destruct (SC.best_generalize jcanon cands) as [[g v_prev]|] eqn:Hgen.
+        * (* generalisation branch *)
+          destruct (SC.sc_alloc g.(SC.gen_j) st1) as [vg stg0] eqn:Hallocg.
+          set (bg1 := SC.cb_put_holes vg g.(SC.gen_holes) stg0.(SC.sc_builder)) in *.
+          set (bg2 := SC.cb_put_succ v_prev [vg] bg1) in *.
+          set (bg3 := SC.cb_put_inst v_prev g.(SC.gen_sub1) bg2) in *.
+          set (bg4 := SC.cb_put_succ v0 [vg] bg3) in *.
+          set (bg5 := SC.cb_put_inst v0 g.(SC.gen_sub2) bg4) in *.
+          set (stg1 := {| SC.sc_builder := bg5; SC.sc_memo := stg0.(SC.sc_memo) |}) in *.
+          set (nextg := SC.drive_step Σenv g.(SC.gen_j)) in *.
+          destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
+                      match js with
+                      | [] => Some ([], st0)
+                      | j0 :: js0 =>
+                          match SC.supercompile_cfg fuel' Σenv j0 st0 with
+                          | None => None
+                          | Some (w, stw) =>
+                              match compile_succs js0 stw with
+                              | None => None
+                              | Some (ws, st2) => Some (w :: ws, st2)
+                              end
+                          end
+                      end) nextg stg1) as [[vsg stg2]|] eqn:Hcomp.
+          -- (* success *)
+             injection Hsc as <- <-.
+             etrans; [apply (sc_alloc_dom_mono _ _ _ _ Halloc)|].
+             etrans; [apply (sc_alloc_dom_mono _ _ _ _ Hallocg)|].
+             etrans; [| apply (compile_succs_dom_mono fuel' Σenv nextg stg1 vsg stg2 Hcomp (IH Σenv))].
+             subst stg1 bg5 bg4 bg3 bg2 bg1. cbn. set_solver.
+          -- (* failure *)
+             injection Hsc as <- <-.
+             etrans; [apply (sc_alloc_dom_mono _ _ _ _ Halloc)|].
+             etrans; [apply (sc_alloc_dom_mono _ _ _ _ Hallocg)|].
+             subst stg1 bg5 bg4 bg3 bg2 bg1. cbn. set_solver.
+        * (* no generalise branch *)
+          set (next := SC.drive_step Σenv jcanon) in *.
+          destruct ((fix compile_succs (js : list SC.config) (st0 : SC.sc_state) {struct js} : option (list nat * SC.sc_state) :=
+                      match js with
+                      | [] => Some ([], st0)
+                      | j0 :: js0 =>
+                          match SC.supercompile_cfg fuel' Σenv j0 st0 with
+                          | None => None
+                          | Some (w, stw) =>
+                              match compile_succs js0 stw with
+                              | None => None
+                              | Some (ws, st2) => Some (w :: ws, st2)
+                              end
+                          end
+                      end) next st1) as [[vs st2]|] eqn:Hcomp.
+          -- (* success *)
+             injection Hsc as <- <-.
+             etrans; [apply (sc_alloc_dom_mono _ _ _ _ Halloc)|].
+             etrans; [apply (compile_succs_dom_mono fuel' Σenv next st1 vs st2 Hcomp (IH Σenv))|].
+             cbn. set_solver.
+          -- (* failure *)
+             injection Hsc as <- <-.
+             apply (sc_alloc_dom_mono _ _ _ _ Halloc).
+  Qed.
+
 
   (** Helper: compile_succs preserves well-formedness
   
@@ -810,7 +866,7 @@ Qed.
         apply Hwf in Hsc.
         (* Now we need: w ∈ dom stw → w ∈ dom st2.
            This follows from domain monotonicity of [compile_succs]. *)
-        pose proof (compile_succs_dom_mono fuel Σenv js' stw ws' st2 Hrest) as Hmono.
+        pose proof (compile_succs_dom_mono fuel Σenv js' stw ws' st2 Hrest (supercompile_cfg_dom_mono fuel Σenv)) as Hmono.
         exact (Hmono _ Hsc).
       + (* Show Forall for ws' by IH *)
         apply (IH stw ws' st2 Hrest Hwf).
@@ -1005,7 +1061,7 @@ Qed.
       destruct (IH stw ws' st2 Hrest HwfW Hstep) as [Hwf2 Hfor].
       split; [exact Hwf2|].
       constructor.
-      + pose proof (compile_succs_dom_mono fuel Σenv js' stw ws' st2 Hrest) as Hmono.
+      + pose proof (compile_succs_dom_mono fuel Σenv js' stw ws' st2 Hrest (supercompile_cfg_dom_mono fuel Σenv)) as Hmono.
         exact (Hmono _ Hwdom).
       + exact Hfor.
   Qed.
@@ -1221,7 +1277,7 @@ Qed.
                      subst stg1 bg5 bg4 bg3 bg2 bg1.
                      cbn.
                      exact Hv0_stg0. }
-                   pose proof (compile_succs_dom_mono fuel' Σenv nextg stg1 vsg stg2 Hcomp) as Hmono.
+                   pose proof (compile_succs_dom_mono fuel' Σenv nextg stg1 vsg stg2 Hcomp (supercompile_cfg_dom_mono fuel' Σenv)) as Hmono.
                    exact (Hmono _ Hv0_stg1).
               -- (* compile_succs failed: keep stg1 *)
                  injection Hsc as <- <-.
@@ -1264,7 +1320,7 @@ Qed.
                   ++ (* root v0 remains in dom, and compile_succs is dom-mono *)
                     assert (Hv0_st1 : v0 ∈ dom st1.(SC.sc_builder).(SC.cb_label)).
                     { apply (sc_alloc_adds_label _ _ _ _ Halloc). }
-                    pose proof (compile_succs_dom_mono fuel' Σenv next st1 vs st2 Hcomp) as Hmono.
+                    pose proof (compile_succs_dom_mono fuel' Σenv next st1 vs st2 Hcomp (supercompile_cfg_dom_mono fuel' Σenv)) as Hmono.
                     exact (Hmono _ Hv0_st1).
               -- (* failure: keep st1 *)
                  injection Hsc as <- <-.
